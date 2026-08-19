@@ -781,6 +781,10 @@ public:
     /// Prints the work journal. Runs on an already-dead device, so cost does not matter.
     void DumpGpuWorkJournal() const;
 
+    /// Prints the VK_NV_device_diagnostic_checkpoints markers the driver still holds, i.e. WHICH
+    /// recorded draw or dispatch each queue had reached when the device died.
+    void LogQueueCheckpoints() const;
+
 private:
     vk::UniqueInstance instance;
     vk::PhysicalDevice physical_device;
@@ -837,6 +841,7 @@ private:
     bool supports_memory_budget{};
     bool supports_block_texel_view{};
     bool device_fault{};
+    bool diagnostic_checkpoints{};
     bool device_fault_vendor_binary{};
     mutable std::once_flag device_fault_once;
     /// Separate from device_fault_once so the journal is still printed on a device that does not

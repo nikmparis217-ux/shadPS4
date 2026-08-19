@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <bit>
+#include <cstdlib>
 #include <limits>
 
 #include <boost/container/static_vector.hpp>
@@ -407,6 +409,20 @@ bool Instance::CreateDevice() {
     if (device_fault) {
         LOG_INFO(Render_Vulkan, "Device fault reporting enabled (vendor binary dumps: {})",
                  device_fault_vendor_binary ? "yes" : "no");
+    }
+    // VK_NV_device_diagnostic_checkpoints stamps the command stream with our own markers.
+    // It costs one command per draw or dispatch and nothing on the GPU, and it is the only
+    // way to turn a device loss into the name of OUR shader: the vendor dump calls the
+    // faulting shader something like compute_01, which matches nothing on this side.
+    // GT_GPU_CHECKPOINTS=0 turns it off: it is one extra command per draw, and GT7 records
+    // about 6900 draws per frame, so it must be possible to take out of an fps measurement.
+    const char* const checkpoints_env = std::getenv("GT_GPU_CHECKPOINTS");
+    const bool want_checkpoints = !(checkpoints_env != nullptr && checkpoints_env[0] == '0');
+    diagnostic_checkpoints =
+        want_checkpoints && add_extension(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+    if (diagnostic_checkpoints) {
+        LOG_INFO(Render_Vulkan, "GPU checkpoints enabled - a device loss will name the last "
+                                "draw or dispatch each queue reached.");
     }
     const bool calibrated_timestamps =
         TRACY_GPU_ENABLED ? add_extension(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME) : false;
@@ -981,6 +997,7 @@ void Instance::LogDeviceFaultInfo() const {
 
         // The driver has now said WHERE it died; the journal says WHAT it was running. Print it
         // before the vendor blob, which nothing here can read anyway.
+        LogQueueCheckpoints();
         DumpGpuWorkJournal();
 
         if (!vendor_binary.empty() && counts.vendorBinarySize > 0) {
@@ -1004,6 +1021,37 @@ void Instance::LogDeviceFaultInfo() const {
     });
 }
 
+void Instance::LogQueueCheckpoints() const {
+    if (!diagnostic_checkpoints) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "VK_NV_device_diagnostic_checkpoints is not enabled, so the driver cannot say "
+                     "which recorded draw or dispatch each queue had reached.");
+        return;
+    }
+    const auto dump = [](std::string_view which, vk::Queue queue) {
+        if (!queue) {
+            return;
+        }
+        const auto checkpoints = queue.getCheckpointDataNV();
+        if (checkpoints.empty()) {
+            LOG_CRITICAL(Render_Vulkan, "  {} queue: the driver returned no checkpoints", which);
+            return;
+        }
+        for (const auto& cp : checkpoints) {
+            const u64 raw = reinterpret_cast<u64>(cp.pCheckpointMarker);
+            LOG_CRITICAL(Render_Vulkan, "  {} queue at {}: journal seq {}, shader 0x{:08x}", which,
+                         vk::to_string(cp.stage), static_cast<u32>(raw >> 32),
+                         static_cast<u32>(raw));
+        }
+    };
+    LOG_CRITICAL(Render_Vulkan, "==== GPU CHECKPOINTS (the last recorded work each queue reached; "
+                                "cross-reference the seq against LAST GPU WORK below) ====");
+    dump("graphics", graphics_queue);
+    if (present_queue != graphics_queue) {
+        dump("present", present_queue);
+    }
+}
+
 void Instance::RecordGpuWork(const GpuWorkPayload& payload) const {
     auto& journal = gpu_work_journal;
     const u64 seq = journal.next_seq.fetch_add(1, std::memory_order_relaxed) + 1;
@@ -1017,6 +1065,16 @@ void Instance::RecordGpuWork(const GpuWorkPayload& payload) const {
     std::atomic_thread_fence(std::memory_order_release);
     entry.payload = payload;
     entry.seq.store(seq, std::memory_order_release);
+
+    // Stamp the command stream with (seq, shader hash) BEFORE the caller records the draw or
+    // dispatch itself - every RecordGpuWork call site is immediately followed by the command,
+    // so the last marker a queue reached names the work it was about to run, or was running.
+    // The marker is opaque to the driver and is never dereferenced by anyone.
+    if (diagnostic_checkpoints && payload.cmdbuf != 0) {
+        const u64 marker = (seq << 32) | static_cast<u32>(payload.primary_hash);
+        const vk::CommandBuffer cmdbuf{std::bit_cast<VkCommandBuffer>(payload.cmdbuf)};
+        cmdbuf.setCheckpointNV(reinterpret_cast<const void*>(marker));
+    }
 
     // Warn AT RECORD TIME, not only in the dump: most runs do not lose the device, and a monstrous
     // dispatch should be visible in those too.
