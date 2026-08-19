@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: Copyright 2025-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <mutex>
+
+#include "common/scm_rev.h"
 #include "common/serdes.h"
 #include "core/emulator_settings.h"
 #include "shader_recompiler/frontend/fetch_shader.h"
@@ -15,6 +18,35 @@ namespace Serialization {
 static constexpr u32 ShaderBinaryVersion = 3u;
 static constexpr u32 ShaderMetaVersion = 3u;
 static constexpr u32 PipelineKeyVersion = 3u;
+
+/// Every serialized record carries its format version XOR this. The hand-bumped versions above
+/// only cover the FORMAT; the SPIR-V a shader compiles to changes whenever the recompiler does,
+/// and nobody remembers to bump a number after an emitter edit. So the build identity is mixed
+/// in: any rebuild opens a fresh generation and this binary can never be handed a module some
+/// other binary produced.
+///
+/// This is not hypothetical. A cache written across a day of builds silently fed back a stale
+/// module for the shader that draws GT7 dialog text: the box, its icon and its button drew,
+/// the glyphs did not, nothing logged an error, and the only symptom was
+/// "Cached permutation N of fs_X conflicts with index M" - which reads like bookkeeping noise.
+/// Wiping the cache by hand fixed it; that is what this makes automatic.
+inline u32 BuildGeneration() {
+    static const u32 gen = [] {
+        u32 h = 2166136261u; // FNV-1a
+        for (const char* str : {Common::g_version, Common::g_scm_rev, Common::g_scm_date}) {
+            for (const char* c = str; *c != 0; ++c) {
+                h ^= static_cast<u8>(*c);
+                h *= 16777619u;
+            }
+        }
+        return h;
+    }();
+    return gen;
+}
+
+inline u32 Versioned(u32 format_version) {
+    return format_version ^ BuildGeneration();
+}
 } // namespace Serialization
 
 namespace Vulkan {
@@ -28,7 +60,7 @@ void RegisterPipelineData(const ComputePipelineKey& key,
     Serialization::Archive ar{};
     Serialization::Writer pldata{ar};
 
-    pldata.Write(Serialization::PipelineKeyVersion);
+    pldata.Write(Serialization::Versioned(Serialization::PipelineKeyVersion));
     pldata.Write(u32{1}); // compute
 
     key.Serialize(ar);
@@ -47,7 +79,7 @@ void RegisterPipelineData(const GraphicsPipelineKey& key, u64 hash,
     Serialization::Archive ar{};
     Serialization::Writer pldata{ar};
 
-    pldata.Write(Serialization::PipelineKeyVersion);
+    pldata.Write(Serialization::Versioned(Serialization::PipelineKeyVersion));
     pldata.Write(u32{0}); // graphics
 
     key.Serialize(ar);
@@ -68,8 +100,8 @@ void RegisterShaderMeta(const Shader::Info& info,
     Serialization::Archive ar;
     Serialization::Writer meta{ar};
 
-    meta.Write(Serialization::ShaderMetaVersion);
-    meta.Write(Serialization::ShaderBinaryVersion);
+    meta.Write(Serialization::Versioned(Serialization::ShaderMetaVersion));
+    meta.Write(Serialization::Versioned(Serialization::ShaderBinaryVersion));
 
     meta.Write(perm_hash);
     meta.Write(perm_idx);
@@ -98,13 +130,13 @@ bool LoadShaderMeta(Serialization::Archive& ar, Shader::Info& info,
 
     u32 meta_version{};
     meta.Read(meta_version);
-    if (meta_version != Serialization::ShaderMetaVersion) {
+    if (meta_version != Serialization::Versioned(Serialization::ShaderMetaVersion)) {
         return false;
     }
 
     u32 binary_version{};
     meta.Read(binary_version);
-    if (binary_version != Serialization::ShaderBinaryVersion) {
+    if (binary_version != Serialization::Versioned(Serialization::ShaderBinaryVersion)) {
         return false;
     }
 
@@ -349,7 +381,17 @@ void PipelineCache::WarmUp() {
 
             u32 version{};
             pldata.Read(version);
-            if (version != Serialization::PipelineKeyVersion) {
+            if (version != Serialization::Versioned(Serialization::PipelineKeyVersion)) {
+                // Say it ONCE and plainly. The old symptom of a foreign store was a flood of
+                // "Cached permutation N conflicts with index M" plus whatever the stale module
+                // happened to draw; one line naming the cause is worth more than both.
+                static std::once_flag foreign_store_once;
+                std::call_once(foreign_store_once, [] {
+                    LOG_WARNING(Render_Vulkan,
+                                "The pipeline cache was written by a different build of the "
+                                "emulator - ignoring it and refilling. This build is {} {} ({}).",
+                                Common::g_version, Common::g_scm_rev, Common::g_scm_date);
+                });
                 return;
             }
 
