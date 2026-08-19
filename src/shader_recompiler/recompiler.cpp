@@ -80,7 +80,22 @@ IR::Program TranslateProgram(const std::span<const u32>& code, Pools& pools, Inf
     Shader::Optimization::RingAccessElimination(program, runtime_info);
     Shader::Optimization::ReadLaneEliminationPass(program);
     Shader::Optimization::FlattenExtendedUserdataPass(program);
+    if (program.info.has_bindless_sharp) {
+        // Abandoned by the flatten pass (dynamic ReadConst offset - the SRT walker cannot
+        // pre-copy it). Same exit as below: CompileModule substitutes a no-op module.
+        Shader::IR::DumpProgram(program, info, "bindless.", /*force=*/true);
+        return program;
+    }
     Shader::Optimization::ResourceTrackingPass(program, profile);
+    if (program.info.has_bindless_sharp) {
+        // The tracker abandoned this program (dynamically indexed descriptors - bindless).
+        // Skip the remaining passes: they would trip over the instructions the tracker left
+        // unpatched. CompileModule substitutes a no-op module. See GT_BINDLESS_STUB.
+        // Dump the IR unconditionally: it is the evidence for the real-bindless design
+        // (which ops, buffer or image, and what the untracked handle chains look like).
+        Shader::IR::DumpProgram(program, info, "bindless.", /*force=*/true);
+        return program;
+    }
     Shader::Optimization::LowerBufferFormatToRaw(program);
     Shader::Optimization::SharedMemorySimplifyPass(program, profile);
     Shader::Optimization::SharedMemoryToStoragePass(program, runtime_info, profile);

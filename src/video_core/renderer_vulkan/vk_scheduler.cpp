@@ -1,8 +1,11 @@
 // SPDX-FileCopyrightText: Copyright 2025 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <atomic>
+#include <cstdlib>
 #include "common/assert.h"
 #include "common/debug.h"
+#include "common/logging/log.h"
 #include "common/thread.h"
 #include "imgui/renderer/texture_manager.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
@@ -17,6 +20,10 @@ Scheduler::Scheduler(const Instance& instance)
 #if TRACY_GPU_ENABLED
     profiler_scope = reinterpret_cast<tracy::VkCtxScope*>(std::malloc(sizeof(tracy::VkCtxScope)));
 #endif
+    // Three Schedulers exist (draw, present, flip) and each owns a SEPARATE timeline semaphore, but
+    // BufferCache and TextureCache are bound to the draw one alone. Publishing the timeline here is
+    // what lets a deletion wait on all of them instead of on whichever cache happened to queue it.
+    instance.RegisterTimeline(&master_semaphore);
     AllocateWorkerCommandBuffers();
     priority_pending_ops_thread =
         std::jthread(std::bind_front(&Scheduler::PriorityPendingOpsThread, this));
@@ -133,6 +140,11 @@ void Scheduler::AllocateWorkerCommandBuffers() {
     };
 
     current_cmdbuf = command_pool.Commit();
+    // Publish which Scheduler this handle belongs to. The validation layer names a VkCommandBuffer
+    // when it reports a resource destroyed while in use, and that name is only useful next to an
+    // ownership table - see Instance::RegisterCommandBuffer for why no tick comparison can answer it.
+    instance.RegisterCommandBuffer(
+        std::bit_cast<u64>(static_cast<VkCommandBuffer>(current_cmdbuf)), &master_semaphore);
     Check(current_cmdbuf.begin(begin_info));
 
     // Invalidate dynamic state so it gets applied to the new command buffer.
@@ -150,6 +162,9 @@ void Scheduler::AllocateWorkerCommandBuffers() {
 
 void Scheduler::SubmitExecution(SubmitInfo& info) {
     std::scoped_lock lk{submit_mutex};
+    // Snapshot NOW what this command buffer contains, but only publish it as "the driver has this"
+    // if the submit below actually succeeds - see MarkGpuWorkSubmitted.
+    const u64 work_in_this_cmdbuf = instance.PeekGpuWorkSeq();
     const u64 signal_value = master_semaphore.NextTick();
 
 #if TRACY_GPU_ENABLED
@@ -191,9 +206,56 @@ void Scheduler::SubmitExecution(SubmitInfo& info) {
 
     ImGui::Core::TextureManager::Submit();
     auto submit_result = instance.GetGraphicsQueue().submit(submit_info, info.fence);
+    if (submit_result == vk::Result::eErrorDeviceLost) {
+        // The loss is reported asynchronously, so this submit is not necessarily the guilty one.
+        // Ask the driver before aborting - it is the only thing that knows what it choked on.
+        // Deliberately WITHOUT marking this command buffer as submitted: it was not delivered, and
+        // the journal should point at the last submission that really was.
+        instance.LogDeviceFaultInfo();
+    } else {
+        instance.MarkGpuWorkSubmitted(
+            work_in_this_cmdbuf, signal_value,
+            std::bit_cast<u64>(static_cast<VkCommandBuffer>(current_cmdbuf)), &master_semaphore);
+    }
     ASSERT_MSG(submit_result != vk::Result::eErrorDeviceLost, "Device lost during submit");
 
     master_semaphore.Refresh();
+
+    // GT_STALL_DUMP=1: dump the work journal LIVE, the moment this timeline stops making progress
+    // while submits keep piling up - NOT at device-lost time. Three post-mortems in a row (runs
+    // 42-44, byte-identical fault span 0x20010f440..0x20010fcd0 at compile #195) could not name the
+    // hung work: the loss is reported ~10,000 submits after the stall, by which time the 512-entry
+    // submit ring and the 32k-entry journal have both wrapped and the oldest unfinished tick reads
+    // "no submit record kept". Detected at a ~256-tick pile-up instead, everything is still in the
+    // rings and the EXISTING dump names the shader. Read-only: the run continues after the dump, so
+    // a false positive costs log lines, not the run. Fires once per process.
+    static const bool stall_dump_enabled = [] {
+        const char* v = std::getenv("GT_STALL_DUMP");
+        return v && v[0] == '1';
+    }();
+    if (stall_dump_enabled) {
+        const u64 done = master_semaphore.KnownGpuTick();
+        const u64 cur = master_semaphore.CurrentTick();
+        const auto now = std::chrono::steady_clock::now();
+        if (done != stall_last_gpu_tick) {
+            stall_last_gpu_tick = done;
+            stall_last_progress = now;
+        } else if (cur - done > 256) {
+            static std::atomic<bool> stall_dumped{false};
+            const auto frozen =
+                std::chrono::duration_cast<std::chrono::milliseconds>(now - stall_last_progress);
+            if (frozen.count() > 700 && !stall_dumped.exchange(true)) {
+                LOG_CRITICAL(Render_Vulkan,
+                             "GPU STALL (live): a timeline's completed tick has been frozen at {} "
+                             "for {} ms while {} submits piled up behind it. Dumping the work "
+                             "journal NOW, while the submit ring still holds the stalled tick - the "
+                             "oldest unfinished tick below is the work that hung.",
+                             done, frozen.count(), cur - done);
+                instance.DumpGpuWorkJournal();
+            }
+        }
+    }
+
     AllocateWorkerCommandBuffers();
 
     // Apply pending operations

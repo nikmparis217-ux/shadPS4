@@ -157,8 +157,19 @@ void FaultManager::ProcessFaultBuffer() {
     scheduler.DeferOperation([this, mapped, area = current_area] {
         fault_ranges.Clear();
         const u64* fault_buf = std::bit_cast<const u64*>(mapped);
-        const u32 fault_count = fault_buf[0];
+        // GT7 (19 Aug): clamp the GPU-written count to the area, and drop faulted pages
+        // that are not mapped guest memory - a bindless-lowered shader chasing a junk V#
+        // records junk pages, and FindBuffer on those took the CPU down in
+        // ResolveOverlaps (run 78, exception at buffer_cache.cpp:532).
+        const u32 fault_count =
+            std::min<u32>(static_cast<u32>(fault_buf[0]), MaxPageFaults - 1);
         for (u32 i = 1; i <= fault_count; ++i) {
+            if (!buffer_cache.IsFaultAddressValid(fault_buf[i], caching_pagesize)) {
+                LOG_WARNING(Render_Vulkan,
+                            "Faulted page {:#x} is not mapped guest memory - ignored",
+                            fault_buf[i]);
+                continue;
+            }
             fault_ranges.Add(fault_buf[i], caching_pagesize);
             LOG_INFO(Render_Vulkan, "Accessed non-GPU cached memory at {:#x}", fault_buf[i]);
         }

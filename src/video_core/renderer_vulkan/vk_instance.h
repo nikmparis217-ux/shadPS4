@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include <atomic>
+#include <limits>
+#include <mutex>
 #include <span>
 #include <unordered_map>
 
@@ -18,6 +21,219 @@ class WindowSDL;
 VK_DEFINE_HANDLE(VmaAllocator)
 
 namespace Vulkan {
+
+/// dim_x*y*z * threads_x*y*z reaches 2^96, so a plain multiply rolls over silently and a monstrous
+/// dispatch reads as a small one. Saturating makes the overflow VISIBLE: a saturated estimate means
+/// the group counts are garbage, which wants a different investigation from "this shader was given
+/// too much work". Lives here because both the recorder and the reader must agree on it.
+constexpr u64 GpuWorkSatMul(u64 a, u64 b) {
+    if (a == 0 || b == 0) {
+        return 0;
+    }
+    if (a > std::numeric_limits<u64>::max() / b) {
+        return std::numeric_limits<u64>::max();
+    }
+    return a * b;
+}
+
+/// Saturating add, for the same reason as GpuWorkSatMul: a rolled-over total reads as a small one.
+constexpr u64 GpuWorkSatAdd(u64 a, u64 b) {
+    return (a > std::numeric_limits<u64>::max() - b) ? std::numeric_limits<u64>::max() : a + b;
+}
+
+/// What kind of work was handed to the GPU.
+enum class GpuWorkKind : u8 {
+    Draw,
+    DrawIndexed,
+    DrawIndirect,
+    DrawIndexedIndirect,
+    DispatchDirect,
+    DispatchIndirect,
+    /// ⚠⚠ THE JOURNAL'S BLIND SPOT, and it took six runs to matter. Everything above is recorded
+    /// from vk_rasterizer, i.e. GUEST work. The emulator's OWN compute and fullscreen passes -
+    /// tile_manager's detiler, FSR, post-process, blits and clears - went through the same queue and
+    /// were never recorded at all, so the in-flight census could not name them however complete it
+    /// claimed to be. That mattered because the census proved all 69 guest shaders in the hung
+    /// command buffer are on disk and only six of them contain a loop, and every one of those six
+    /// was capped in a run that still hung. A hang that is "one shader, one loop" and is none of
+    /// those six has to be work the journal was not looking at - and tiling.comp does contain a
+    /// `while` loop whose only bound is a uniform the host fills without clamping.
+    HostDetile,
+    HostTile,
+    HostFsr,
+    HostPostProcess,
+    HostBlit,
+};
+
+/// How much the indirect argument numbers in a GpuWorkPayload can be trusted. An UNMARKED guess
+/// reads as a fact, so every entry says where its numbers came from.
+namespace GpuWorkFlag {
+/// The guest argument buffer was mapped and the counts below were read out of it.
+constexpr u8 IndirectArgsRead = 1 << 0;
+/// The argument address was not mapped, so nothing could be read and the counts are unknown.
+constexpr u8 IndirectArgsUnmapped = 1 << 1;
+/// A shader wrote those arguments, which is the whole point of an indirect dispatch - so the host
+/// view is STALE and the counts below are what the CPU last saw, NOT what the GPU used.
+constexpr u8 IndirectArgsGpuModified = 1 << 2;
+} // namespace GpuWorkFlag
+
+/// One unit of work handed to the GPU. Deliberately plain data: no pointers to walk, no strings to
+/// allocate, nothing that can dangle while a device is dying. `cmdbuf` is an opaque handle value
+/// kept only so entries can be grouped per queue - it is never dereferenced.
+struct GpuWorkPayload {
+    GpuWorkKind kind{};
+    u8 primary_stage{};   ///< Shader::Stage of the first stage (0=fs 1=vs 2=gs 3=es 4=hs 5=ls 6=cs)
+    u8 secondary_stage{};
+    u8 flags{};
+    u32 lds_bytes{};
+    u32 num_vgprs{};
+    u64 primary_hash{};   ///< Shader::Info::pgm_hash, i.e. the name of the dumped .spv
+    u64 secondary_hash{};
+    u64 cmdbuf{};
+    u64 guest_addr{};
+    u32 groups[3]{};
+    u32 threads_per_group[3]{};
+    u32 count_a{};        ///< vertices, or max_count for an indirect draw
+    u32 count_b{};        ///< instances, or the argument stride for an indirect draw
+    u32 rt_width{};       ///< render target, draws only
+    u32 rt_height{};
+    u32 rt_layers{};
+    /// ⚠ An UPPER BOUND on fragment invocations, never a measurement: it is the whole render area,
+    /// while the real number depends on triangle coverage, scissor, depth test and early-Z. It
+    /// exists because a fullscreen pass is 3 vertices and millions of pixels, so a vertex-only
+    /// estimate is blind to exactly the work most likely to be heavy.
+    u64 pixel_estimate{};
+    /// The biggest dimension of this work: invocations for a dispatch, max(vertex, pixel) for a
+    /// draw. SATURATED, see GpuWorkSatMul - a saturated value is itself a finding (garbage counts),
+    /// which is a different bug from "a lot of work".
+    u64 work_estimate{};
+};
+
+class MasterSemaphore;
+
+/// Ticks captured from EVERY Scheduler's timeline at one instant.
+///
+/// ⚠⚠ MEASURED CAUSE of the destroy-while-in-use faults: BufferCache and TextureCache are bound to
+/// `draw_scheduler` ALONE (vk_presenter.cpp:502), while the presenter records commands referring to
+/// those same buffers and images on `present_scheduler` and `flip_scheduler` (vk_presenter.cpp:648,
+/// :794, :901). Each Scheduler owns a SEPARATE timeline semaphore, so a tick from one says NOTHING
+/// about the progress of another - and a lifetime gate that consults one of three is not a gate.
+struct GpuTimelineSet {
+    static constexpr u32 MaxTimelines = 4;
+    u64 ticks[MaxTimelines]{};
+    u32 count{};
+};
+
+/// One buffer destruction, recorded at the moment the erase ACTUALLY ran. Exists because the
+/// validation layer reports "VkBuffer 0x... was destroyed" while a command buffer still referenced
+/// it, and BufferCache::DeleteBuffer already defers behind a tick gate - so the gate is passing when
+/// it should not, and these are the numbers that say why. `handle` is printed in the same form the
+/// layer prints it, so the two logs can be joined by eye.
+struct GpuBufferDeath {
+    u64 handle{};
+    u64 guest_addr{};
+    u32 size{};
+    u64 timeline{};    ///< which MasterSemaphore the gate was measured against (3 Schedulers exist)
+    u64 defer_tick{};  ///< the tick DeleteBuffer recorded
+    u64 known_gpu{};   ///< KnownGpuTick when the erase ran - must be >= defer_tick for the gate
+    /// ⚠⚠ `known_gpu` ALONE can neither condemn nor clear the gate, and NO OTHER TICK FIELD IS KEPT
+    /// HERE, deliberately. Two were tried and both were degenerate, on runs that were no different:
+    /// against the caller's own tick the answer can only be "sound" (reported 0 of 256 while the
+    /// log carried 2616 use-after-free references), and against another Scheduler's CurrentTick it
+    /// can only be "unsound" (reported 689 of 689), because CurrentTick belongs to a command buffer
+    /// that has not been submitted and KnownGpuTick is at most CurrentTick-1. The failed-query path
+    /// in Refresh() also used to latch 0xFFFFFFFFFFFFFFFF, which satisfies every comparison.
+    /// The decidable question is ownership - see Instance::RegisterCommandBuffer.
+    bool tick_trustworthy{};  ///< false once any timeline has reported the device lost
+    bool during_shutdown{};   ///< true when recorded from the teardown flush, not from normal play
+};
+
+struct GpuBufferDeathRing {
+    static constexpr u32 Capacity = 256;
+    static constexpr u32 PrintDetailed = 24;
+    GpuBufferDeath entries[Capacity];
+    std::atomic<u64> next{0};
+};
+
+struct GpuWorkEntry {
+    /// Published LAST with release ordering, and zeroed first: a reader that sees a non-zero value
+    /// here, copies the payload, and re-reads the same value knows the copy belongs to this seq.
+    std::atomic<u64> seq{0};
+    GpuWorkPayload payload{};
+};
+
+/// A ring of the most recent work submissions, so a lost device can be asked what it was doing.
+/// Lives on the Instance because that is what LogDeviceFaultInfo() has in hand, and because the
+/// three Schedulers share one Instance - which makes this the only place the overall order of
+/// submissions is visible.
+struct GpuWorkJournal {
+    /// Power of two: index with & (Capacity - 1), never %.
+    ///
+    /// MEASURED three times, never guessed. At 64 every entry was still in the open command buffer,
+    /// so the ring could not reach back even one submission. At 1024 the tool first reported the real
+    /// depth: this game builds command buffers of ~6400 draws and dispatches. 8192 was then chosen as
+    /// the first power of two that can see past ONE of them - and that was still too small, which
+    /// only became visible once the census printed what it could not read: the open command buffer
+    /// held 4596 entries and the in-flight one 6251, so **2657 of the hung command buffer's own
+    /// entries had already been overwritten** and the shader that hung could have been any of them.
+    /// The ring must hold the OPEN buffer plus the whole IN-FLIGHT set (up to three command buffers
+    /// here), not one buffer. 32768 covers ~5 of them. ~96 bytes an entry, so about 3 MB - paid once
+    /// at startup, and the point of the instrument is to have the answer in it.
+    static constexpr u32 Capacity = 32768;
+    /// How many entries the dump prints in full. The rest are summarised - 1024 entries would be
+    /// 2000 lines of CRITICAL and would bury the fault records above them.
+    static constexpr u32 PrintDetailed = 48;
+    static constexpr u32 MaxWarned = 32;
+
+    GpuWorkEntry entries[Capacity];
+    std::atomic<u64> next_seq{0};
+    std::atomic<u64> submitted_upto_seq{0};
+
+    /// One record per successful submit: which timeline tick that command buffer will signal, and
+    /// where its work ends in the journal.
+    ///
+    /// ⚠⚠ WHY THIS EXISTS. The dump used to name "the newest SUBMITTED entry" as the last work the
+    /// driver was given, and that is NOT the work that hung - it is merely the last entry that got
+    /// recorded before the fault. Because a lost device is reported ASYNCHRONOUSLY, several command
+    /// buffers are in flight at once: the guard in MasterSemaphore::Refresh measured
+    /// current_tick 3834 against gpu_tick 3831, i.e. THREE command buffers the GPU had started and
+    /// not finished. Naming only the newest made the same very common shader (cs_0xa911a841) look
+    /// guilty in five consecutive runs; capping every one of its loops changed nothing, which is how
+    /// the misdirection was caught. Anything less than the whole in-flight set is a guess.
+    ///
+    /// Cheap by construction: a range per submit, not a tick per entry - the last command buffer
+    /// alone held 4553 entries, so stamping each one would cost that much work at every flush.
+    struct SubmitRecord {
+        u64 tick{};     ///< the timeline value this command buffer signals on completion
+        u64 seq_end{};  ///< journal seq just past this command buffer's last entry
+        u64 cmdbuf{};
+        /// ⚠ WHICH TIMELINE the tick belongs to. Ticks are per-Scheduler, so they are NOT comparable
+        /// across schedulers: the draw scheduler was at 3637 while the present one was at 2581. The
+        /// first version of this record omitted the index, so resolving a tick's seq range scanned
+        /// this ring for "the newest record with a SMALLER tick" and happily matched a record from a
+        /// DIFFERENT scheduler - which is why the present scheduler's range came back identical to
+        /// the draw scheduler's, and why every present/flip census was really a copy of the draw
+        /// work. Match on the PAIR or the range is meaningless.
+        u32 timeline{};
+    };
+    /// MEASURED (runs 42-44): the device loss is noticed ~10,000 submits after the stall, so at
+    /// 512 the oldest unfinished tick's record was gone in every post-mortem and the hung work
+    /// could not be named. 16384 reaches past the largest pile-up seen (10,023). 32 bytes a record
+    /// = 512 KB, paid once. The live GT_STALL_DUMP detector is the primary instrument; this is the
+    /// belt to its braces.
+    static constexpr u32 SubmitHistory = 16384;
+    SubmitRecord submits[SubmitHistory]{};
+    std::atomic<u64> next_submit{0};
+
+    /// Warn-once bookkeeping, kept here rather than left to the logger: spdlog's duplicate filter
+    /// only collapses CONSECUTIVE identical lines and is off by default, so a runaway shader would
+    /// print once per frame. A linear scan of at most 32 hashes caps it at one line per shader.
+    u64 warned_hashes[MaxWarned]{};
+    u32 warned_count{0};
+    /// Invocations, cached once at construction. 0 disables the warning. NEVER read the setting
+    /// per draw.
+    u64 warn_threshold{0};
+};
 
 class Instance {
 public:
@@ -439,8 +655,103 @@ public:
         return supports_memory_budget;
     }
 
+    /// Returns whether VK_EXT_device_fault is supported and was enabled.
+    bool IsDeviceFaultSupported() const {
+        return device_fault;
+    }
+
+    /// Asks the driver what actually killed the device after a VK_ERROR_DEVICE_LOST.
+    /// Call this *before* aborting, from whichever thread saw the error. Safe to call from
+    /// several threads and more than once: only the first call queries and reports.
+    void LogDeviceFaultInfo() const;
+
+    /// Records one unit of work handed to the GPU, and warns immediately if it is monstrous.
+    /// Cheap by construction - plain stores plus one relaxed increment, no allocation, no lock, no
+    /// Vulkan call, no barrier - so unlike CDL and the validation layers it physically cannot move
+    /// the GPU timeline and hide the race we are hunting.
+    void RecordGpuWork(const GpuWorkPayload& payload) const;
+
+    /// Returns the sequence number of the newest recorded work, to be passed to
+    /// MarkGpuWorkSubmitted only after the submit it belongs to has SUCCEEDED.
+    [[nodiscard]] u64 PeekGpuWorkSeq() const {
+        return gpu_work_journal.next_seq.load(std::memory_order_relaxed);
+    }
+
+    /// Newest work sequence already handed to the driver. PeekGpuWorkSeq() equal to this
+    /// means the open command buffer holds NO recorded work - an end-of-pipe fence signed
+    /// right now orders against nothing, so GT_DEFER_EOP signs it eagerly instead of
+    /// deferring (deferral on an empty queue bought nothing and raced GT7's boot: the
+    /// FWRKR null-read, 2 of 5 boots).
+    [[nodiscard]] u64 SubmittedUptoGpuWorkSeq() const {
+        return gpu_work_journal.submitted_upto_seq.load(std::memory_order_relaxed);
+    }
+
+    /// Marks work up to `upto` as genuinely handed to the driver. ⚠ Call this AFTER a successful
+    /// vkQueueSubmit, never before: a submit that returns VK_ERROR_DEVICE_LOST did NOT deliver its
+    /// command buffer, and counting it as delivered makes the journal name the wrong submission as
+    /// "the last work the driver was given" - which matters precisely because the loss is reported
+    /// asynchronously and the guilty work is an EARLIER one.
+    /// `tick` is the timeline value the command buffer will signal, and `cmdbuf` its handle, so the
+    /// dump can name every command buffer that was IN FLIGHT rather than only the newest recorded.
+    /// `semaphore` identifies WHICH timeline the tick counts on - required, because ticks from two
+    /// schedulers are different numbers in different sequences and confusing them silently produces
+    /// a plausible-looking range over the wrong command buffer.
+    void MarkGpuWorkSubmitted(u64 upto, u64 tick, u64 cmdbuf,
+                              const MasterSemaphore* semaphore) const;
+
+    /// Records a buffer destruction at the moment the deferred erase actually ran. Host-side only:
+    /// no Vulkan call, no GPU command, so it cannot perturb the race being hunted. Fills in the
+    /// all-timelines fields itself, so the caller only supplies what it alone knows.
+    void RecordBufferDeath(GpuBufferDeath death) const;
+
+    /// Registers a Scheduler's timeline so a lifetime gate can consult ALL of them. Called from the
+    /// Scheduler constructor; every Scheduler holds the Instance by reference and so cannot outlive
+    /// it. Registration is idempotent.
+    void RegisterTimeline(MasterSemaphore* semaphore) const;
+
+    /// Captures the current logical tick of every registered timeline. A deletion queued now is only
+    /// safe once EVERY one of these has been reached, because the resource may be referenced by a
+    /// command buffer on any Scheduler.
+    [[nodiscard]] GpuTimelineSet SnapshotTimelines() const;
+
+    /// True only when every timeline in `set` has genuinely been passed by its GPU. Returns false if
+    /// any timeline has reported the device lost, because a tick sampled after that is meaningless.
+    [[nodiscard]] bool AllTimelinesPast(const GpuTimelineSet& set) const;
+
+    /// How many of `set`'s timelines have been passed. For the journal: `< count` on an entry proves
+    /// the gate let a resource go while another Scheduler was still using it.
+    [[nodiscard]] u32 CountTimelinesPast(const GpuTimelineSet& set) const;
+
+    [[nodiscard]] u32 GetNumTimelines() const {
+        return num_timelines.load(std::memory_order_acquire);
+    }
+
+    /// True once any timeline has reported the device lost - after which no tick is a guarantee.
+    [[nodiscard]] bool AnyTimelineLost() const;
+
+    /// Records that `cmdbuf` belongs to the Scheduler owning `semaphore`.
+    ///
+    /// ⚠ This exists because every TICK-BASED measure of the lifetime gate is degenerate. Comparing
+    /// against the caller's own tick can only ever answer "sound" (it is the very comparison that is
+    /// insufficient); comparing against another Scheduler's CurrentTick can only ever answer
+    /// "unsound", because CurrentTick is the tick of a command buffer that has NOT been submitted and
+    /// KnownGpuTick is at most CurrentTick-1. The first version of this journal reported 0 of 256
+    /// violations, the second 689 of 689, on runs that were no different.
+    ///
+    /// The question that is actually decidable is one of OWNERSHIP: the validation layer names the
+    /// VkCommandBuffer holding a destroyed resource, and this table says which Scheduler that handle
+    /// belongs to. If it is not the one BufferCache and TextureCache are bound to, the gate is
+    /// provably consulting the wrong timeline - and no threshold has to be guessed to say so.
+    void RegisterCommandBuffer(u64 cmdbuf, const MasterSemaphore* semaphore) const;
+
     /// Returns the amount of memory used.
     [[nodiscard]] u64 GetDeviceMemoryUsage() const;
+
+    /// VMA's own totals - what OUR caches allocated, as opposed to GetDeviceMemoryUsage's
+    /// whole-process heap figure. The difference is the driver's/implicit share. Added for the
+    /// memory-pressure hunt: three device-losts (runs 60-62) at 9-11 GB used could not say WHO
+    /// owned the memory.
+    void GetVmaStatistics(u64& used_bytes, u32& alloc_count) const;
 
     /// Returns the total memory budget available to the device.
     [[nodiscard]] u64 GetTotalMemoryBudget() const {
@@ -465,6 +776,10 @@ private:
 
     /// Gets the supported feature flags for a format.
     [[nodiscard]] vk::FormatFeatureFlags2 GetFormatFeatureFlags(vk::Format format) const;
+
+public:
+    /// Prints the work journal. Runs on an already-dead device, so cost does not matter.
+    void DumpGpuWorkJournal() const;
 
 private:
     vk::UniqueInstance instance;
@@ -521,6 +836,28 @@ private:
     bool image_view_min_lod{};
     bool supports_memory_budget{};
     bool supports_block_texel_view{};
+    bool device_fault{};
+    bool device_fault_vendor_binary{};
+    mutable std::once_flag device_fault_once;
+    /// Separate from device_fault_once so the journal is still printed on a device that does not
+    /// support VK_EXT_device_fault, where LogDeviceFaultInfo returns before that flag is reached.
+    mutable std::once_flag gpu_work_dump_once;
+    mutable GpuWorkJournal gpu_work_journal{};
+    mutable GpuBufferDeathRing gpu_buffer_deaths{};
+    /// Every Scheduler's timeline, so a lifetime gate can wait on all of them instead of one.
+    mutable MasterSemaphore* timelines[GpuTimelineSet::MaxTimelines]{};
+    mutable std::atomic<u32> num_timelines{0};
+    mutable std::mutex timelines_mutex;
+    /// Which Scheduler owns which command buffer handle. A pool hands out a small fixed set and
+    /// recycles them, so this saturates quickly and stays tiny.
+    static constexpr u32 MaxTrackedCmdBufs = 32;
+    mutable u64 tracked_cmdbufs[MaxTrackedCmdBufs]{};
+    mutable u32 tracked_cmdbuf_owner[MaxTrackedCmdBufs]{};
+    mutable std::atomic<u32> num_tracked_cmdbufs{0};
+    /// Set the first time the fault is logged. Anything recorded afterwards is post-mortem: the
+    /// teardown flush runs the pending-operation queues on a dead GPU, and those entries used to
+    /// overwrite the ones that mattered in a 256-deep ring after 764 deletions.
+    mutable std::atomic<bool> fault_already_logged{false};
     u64 total_memory_budget{};
     std::vector<size_t> valid_heaps;
 };

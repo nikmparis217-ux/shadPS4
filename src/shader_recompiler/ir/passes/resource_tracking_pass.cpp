@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdlib>
+#include <limits>
+#include "common/logging/log.h"
+#include "core/emulator_settings.h"
 #include "shader_recompiler/frontend/control_flow_graph.h"
 #include "shader_recompiler/info.h"
 #include "shader_recompiler/ir/basic_block.h"
@@ -16,6 +20,60 @@ namespace Shader::Optimization {
 namespace {
 
 using SharpLocation = u32;
+
+// Returned by TrackSharp when the descriptor cannot be statically tracked (bindless).
+// Only reachable with GT_BINDLESS_STUB=1 - without it the old UNREACHABLE fires first.
+constexpr SharpLocation INVALID_SHARP_LOCATION = std::numeric_limits<SharpLocation>::max();
+
+bool BindlessStubEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_BINDLESS_STUB");
+        return v && v[0] == '1';
+    }();
+    return enabled;
+}
+
+// GT_BINDLESS_LOWER=1 (GT7 real-bindless, step 1): a ReadConstBuffer whose V# cannot be
+// statically tracked (it was itself fetched at GPU time - "bindless") is LOWERED to a raw
+// GPU-time memory read instead of abandoning the whole shader: the V#'s dwords are values
+// the IR already computes, so base = dw0 | (dw1 & 0xFF) << 32 (a V# base_address is 40
+// bits) and the read becomes ReadConst(base, index) with flags 0 = "dynamic", which under
+// DMA emits read_const_dynamic() - the BDA page-table walk with fault-buffer backing.
+// Does NOT require the global DMA setting: the created ReadConst carries
+// SrtBindlessFlagBit, which forces the GPU-time path for THAT read alone, and the
+// collection pass keeps the BDA/fault machinery for shaders that carry the bit. The
+// global setting routes EVERY shader through the BDA walk and measured unplayably
+// slow (run 74).
+// GT_BINDLESS_IMG=0: bisect switch - disable ONLY the image/sampler bind-time deref while
+// keeping the buffer load/store/atomic lowerings (runs 83/84 device-fault at boot appeared
+// together with the image derefs; one run with this off says which half is guilty).
+bool BindlessImageDerefEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_BINDLESS_IMG");
+        return !v || v[0] != '0';
+    }();
+    return enabled;
+}
+
+// GT_BINDLESS_STORES=0: second bisect switch - disable the GPU-time WRITE lowerings
+// (stores + atomics) while keeping the loads. The three game-stuck runs (79/82/85) all had
+// writes on; a run with them off separates "the game waits on a value our writes corrupt"
+// from "the game waits on something else entirely".
+bool BindlessStoreLowerEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_BINDLESS_STORES");
+        return !v || v[0] != '0';
+    }();
+    return enabled;
+}
+
+bool BindlessLowerEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_BINDLESS_LOWER");
+        return v && v[0] == '1';
+    }();
+    return enabled;
+}
 
 bool IsBufferAtomic(const IR::Inst& inst) {
     switch (inst.GetOpcode()) {
@@ -260,7 +318,9 @@ public:
         const u32 index{Add(image_resources, desc, [&desc](const auto& existing) {
             return desc.sharp_idx == existing.sharp_idx && desc.is_array == existing.is_array &&
                    desc.mip_fallback_mode == existing.mip_fallback_mode &&
-                   desc.constant_mip_index == existing.constant_mip_index;
+                   desc.constant_mip_index == existing.constant_mip_index &&
+                   desc.deref_buffer == existing.deref_buffer &&
+                   desc.deref_offset_dw == existing.deref_offset_dw;
         })};
         auto& image = image_resources[index];
         image.is_atomic |= desc.is_atomic;
@@ -272,7 +332,9 @@ public:
         const u32 index{Add(sampler_resources, desc, [this, &desc](const auto& existing) {
             return desc.sharp_idx == existing.sharp_idx &&
                    desc.is_inline_sampler == existing.is_inline_sampler &&
-                   desc.inline_sampler == existing.inline_sampler;
+                   desc.inline_sampler == existing.inline_sampler &&
+                   desc.deref_buffer == existing.deref_buffer &&
+                   desc.deref_offset_dw == existing.deref_offset_dw;
         })};
         return index;
     }
@@ -408,8 +470,21 @@ SharpSources FindSharpSources(const IR::Inst* handle, u32 pc) {
     }
     if (sources.empty()) {
         if (found_read_const_buffer) {
+            if (BindlessStubEnabled()) {
+                // GT7's GPU-driven pipeline indexes its descriptors dynamically. Report it
+                // and hand back "not found" - TrackSharp turns that into a stubbed shader
+                // instead of taking the whole emulator down.
+                LOG_ERROR(Render_Recompiler,
+                          "Bindless sharp access detected pc={:#x} - shader will be stubbed", pc);
+                return sources;
+            }
             UNREACHABLE_MSG("Bindless sharp access detected pc={:#x}", pc);
         } else {
+            if (BindlessStubEnabled()) {
+                LOG_ERROR(Render_Recompiler,
+                          "Unable to find sharp sources pc={:#x} - shader will be stubbed", pc);
+                return sources;
+            }
             UNREACHABLE_MSG("Unable to find sharp sources pc={:#x}", pc);
         }
     }
@@ -458,6 +533,10 @@ SharpLocation SharpLocationFromSource(const IR::Inst* inst) {
 
 SharpLocation TrackSharp(const IR::Inst* inst, const IR::Block& current_parent, u32 pc = 0) {
     auto sources = FindSharpSources(inst, pc);
+    if (sources.empty()) {
+        // Only reachable with GT_BINDLESS_STUB=1 (FindSharpSources UNREACHABLEs otherwise).
+        return INVALID_SHARP_LOCATION;
+    }
     size_t num_sources = sources.size();
     ASSERT(current_parent.cfg_block);
 
@@ -520,6 +599,159 @@ void PatchBufferSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors&
         IR::Inst* buffer_handle = handle->Arg(0).InstRecursive();
         const auto inst_info = inst.Flags<IR::BufferInstInfo>();
         const auto sharp_idx = TrackSharp(buffer_handle, block, inst_info.pc);
+        if (sharp_idx == INVALID_SHARP_LOCATION) {
+            const auto opcode = inst.GetOpcode();
+            const u32 load_dwords = opcode == IR::Opcode::LoadBufferU32     ? 1
+                                    : opcode == IR::Opcode::LoadBufferU32x2 ? 2
+                                    : opcode == IR::Opcode::LoadBufferU32x3 ? 3
+                                    : opcode == IR::Opcode::LoadBufferU32x4 ? 4
+                                                                            : 0;
+            if (BindlessLowerEnabled() && load_dwords != 0 &&
+                handle->GetOpcode() == IR::Opcode::CompositeConstructU32x4) {
+                // GT_BINDLESS_LOWER, VMEM flavour (19 Aug, from the run-74/75 dumps): a
+                // buffer_load_dword[xN] whose V# was itself fetched at GPU time (the pattern
+                // that still stubbed cs_aeea6ad8 & friends after the s_buffer_load lowering).
+                // Rebuild the address the way CalculateBufferAddress does, but with the
+                // STRIDE read out of the live V# dwords (dw1[29:16]) instead of a
+                // compile-time sharp, then read each dword through the BDA path.
+                // Not handled (accepted risk, log-visible): swizzle_enable / add_tid V#s -
+                // GT7's GPU-driven tables are linear - and non-dword alignment.
+                IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+                const IR::U32 dw0{handle->Arg(0)};
+                const IR::U32 dw1{handle->Arg(1)};
+                const IR::U32 base_hi = ir.BitwiseAnd(dw1, ir.Imm32(0xFFu));
+                const IR::Value base = ir.CompositeConstruct(dw0, base_hi);
+                const IR::U32 stride = ir.BitFieldExtract(dw1, ir.Imm32(16u), ir.Imm32(14u));
+                IR::U32 offset = ir.IAdd(ir.Imm32(static_cast<u32>(inst_info.inst_offset.Value())),
+                                         IR::GetBufferSOffsetArg(&inst));
+                if (inst_info.voffset_enable) {
+                    offset = ir.IAdd(offset, IR::GetBufferVOffsetArg(&inst));
+                }
+                IR::U32 addr = offset;
+                if (inst_info.index_enable) {
+                    addr = ir.IAdd(ir.IMul(IR::GetBufferIndexArg(&inst), stride), offset);
+                }
+                const IR::U32 dw_off = ir.ShiftRightLogical(addr, ir.Imm32(2u));
+                std::array<IR::Value, 4> loaded;
+                for (u32 i = 0; i < load_dwords; ++i) {
+                    const IR::U32 v = ir.ReadConst(base, ir.IAdd(dw_off, ir.Imm32(i)));
+                    v.InstRecursive()->SetFlags<u32>(SrtBindlessFlagBit);
+                    loaded[i] = v;
+                }
+                const IR::Value result =
+                    load_dwords == 1 ? loaded[0]
+                    : load_dwords == 2
+                        ? ir.CompositeConstruct(IR::U32{loaded[0]}, IR::U32{loaded[1]})
+                    : load_dwords == 3
+                        ? ir.CompositeConstruct(IR::U32{loaded[0]}, IR::U32{loaded[1]},
+                                                IR::U32{loaded[2]})
+                        : ir.CompositeConstruct(IR::U32{loaded[0]}, IR::U32{loaded[1]},
+                                                IR::U32{loaded[2]}, IR::U32{loaded[3]});
+                inst.ReplaceUsesWith(result);
+                LOG_INFO(Render_Recompiler,
+                         "shader {:#x}: bindless LoadBufferU32x{} lowered to GPU-time read "
+                         "(pc={:#x})",
+                         info.pgm_hash, load_dwords, inst_info.pc.Value());
+                return;
+            }
+            if (BindlessLowerEnabled() && BindlessStoreLowerEnabled() &&
+                opcode == IR::Opcode::BufferAtomicIAdd32 &&
+                handle->GetOpcode() == IR::Opcode::CompositeConstructU32x4) {
+                // GT_BINDLESS_LOWER, atomic flavour: buffer_atomic_add off a GPU-fetched V#
+                // (3e50e1's blocker - GPU-driven counters).
+                IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+                const IR::U32 dw0{handle->Arg(0)};
+                const IR::U32 dw1{handle->Arg(1)};
+                const IR::U32 base_hi = ir.BitwiseAnd(dw1, ir.Imm32(0xFFu));
+                const IR::Value base = ir.CompositeConstruct(dw0, base_hi);
+                const IR::U32 stride = ir.BitFieldExtract(dw1, ir.Imm32(16u), ir.Imm32(14u));
+                IR::U32 offset = ir.IAdd(ir.Imm32(static_cast<u32>(inst_info.inst_offset.Value())),
+                                         IR::GetBufferSOffsetArg(&inst));
+                if (inst_info.voffset_enable) {
+                    offset = ir.IAdd(offset, IR::GetBufferVOffsetArg(&inst));
+                }
+                IR::U32 addr = offset;
+                if (inst_info.index_enable) {
+                    addr = ir.IAdd(ir.IMul(IR::GetBufferIndexArg(&inst), stride), offset);
+                }
+                const IR::U32 dw_off = ir.ShiftRightLogical(addr, ir.Imm32(2u));
+                const IR::U32 result = ir.ConstAtomicIAdd32(base, dw_off, IR::U32{inst.Arg(2)});
+                inst.ReplaceUsesWith(result);
+                LOG_INFO(Render_Recompiler,
+                         "shader {:#x}: bindless BufferAtomicIAdd32 lowered to GPU-time atomic "
+                         "(pc={:#x})",
+                         info.pgm_hash, inst_info.pc.Value());
+                return;
+            }
+            const u32 store_dwords = opcode == IR::Opcode::StoreBufferU32     ? 1
+                                     : opcode == IR::Opcode::StoreBufferU32x2 ? 2
+                                     : opcode == IR::Opcode::StoreBufferU32x3 ? 3
+                                     : opcode == IR::Opcode::StoreBufferU32x4 ? 4
+                                                                              : 0;
+            if (BindlessLowerEnabled() && BindlessStoreLowerEnabled() && store_dwords != 0 &&
+                handle->GetOpcode() == IR::Opcode::CompositeConstructU32x4) {
+                // GT_BINDLESS_LOWER, store flavour (19 Aug): buffer_store through a
+                // GPU-fetched V# (2-level indirection - SRT -> V# table -> V#; the pattern
+                // that still stubbed every GPU-driven producer after the load lowering).
+                // Same GPU-time address math as the loads, one WriteConst per dword. A
+                // non-resident page records a fault and drops the write for this frame.
+                IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+                const IR::U32 dw0{handle->Arg(0)};
+                const IR::U32 dw1{handle->Arg(1)};
+                const IR::U32 base_hi = ir.BitwiseAnd(dw1, ir.Imm32(0xFFu));
+                const IR::Value base = ir.CompositeConstruct(dw0, base_hi);
+                const IR::U32 stride = ir.BitFieldExtract(dw1, ir.Imm32(16u), ir.Imm32(14u));
+                IR::U32 offset = ir.IAdd(ir.Imm32(static_cast<u32>(inst_info.inst_offset.Value())),
+                                         IR::GetBufferSOffsetArg(&inst));
+                if (inst_info.voffset_enable) {
+                    offset = ir.IAdd(offset, IR::GetBufferVOffsetArg(&inst));
+                }
+                IR::U32 addr = offset;
+                if (inst_info.index_enable) {
+                    addr = ir.IAdd(ir.IMul(IR::GetBufferIndexArg(&inst), stride), offset);
+                }
+                const IR::U32 dw_off = ir.ShiftRightLogical(addr, ir.Imm32(2u));
+                const IR::Value value = inst.Arg(2);
+                for (u32 i = 0; i < store_dwords; ++i) {
+                    const IR::U32 elem = store_dwords == 1
+                                             ? IR::U32{value}
+                                             : IR::U32{ir.CompositeExtract(value, i)};
+                    ir.WriteConst(base, ir.IAdd(dw_off, ir.Imm32(i)), elem);
+                }
+                inst.Invalidate();
+                LOG_INFO(Render_Recompiler,
+                         "shader {:#x}: bindless StoreBufferU32x{} lowered to GPU-time write "
+                         "(pc={:#x})",
+                         info.pgm_hash, store_dwords, inst_info.pc.Value());
+                return;
+            }
+            if (BindlessLowerEnabled() && opcode == IR::Opcode::ReadConstBuffer &&
+                handle->GetOpcode() == IR::Opcode::CompositeConstructU32x4) {
+                // GT_BINDLESS_LOWER: s_buffer_load off a GPU-fetched V#. The V#'s dwords are
+                // live IR values - turn the load into a raw GPU-time read at
+                // base_address(40b) + index*4. No bounds check against num_records (dw2):
+                // an OOB read lands on the BDA fault path and returns 0, which matches
+                // GCN's own OOB-returns-zero semantics closely enough.
+                IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
+                const IR::U32 dw0{handle->Arg(0)};
+                const IR::U32 dw1{handle->Arg(1)};
+                const IR::U32 base_hi = ir.BitwiseAnd(dw1, ir.Imm32(0xFFu));
+                const IR::Value base = ir.CompositeConstruct(dw0, base_hi);
+                const IR::U32 result = ir.ReadConst(base, IR::U32{inst.Arg(1)});
+                result.InstRecursive()->SetFlags<u32>(SrtBindlessFlagBit);
+                inst.ReplaceUsesWith(result);
+                LOG_INFO(Render_Recompiler,
+                         "shader {:#x}: bindless ReadConstBuffer lowered to GPU-time read "
+                         "(pc={:#x})",
+                         info.pgm_hash, inst_info.pc.Value());
+                return;
+            }
+            LOG_ERROR(Render_Recompiler,
+                      "shader {:#x}: bindless {} not lowerable (handle op {}) pc={:#x}",
+                      info.pgm_hash, opcode, handle->GetOpcode(), inst_info.pc.Value());
+            info.has_bindless_sharp = true; // program is abandoned; a no-op module ships instead
+            return;
+        }
         const auto buffer = info.ReadUdSharp<AmdGpu::Buffer>(sharp_idx);
         buffer_binding = descriptors.Add(BufferResource{
             .sharp_idx = sharp_idx,
@@ -542,6 +774,33 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
     const auto inst_info = inst.Flags<IR::TextureInstInfo>();
     const IR::Inst* image_handle = inst.Arg(0).InstRecursive();
     const auto tsharp = TrackSharp(image_handle, block, inst_info.pc);
+    s32 deref_buffer = -1;
+    u32 deref_offset_dw = 0;
+    if (tsharp == INVALID_SHARP_LOCATION) {
+        // GT_BINDLESS_LOWER, image flavour (19 Aug): the T# is fetched from a buffer at
+        // GPU time. A Vulkan descriptor cannot be built on the GPU - but when the fetch
+        // is at a CONSTANT offset in an already-TRACKED buffer (the pattern all four
+        // remaining GT7 stubs show: "ReadConstBuffer #binding, #index"), the CPU can read
+        // the very same T# out of guest memory every time GetSharp runs instead.
+        if (BindlessLowerEnabled() && BindlessImageDerefEnabled() &&
+            image_handle->GetOpcode() == IR::Opcode::ReadConstBuffer &&
+            image_handle->Arg(0).IsImmediate() && image_handle->Arg(1).IsImmediate()) {
+            deref_buffer = static_cast<s32>(image_handle->Arg(0).U32());
+            deref_offset_dw = image_handle->Arg(1).U32();
+            LOG_INFO(Render_Recompiler,
+                     "shader {:#x}: bindless IMAGE {} lowered to bind-time guest deref "
+                     "(buffer {} offset {} dw) pc={:#x}",
+                     info.pgm_hash, inst.GetOpcode(), deref_buffer, deref_offset_dw,
+                     inst_info.pc.Value());
+        } else {
+            LOG_ERROR(Render_Recompiler,
+                      "shader {:#x}: bindless IMAGE {} not lowerable (handle op {}) pc={:#x}",
+                      info.pgm_hash, inst.GetOpcode(), image_handle->GetOpcode(),
+                      inst_info.pc.Value());
+            info.has_bindless_sharp = true; // program is abandoned; a no-op module ships
+            return;
+        }
+    }
     const bool is_atomic = IsImageAtomicInstruction(inst);
     const bool is_written = inst.GetOpcode() == IR::Opcode::ImageWrite || is_atomic;
     const bool is_storage =
@@ -552,6 +811,8 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
         inst_info.has_lod && is_written && !profile.supports_image_load_store_lod;
     ImageResource image_res = {
         .sharp_idx = tsharp,
+        .deref_buffer = deref_buffer,
+        .deref_offset_dw = deref_offset_dw,
         .is_depth = bool(inst_info.is_depth),
         .is_atomic = is_atomic,
         .is_array = bool(inst_info.is_array),
@@ -651,8 +912,31 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
             const auto& [sampler_handle, disable_aniso] =
                 TryDisableAnisoLod0(sampler->Arg(0).InstRecursive());
             const auto ssharp = TrackSharp(sampler_handle, block, inst_info.pc);
+            if (ssharp == INVALID_SHARP_LOCATION &&
+                !(BindlessLowerEnabled() && BindlessImageDerefEnabled() &&
+                  sampler_handle->GetOpcode() == IR::Opcode::ReadConstBuffer &&
+                  sampler_handle->Arg(0).IsImmediate() &&
+                  sampler_handle->Arg(1).IsImmediate())) {
+                LOG_ERROR(Render_Recompiler,
+                          "shader {:#x}: bindless SAMPLER for {} not lowerable pc={:#x}",
+                          info.pgm_hash, inst.GetOpcode(), inst_info.pc.Value());
+                info.has_bindless_sharp = true; // program is abandoned
+                return;
+            }
+            const bool sampler_deref = ssharp == INVALID_SHARP_LOCATION;
+            if (sampler_deref) {
+                LOG_INFO(Render_Recompiler,
+                         "shader {:#x}: bindless SAMPLER lowered to bind-time guest deref "
+                         "(buffer {} offset {} dw)",
+                         info.pgm_hash, sampler_handle->Arg(0).U32(),
+                         sampler_handle->Arg(1).U32());
+            }
             sampler_binding = descriptors.Add(SamplerResource{
                 .sharp_idx = ssharp,
+                .deref_buffer = sampler_deref
+                                    ? static_cast<s32>(sampler_handle->Arg(0).U32())
+                                    : -1,
+                .deref_offset_dw = sampler_deref ? sampler_handle->Arg(1).U32() : 0,
                 .is_inline_sampler = false,
                 .associated_image = image_binding,
                 .disable_aniso = disable_aniso,
@@ -1199,6 +1483,12 @@ void ResourceTrackingPass(IR::Program& program, const Profile& profile) {
                 PatchBufferSharp(*block, inst, info, descriptors, profile);
             } else if (IsImageInstruction(inst)) {
                 PatchImageSharp(*block, inst, info, descriptors, profile);
+            }
+            if (info.has_bindless_sharp) {
+                // Untrackable (bindless) descriptor: the program is abandoned here and a
+                // no-op module is substituted (GT_BINDLESS_STUB). Patching further
+                // instructions would only trip the tracker's asserts on half-built state.
+                return;
             }
         }
     }

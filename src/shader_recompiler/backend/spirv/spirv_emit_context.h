@@ -300,6 +300,10 @@ public:
         bool is_integer = false;
         bool is_storage = false;
         MipStorageFallbackMode mip_fallback_mode{};
+        // Size of the DynamicIndex mip-fallback descriptor array; the emitter clamps the
+        // runtime index against it (runs 95-98: an unclamped index read a descriptor past
+        // the array = the deterministic ReadInvalid 0x300100000 with a warm pipeline cache).
+        u32 num_bindings = 1;
     };
 
     enum class PointerType : u32 {

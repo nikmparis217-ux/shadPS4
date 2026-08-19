@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -452,6 +453,11 @@ private:
     std::jthread priority_pending_ops_thread;
     RenderState render_state;
     bool is_rendering = false;
+    /// GT_STALL_DUMP live-stall detector state (see SubmitExecution). Per scheduler, because ticks
+    /// are per-timeline; the fired-once flag is process-global in the .cpp so the draw and present
+    /// schedulers cannot each print a 30k-line journal for the same stall.
+    u64 stall_last_gpu_tick{};
+    std::chrono::steady_clock::time_point stall_last_progress{};
     tracy::VkCtxScope* profiler_scope{};
 };
 

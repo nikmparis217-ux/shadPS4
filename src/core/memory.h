@@ -197,6 +197,20 @@ public:
         return virtual_addr + size < max_gpu_address;
     }
 
+    // "Can this range actually be dereferenced" - unlike IsValidMapping below, which only
+    // asks whether the range lies inside the VMA map and therefore answers TRUE for a FREE
+    // area (run 94: a boot-time guest-table deref passed IsValidMapping and still faulted).
+    // Deliberately lock-free, exactly like IsValidMapping: it is called from fault handlers
+    // and hot bind paths, where a lock can deadlock and a stale answer only costs one retry.
+    bool IsMappedMemory(const VAddr virtual_addr, const u64 size = 1) {
+        if (vma_map.empty() || virtual_addr < vma_map.begin()->first) {
+            return false;
+        }
+        const auto vma = FindVMA(virtual_addr);
+        return vma != vma_map.end() && vma->second.IsMapped() &&
+               vma->second.Contains(virtual_addr, std::max<u64>(size, 1));
+    }
+
     bool IsValidMapping(const VAddr virtual_addr, const u64 size = 0) {
         const auto end_it = std::prev(vma_map.end());
         const VAddr end_addr = end_it->first + end_it->second.size;

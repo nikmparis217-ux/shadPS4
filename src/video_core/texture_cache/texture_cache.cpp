@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdlib>
 #include <xxhash.h>
 
 #include "common/assert.h"
@@ -963,12 +964,22 @@ void TextureCache::GarbageCollectImages() {
     u64 ticks_to_destroy = 0;
     size_t num_deletions = 0;
 
+    // The buffer GC's memory-pressure lesson applies here too (runs 60/61: DEVICE LOST at
+    // 9-11 GB of a 12 GB card): under GT_BUFFER_GC's pressure mode the aggressive pass frees
+    // MORE and YOUNGER images, because the driver dies of oversubscription before any of our
+    // own allocations would fail.
+    // Follows the buffer GC's NEW default-on semantics (unset = on, '0' = off) - the old
+    // presence check would have INVERTED once GT_BUFFER_GC stopped being set explicitly.
+    static const bool pressure_mode = [] {
+        const char* v = std::getenv("GT_BUFFER_GC");
+        return !(v && v[0] == '0');
+    }();
     const auto configure = [&](bool allow_aggressive) {
         pressured = total_used_memory >= pressure_gc_memory;
         aggresive = allow_aggressive && total_used_memory >= critical_gc_memory;
-        ticks_to_destroy = aggresive ? 160 : pressured ? 80 : 16;
+        ticks_to_destroy = aggresive ? (pressure_mode ? 16 : 160) : pressured ? 80 : 16;
         ticks_to_destroy = std::min(ticks_to_destroy, gc_tick);
-        num_deletions = aggresive ? 40 : pressured ? 20 : 10;
+        num_deletions = aggresive ? (pressure_mode ? 1024 : 40) : pressured ? 20 : 10;
     };
     const auto clean_up = [&](ImageId image_id) {
         if (num_deletions == 0) {
@@ -1058,6 +1069,20 @@ void TextureCache::RunGarbageCollector() {
     SCOPE_EXIT {
         ++gc_tick;
     };
+    // GT_TEX_GC=0: A/B switch for the deterministic "ReadInvalid 0x300100000 in no live
+    // buffer" device fault (runs 95/96/100). It predates the buffer GC (which was off in
+    // 95/96), it is a read of GPU memory NOTHING in the buffer registry owns, and the
+    // texture cache is the one upstream system that has ALWAYS deleted resources - gated,
+    // like the buffer path used to be, on the DRAW tick alone while present/flip command
+    // buffers may still reference the image. If a run with this off loses the fault, image
+    // deletion needs the same all-timelines gate the buffers just got.
+    static const bool tex_gc_enabled = [] {
+        const char* v = std::getenv("GT_TEX_GC");
+        return !(v && v[0] == '0');
+    }();
+    if (!tex_gc_enabled) {
+        return;
+    }
 
     GarbageCollectImages();
     GarbageCollectSamplers();

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdlib>
 #include <boost/preprocessor/stringize.hpp>
 
 #include "common/assert.h"
@@ -17,6 +18,7 @@
 #include "video_core/amdgpu/pm4_cmds.h"
 #include "video_core/renderdoc.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
+#include "video_core/renderer_vulkan/vk_scheduler.h"
 
 namespace AmdGpu {
 
@@ -694,12 +696,34 @@ Liverpool::Task Liverpool::ProcessGraphics(std::span<const u32> dcb, std::span<c
                 if (rasterizer) {
                     rasterizer->ProcessDownloadImages();
                 }
-                event_eos->SignalFence([](void* address, u64 data, u32 num_bytes) {
-                    auto* memory = Core::Memory::Instance();
-                    if (!memory->TryWriteBacking(address, &data, num_bytes)) {
-                        memcpy(address, &data, num_bytes);
-                    }
-                });
+                // Same contract and same fix as EventWriteEop below: an EOS fence says the prior
+                // work COMPLETED, so it must not be signed at parse time. GdsStore stays
+                // synchronous - it already Finish()es the GPU before reading GDS.
+                static const bool defer_eos = [] {
+                    const char* v = std::getenv("GT_DEFER_EOP");
+                    return v && std::atoi(v) != 0;
+                }();
+                if (defer_eos && rasterizer &&
+                    event_eos->command == PM4CmdEventWriteEos::Command::SignalFence &&
+                    rasterizer->HasPendingGpuWork()) {
+                    const PM4CmdEventWriteEos eos_copy = *event_eos;
+                    rasterizer->GetScheduler().DeferPriorityOperation([eos_copy] {
+                        eos_copy.SignalFence([](void* address, u64 data, u32 num_bytes) {
+                            auto* memory = Core::Memory::Instance();
+                            if (!memory->TryWriteBacking(address, &data, num_bytes)) {
+                                memcpy(address, &data, num_bytes);
+                            }
+                        });
+                    });
+                    rasterizer->Flush();
+                } else {
+                    event_eos->SignalFence([](void* address, u64 data, u32 num_bytes) {
+                        auto* memory = Core::Memory::Instance();
+                        if (!memory->TryWriteBacking(address, &data, num_bytes)) {
+                            memcpy(address, &data, num_bytes);
+                        }
+                    });
+                }
                 if (event_eos->command == PM4CmdEventWriteEos::Command::GdsStore) {
                     ASSERT(event_eos->size == 1);
                     if (rasterizer) {
@@ -714,6 +738,47 @@ Liverpool::Task Liverpool::ProcessGraphics(std::span<const u32> dcb, std::span<c
                 const auto* event_eop = reinterpret_cast<const PM4CmdEventWriteEop*>(header);
                 if (rasterizer) {
                     rasterizer->ProcessDownloadImages();
+                }
+                // GT_DEFER_EOP=1: sign the fence only when the GPU has really finished.
+                //
+                // An EOP fence is the hardware's statement "every prior command in this queue has
+                // COMPLETED - caches flushed, writes visible - and only then is this value written".
+                // Writing it here, at PARSE time, tells the game the GPU finished work that has not
+                // even been handed to the driver yet (it is sitting in the open command buffer).
+                // A GPU-driven title believes it, recycles command/vertex/argument memory, and the
+                // real GPU work then consumes the recycled bytes. Measured on GT7: seven runs hung
+                // at the same spot with a byte-stable device-fault signature and ZERO memory
+                // faults; splitting submissions (which shrinks the parse-to-execution lag) got it
+                // past that wall, while a full memory barrier per dispatch (same lag) did not -
+                // which says ORDERING AGAINST THE GAME, not visibility between GPU commands.
+                //
+                // The deferred lambda copies the PACKET BY VALUE: it lives in the ring the game is
+                // free to reuse the moment it sees the fence - reading it later would be exactly
+                // the corruption this fix removes. DeferPriorityOperation (not DeferOperation)
+                // because the game may go quiet waiting for this fence, and the ordinary queue is
+                // only drained on the next submit - which would then never come. The Flush after
+                // queueing is load-bearing for the same reason: the tick this defers to must be
+                // HANDED to the driver, or it never completes.
+                static const bool defer_eop = [] {
+                    const char* v = std::getenv("GT_DEFER_EOP");
+                    return v && std::atoi(v) != 0;
+                }();
+                if (defer_eop && rasterizer && rasterizer->HasPendingGpuWork()) {
+                    const PM4CmdEventWriteEop eop_copy = *event_eop;
+                    rasterizer->GetScheduler().DeferPriorityOperation([eop_copy] {
+                        eop_copy.SignalFence(
+                            [](void* address, u64 data, u32 num_bytes) {
+                                auto* memory = Core::Memory::Instance();
+                                if (!memory->TryWriteBacking(address, &data, num_bytes)) {
+                                    memcpy(address, &data, num_bytes);
+                                }
+                            },
+                            [] {
+                                Platform::IrqC::Instance()->Signal(Platform::InterruptId::GfxEop);
+                            });
+                    });
+                    rasterizer->Flush();
+                    break;
                 }
                 event_eop->SignalFence(
                     [](void* address, u64 data, u32 num_bytes) {
@@ -915,6 +980,18 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
 
     auto base_addr = reinterpret_cast<VAddr>(acb.data());
     size_t acb_size = acb.size_bytes();
+    // Run 91 (first World Map session, entering the circuits): the span handed here pointed
+    // at 0xffffffffffffffff and reading the first PM4 header killed the process - a garbage
+    // ring read offset computes a wild base. A dropped ACB submission is one missed compute
+    // batch; a dead parser is the whole session. Same softclamp doctrine as everywhere else.
+    if (!acb.empty() && !Core::Memory::Instance()->IsMappedMemory(base_addr, acb_size)) {
+        LOG_CRITICAL(Lib_GnmDriver,
+                     "[softclamp] ACB vqid {} span {:#x}+{:#x} is not mapped guest memory - "
+                     "dropping the submission",
+                     vqid, base_addr, acb_size);
+        FIBER_EXIT;
+        co_return;
+    }
     while (!acb.empty()) {
         ProcessCommands();
 
@@ -953,8 +1030,25 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
         }
 
         if (header->type != 3) {
-            // No other types of packets were spotted so far
-            UNREACHABLE_MSG("Invalid PM4 type {}", header->type.Value());
+            // GT7 (run 72): the ACB ring occasionally carries a non-type-3 header - torn or
+            // not-yet-written data, the same disease the softclamp guards absorb elsewhere.
+            // Type 0 is a real (legacy) PM4 packet: skip it honestly by its own count field.
+            // Anything else has no legitimate length, so step one dword and rescan. Either
+            // way the queue advances and the game survives; dying here ended run 72.
+            static std::atomic<u32> bad_pm4_logged{0};
+            const u32 skip_dw = header->type == 0 ? header->type0.NumWords() + 1 : 1;
+            if (bad_pm4_logged.fetch_add(1, std::memory_order_relaxed) < 16) {
+                LOG_WARNING(Lib_GnmDriver,
+                            "[softclamp] ACB PM4 header type {} (raw {:#x}) - skipping {} dwords",
+                            header->type.Value(), header->raw, skip_dw);
+            }
+            const u32 clamped_skip = std::min<u32>(skip_dw, static_cast<u32>(acb.size()));
+            acb = NextPacket(acb, clamped_skip);
+            if constexpr (!is_indirect) {
+                *queue.read_addr += clamped_skip;
+                *queue.read_addr %= queue.ring_size_dw;
+            }
+            continue;
         }
 
         const PM4ItOpcode opcode = header->type3.opcode;
@@ -1145,6 +1239,63 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
             const auto* release_mem = reinterpret_cast<const PM4CmdReleaseMem*>(header);
             if (rasterizer) {
                 rasterizer->ProcessDownloadImages();
+            }
+            // GT_DEFER_EOP=1 also defers ASC ReleaseMem fences - the same contract as the gfx
+            // EOP below: "every prior command COMPLETED". Signing it at parse time is the
+            // recycled-memory race, and GT7's GPU-driven streaming runs on exactly these
+            // compute queues (the submission split that cures the wall splits at DISPATCHES,
+            // i.e. the compute stream; gfx-only deferral alone did NOT cure it - run 29).
+            // The packet is copied BY VALUE: it lives in ring memory the game is free to
+            // reuse the moment it sees the fence. ONLY plain memory-write fences are
+            // deferred - the GdsMemStore variant records GPU commands (rasterizer->
+            // CopyBuffer), which on the priority thread would be a data race; it stays
+            // synchronous. The Flush after queueing is load-bearing: a game quietly polling
+            // this fence submits nothing, so the tick this defers to must be handed to the
+            // driver here or it never completes.
+            // Split from GT_DEFER_EOP (18 Aug): with DirectMemoryAccess ON, deferring the
+            // ASC ReleaseMem fences crashes GT7's boot 4 runs out of 4 (FWRKR null-read)
+            // while each feature alone boots fine - the interaction is unexplained, so the
+            // two deferrals get separate switches and -Net picks the surviving combination.
+            static const bool defer_release_mem = [] {
+                const char* v = std::getenv("GT_DEFER_RELEASEMEM");
+                return v && std::atoi(v) != 0;
+            }();
+            const auto data_sel = release_mem->data_sel.Value();
+            // ONLY completion VALUES are deferred (Data32/Data64 - what the game polls
+            // before recycling memory). GpuClock64/PerfCounter are TIMESTAMPS: the game
+            // calibrates its GPU clock at boot from consecutive reads, and deferring them
+            // makes both land at the same instant - zero delta, garbage calibration, and
+            // the FWRKR null-read 3 boots out of 7 (0xe[df]c?4273d). They gate no memory
+            // reuse, so signing them at parse time is harmless to the recycling race.
+            const bool completion_value_fence =
+                data_sel == DataSelect::Data32Low || data_sel == DataSelect::Data64;
+            // Eager when the open command buffer is EMPTY: with nothing recorded the fence
+            // orders against nothing and deferral buys no correctness.
+            if (defer_release_mem && rasterizer && completion_value_fence &&
+                rasterizer->HasPendingGpuWork()) {
+                const PM4CmdReleaseMem rm_copy = *release_mem;
+                const u32 pipe_id = queue.pipe_id;
+                rasterizer->GetScheduler().DeferPriorityOperation([rm_copy, pipe_id] {
+                    // Written through TryWriteBacking like the gfx EOP defer: the priority
+                    // thread must not take a page-protection fault on tracked guest memory.
+                    const bool is_64 = rm_copy.data_sel.Value() == DataSelect::Data64;
+                    u64 payload = is_64 ? rm_copy.DataQWord() : rm_copy.DataDWord();
+                    const u32 num_bytes = is_64 ? 8 : 4;
+                    auto* memory = Core::Memory::Instance();
+                    void* address = rm_copy.Address<void*>();
+                    if (!memory->TryWriteBacking(address, &payload, num_bytes)) {
+                        memcpy(address, &payload, num_bytes);
+                    }
+                    // Same interrupt rule as SignalFence: only when the packet asked for one.
+                    const auto isel = rm_copy.int_sel.Value();
+                    if (isel == InterruptSelect::IrqWhenWriteConfirm ||
+                        isel == InterruptSelect::IrqUndocumented) {
+                        Platform::IrqC::Instance()->Signal(
+                            static_cast<Platform::InterruptId>(pipe_id));
+                    }
+                });
+                rasterizer->Flush();
+                break;
             }
             release_mem->SignalFence(
                 [pipe_id = queue.pipe_id] {

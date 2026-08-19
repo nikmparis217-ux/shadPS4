@@ -1,8 +1,12 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <map>
+#include <mutex>
+#include <fmt/format.h>
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "video_core/buffer_cache/bda_registry.h"
 #include "video_core/buffer_cache/buffer.h"
 #include "video_core/renderer_vulkan/liverpool_to_vk.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
@@ -12,6 +16,67 @@
 #include <vk_mem_alloc.h>
 
 namespace VideoCore {
+
+// See bda_registry.h. Keyed by device address; a std::map so a faulting address resolves
+// with one upper_bound. Contention is create/destroy only - never per bind, never per draw.
+namespace {
+struct BdaRangeInfo {
+    u64 size;
+    VAddr guest_addr;
+};
+std::mutex bda_registry_mutex;
+std::map<u64, BdaRangeInfo> bda_registry;
+} // namespace
+
+void RegisterBdaRange(u64 bda_addr, u64 size, VAddr guest_addr) {
+    std::scoped_lock lk{bda_registry_mutex};
+    bda_registry[bda_addr] = BdaRangeInfo{size, guest_addr};
+}
+
+void UnregisterBdaRange(u64 bda_addr) {
+    std::scoped_lock lk{bda_registry_mutex};
+    bda_registry.erase(bda_addr);
+}
+
+std::string DescribeBdaAddressForFault(u64 device_addr) {
+    std::scoped_lock lk{bda_registry_mutex};
+    if (bda_registry.empty()) {
+        return "    (no buffers with a device address are registered)";
+    }
+    // First range starting at or after the fault; the candidate that could CONTAIN the
+    // fault is the one before it.
+    auto after = bda_registry.upper_bound(device_addr);
+    std::string out;
+    const auto describe = [&](std::map<u64, BdaRangeInfo>::const_iterator it, const char* tag) {
+        const u64 bda = it->first;
+        const auto& info = it->second;
+        const bool contains = device_addr >= bda && device_addr < bda + info.size;
+        out += fmt::format("    {} buffer: bda [{:#x}, {:#x}) size {:#x} guest {:#x}{}\n", tag,
+                           bda, bda + info.size, info.size, info.guest_addr,
+                           contains ? fmt::format(" - CONTAINS the fault at bda+{:#x}",
+                                                  device_addr - bda)
+                                    : fmt::format(" - fault is {:#x} bytes {} it",
+                                                  device_addr >= bda ? device_addr - (bda + info.size)
+                                                                     : bda - device_addr,
+                                                  device_addr >= bda ? "past" : "before"));
+    };
+    if (after != bda_registry.begin()) {
+        auto prev = std::prev(after);
+        describe(prev, "nearest-below");
+        if (prev != bda_registry.begin()) {
+            describe(std::prev(prev), "next-below");
+        }
+    }
+    if (after != bda_registry.end()) {
+        describe(after, "nearest-above");
+    }
+    if (out.empty()) {
+        out = "    (registry has no neighbours for this address)";
+    } else if (out.back() == '\n') {
+        out.pop_back();
+    }
+    return out;
+}
 
 std::string_view BufferTypeName(MemoryUsage type) {
     switch (type) {
@@ -64,6 +129,12 @@ UniqueBuffer::UniqueBuffer(vk::Device device_, VmaAllocator allocator_)
 
 UniqueBuffer::~UniqueBuffer() {
     if (buffer) {
+        // The registry entry must die with the OWNER of the VkBuffer (this covers the
+        // cache's deferred deletions too); the registration itself happens in Buffer's
+        // constructor, which is the first place both the BDA and the guest range exist.
+        if (bda_addr != 0) {
+            UnregisterBdaRange(bda_addr);
+        }
         vmaDestroyBuffer(allocator, buffer, allocation);
     }
 }
@@ -86,8 +157,13 @@ void UniqueBuffer::Create(const vk::BufferCreateInfo& buffer_ci, MemoryUsage usa
     VkBuffer unsafe_buffer{};
     VkResult result = vmaCreateBuffer(allocator, &buffer_ci_unsafe, &alloc_ci, &unsafe_buffer,
                                       &allocation, out_alloc_info);
-    ASSERT_MSG(result == VK_SUCCESS, "Failed allocating buffer with error {}",
-               vk::to_string(vk::Result{result}));
+    // The SIZE is the discriminator the OOM death needs: a few-MB request means the caches
+    // outgrew VRAM (GC pacing - it only runs per guest frame, and GT7's streaming allocates
+    // thousands of buffers between frames), a multi-GB request means a torn GPU-driven V#'s
+    // garbage size slipped past the base-address guards. Run 55 died here at 650 compiles
+    // with no size in the log, and the two stories want opposite fixes.
+    ASSERT_MSG(result == VK_SUCCESS, "Failed allocating buffer of {} bytes with error {}",
+               buffer_ci.size, vk::to_string(vk::Result{result}));
     buffer = vk::Buffer{unsafe_buffer};
 
     if (with_bda) {
@@ -114,6 +190,10 @@ Buffer::Buffer(const Vulkan::Instance& instance_, Vulkan::Scheduler& scheduler_,
 
     const auto device = instance->GetDevice();
     Vulkan::SetObjectName(device, Handle(), "Buffer {:#x}:{:#x}", cpu_addr, size_bytes);
+
+    if (buffer.bda_addr != 0) {
+        RegisterBdaRange(buffer.bda_addr, size_bytes, cpu_addr);
+    }
 
     // Map it if it is host visible.
     VkMemoryPropertyFlags property_flags{};

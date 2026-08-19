@@ -23,6 +23,7 @@ namespace Vulkan {
 class Scheduler;
 class RenderState;
 class GraphicsPipeline;
+struct GpuWorkPayload;
 
 class Rasterizer {
 public:
@@ -33,6 +34,13 @@ public:
     [[nodiscard]] Scheduler& GetScheduler() noexcept {
         return scheduler;
     }
+
+    /// True when the open command buffer holds recorded-but-unsubmitted GPU work. An
+    /// end-of-pipe fence parsed while this is FALSE orders against nothing and is signed
+    /// eagerly by the GT_DEFER_EOP paths (deferral there bought nothing and raced GT7's
+    /// boot handshake - the FWRKR null-read). Defined in the .cpp: Instance is only
+    /// forward-declared here.
+    [[nodiscard]] bool HasPendingGpuWork() const noexcept;
 
     [[nodiscard]] VideoCore::BufferCache& GetBufferCache() noexcept {
         return buffer_cache;
@@ -98,6 +106,26 @@ private:
     void UpdateColorBlendingState(const GraphicsPipeline* pipeline) const;
 
     bool FilterDraw();
+
+    /// Fills in which shaders a pipeline is about to run, for the GPU work journal.
+    /// WALKS the stages instead of asking for one by name: Pipeline::GetStage dereferences without
+    /// a check and a null stage is legal here (see the null-skip in BindResources), so asking a
+    /// depth-only pipeline for its fragment stage is a null deref.
+    void CollectShaderIdentity(const Pipeline* pipeline, GpuWorkPayload& out) const;
+
+    /// Reads the guest's own indirect arguments - the only way to see how big an indirect dispatch
+    /// really is, since the counts never pass through the host otherwise.
+    /// Same technique AND same guard as BufferCache::FillBuffer: a guest VA is directly a host
+    /// pointer, but that view is only current while the region is not GPU-modified.
+    /// Returns false when nothing could be read. `gpu_modified` is set whenever a shader wrote the
+    /// arguments, which makes the values STALE - that flag must reach the log.
+    bool TryReadIndirectArgs(VAddr addr, u32 num_dwords, u32* out, bool* gpu_modified);
+
+    /// Records the render area as an UPPER BOUND on fragment work, and folds it into the entry's
+    /// overall size. A fullscreen pass is 3 vertices and millions of pixels, so without this the
+    /// journal is blind to the heaviest thing a draw can do.
+    void NoteDrawPixelWork(const RenderState& state, u64 vertex_invocations,
+                           GpuWorkPayload& out) const;
 
     void BindBuffers(const Shader::Info& stage, Shader::Backend::Bindings& binding,
                      Shader::PushData& push_data);

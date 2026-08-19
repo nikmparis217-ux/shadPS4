@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include "common/assert.h"
+#include "common/logging/log.h"
 #include "shader_recompiler/info.h"
 #include "shader_recompiler/ir/attribute.h"
 #include "shader_recompiler/ir/breadth_first_search.h"
@@ -290,10 +291,26 @@ static AttributeRegion GetAttributeRegionKind(IR::Inst* ring_access, const Shade
         return AttributeRegion::InputCP;
     } else if (info.l_stage == LogicalStage::TessellationControl &&
                runtime_info.hs_info.IsPassthrough()) {
-        ASSERT(count <= 1);
+        // GT7 (19 Aug): its hull shaders build ring offsets these two ASSERTs were written
+        // to reject (count hit >2 on hs 0x27d2194a and took the whole emulator down on the
+        // way into a race). A misclassified region reads the wrong ring - garbage on that
+        // patch - which is strictly better than a crash; log it so the shader stays on the
+        // books for a real tessellation fix.
+        if (count > 1) {
+            LOG_ERROR(Render_Recompiler,
+                      "hs {:#x}: tess-constant multiple count={} in passthrough (want <=1) - "
+                      "clamping, patch data will be wrong",
+                      info.pgm_hash, count);
+        }
         return AttributeRegion::PatchConst;
     } else {
-        ASSERT(count <= 2);
+        if (count > 2) {
+            LOG_ERROR(Render_Recompiler,
+                      "hs/ds {:#x}: tess-constant multiple count={} (want <=2) - clamping to "
+                      "PatchConst, patch data will be wrong",
+                      info.pgm_hash, count);
+            count = 2;
+        }
         return AttributeRegion(count);
     }
 }

@@ -434,6 +434,16 @@ U32 IREmitter::ReadConst(const Value& base, const U32& offset) {
     return Inst<U32>(Opcode::ReadConst, base, offset);
 }
 
+// GT_BINDLESS_LOWER: GPU-time dword store through the BDA pagetable - the write half of
+// ReadConst. Only the bindless lowering creates these.
+void IREmitter::WriteConst(const Value& base, const U32& offset, const U32& value) {
+    Inst(Opcode::WriteConst, base, offset, value);
+}
+
+U32 IREmitter::ConstAtomicIAdd32(const Value& base, const U32& offset, const U32& value) {
+    return Inst<U32>(Opcode::ConstAtomicIAdd32, base, offset, value);
+}
+
 U32 IREmitter::ReadConstBuffer(const Value& handle, const U32& index, BufferInstInfo info) {
     return Inst<U32>(Opcode::ReadConstBuffer, Flags{info}, handle, index);
 }

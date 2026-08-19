@@ -24,6 +24,35 @@ struct TilingInfo {
     std::array<ImageInfo::MipInfo, 16> mips;
 };
 
+/// tiling.comp declares `MipInfo mips[16]`, so 16 is a hard limit on BOTH sides of the interface.
+static constexpr u32 MaxTilingMips = 16;
+
+/// ⚠⚠ WHY THIS EXISTS. Both callers used to write `params.num_mips = <count>` and then fill
+/// `params.mips[mip]` in a loop bounded by that count, with nothing checking it against the array's
+/// 16 entries. `params` is a local, so a larger count is a STACK buffer overflow on the host plus an
+/// out-of-bounds read of `info.mips_layout`. And it is worse than a corrupt frame, because num_mips
+/// is also the ONLY bound on tiling.comp's GetMipLevel loop:
+///
+///     while (texel >= mip_size && mip < info.num_mips) { texel -= mip_size; ++mip; ... }
+///
+/// So a large num_mips makes that loop run that many times in EVERY invocation of a dispatch sized
+/// guest_size/bytes_per_texel/64, indexing past the end of the uniform - which robustBufferAccess
+/// answers with zeroes instead of a fault. That is exactly the failure shape being hunted here: a
+/// GPU hang reporting ZERO memory-access faults. Clamping alone would not do: an impossible count is
+/// LOGGED, because silently clamping hides the actual bug upstream (a bad resources.levels, or more
+/// buffer copies than the shader can describe).
+[[nodiscard]] static u32 ClampTilingMips(u32 requested, const char* who) {
+    if (requested <= MaxTilingMips) {
+        return requested;
+    }
+    LOG_ERROR(Render_Vulkan,
+              "{}: {} mip levels requested but tiling.comp can only describe {} - clamping. This "
+              "would have overflowed TilingInfo::mips on the host, and left the shader's GetMipLevel "
+              "loop bounded by {} while it can only index {}",
+              who, requested, MaxTilingMips, requested, MaxTilingMips);
+    return MaxTilingMips;
+}
+
 TileManager::TileManager(const Vulkan::Instance& instance, Vulkan::Scheduler& scheduler,
                          StreamBuffer& stream_buffer_)
     : instance{instance}, scheduler{scheduler}, stream_buffer{stream_buffer_} {
@@ -170,7 +199,7 @@ TileManager::Result TileManager::DetileImage(vk::Buffer in_buffer, u32 in_offset
     TilingInfo params{};
     params.bank_swizzle = info.bank_swizzle;
     params.num_slices = info.props.is_volume ? info.size.depth : info.resources.layers;
-    params.num_mips = info.resources.levels;
+    params.num_mips = ClampTilingMips(info.resources.levels, "DetileBuffer");
     for (u32 mip = 0; mip < params.num_mips; ++mip) {
         auto& mip_info = params.mips[mip];
         mip_info = info.mips_layout[mip];
@@ -238,6 +267,27 @@ TileManager::Result TileManager::DetileImage(vk::Buffer in_buffer, u32 in_offset
 
     const auto dim_x = (info.guest_size / (info.num_bits / 8)) / 64;
     cmdbuf.dispatch(dim_x, 1, 1);
+
+    // Record the pass so the device-fault census can NAME it. The journal was blind to every host
+    // pass, which is why an "all 69 guest shaders accounted for" census could still be missing the
+    // work that hung. count_a/count_b carry the two numbers that decide GetMipLevel's trip count.
+    {
+        Vulkan::GpuWorkPayload work{};
+        work.kind = Vulkan::GpuWorkKind::HostDetile;
+        work.primary_stage = 6; // cs - host passes have no guest pgm_hash, they are named by kind
+        work.cmdbuf = std::bit_cast<u64>(static_cast<VkCommandBuffer>(cmdbuf));
+        work.groups[0] = dim_x;
+        work.groups[1] = 1;
+        work.groups[2] = 1;
+        work.threads_per_group[0] = 64;
+        work.threads_per_group[1] = 1;
+        work.threads_per_group[2] = 1;
+        work.count_a = params.num_mips;
+        work.count_b = params.num_slices;
+        work.guest_addr = info.guest_address;
+        work.work_estimate = u64(dim_x) * 64u;
+        instance.RecordGpuWork(work);
+    }
     return {out_buffer, 0};
 }
 
@@ -255,7 +305,7 @@ void TileManager::TileImage(Image& in_image, std::span<vk::BufferImageCopy> buff
     TilingInfo params{};
     params.bank_swizzle = info.bank_swizzle;
     params.num_slices = info.props.is_volume ? info.size.depth : info.resources.layers;
-    params.num_mips = static_cast<u32>(buffer_copies.size());
+    params.num_mips = ClampTilingMips(static_cast<u32>(buffer_copies.size()), "TileImage");
     for (u32 mip = 0; mip < params.num_mips; ++mip) {
         auto& mip_info = params.mips[mip];
         mip_info = info.mips_layout[mip];
@@ -323,6 +373,26 @@ void TileManager::TileImage(Image& in_image, std::span<vk::BufferImageCopy> buff
 
     const auto dim_x = (info.guest_size / (info.num_bits / 8)) / 64;
     cmdbuf.dispatch(dim_x, 1, 1);
+
+    // Same recording as the detiler: this is the other direction through the very same shader, so
+    // leaving it out would put half of tiling.comp's work back in the blind spot.
+    {
+        Vulkan::GpuWorkPayload work{};
+        work.kind = Vulkan::GpuWorkKind::HostTile;
+        work.primary_stage = 6; // cs
+        work.cmdbuf = std::bit_cast<u64>(static_cast<VkCommandBuffer>(cmdbuf));
+        work.groups[0] = dim_x;
+        work.groups[1] = 1;
+        work.groups[2] = 1;
+        work.threads_per_group[0] = 64;
+        work.threads_per_group[1] = 1;
+        work.threads_per_group[2] = 1;
+        work.count_a = params.num_mips;
+        work.count_b = params.num_slices;
+        work.guest_addr = info.guest_address;
+        work.work_estimate = u64(dim_x) * 64u;
+        instance.RecordGpuWork(work);
+    }
 }
 
 } // namespace VideoCore

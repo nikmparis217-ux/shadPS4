@@ -275,7 +275,7 @@ s32 PS4_SYSV_ABI sceNpCheckPlus(s32 req_id, const OrbisNpCheckPlusParameter* par
         return CompleteRequest(*req, ORBIS_NP_ERROR_SIGNED_OUT);
     }
     LOG_DEBUG(Lib_NpManager, "req_id = {:#x}, features = {:#x}", req_id, param->features);
-    // Grant PS+ — shadNet has no subscription gating.
+    // Grant PS+ ï¿½ shadNet has no subscription gating.
     result->authorized = true;
     return CompleteRequest(*req, ORBIS_OK);
 }
@@ -830,6 +830,40 @@ static void QueueNpStateEvent(Libraries::UserService::OrbisUserServiceUserId use
     g_np_state_events.emplace_back(event);
 }
 
+// The PS4 tells a freshly registered NP state callback what the CURRENT state is - the callback
+// fires at the next sceNpCheckCallback rather than only on a later transition.
+//
+// shadPS4 only ever queued events on a real transition, and OFFLINE THERE ARE NONE:
+// NpHandler::Initialize() returns immediately when shadNet is disabled (np_handler.cpp:103), and
+// the only two FireStateCallback sites (SignedIn at :300, SignedOut at :367) both sit inside
+// shadNet client paths. So the single producer QueueNpStateEvent is never reached,
+// g_np_state_events stays empty for the whole run, and DispatchPendingNpStateCallbacks() takes its
+// `if (g_np_state_events.empty()) return;` every single time. A game that waits to be TOLD its NP
+// state therefore waits for ever.
+//
+// GT7 does exactly that: it registers a state callback and a reachability callback and then polls
+// sceNpCheckCallback thousands of times sitting on "INITIALIZING...". SignedOut is a perfectly
+// good answer - it is what lets an always-online title fall back to offline play - but it was
+// never delivered.
+//
+// Lock order here is callbacks -> events; DispatchPendingNpStateCallbacks takes both through one
+// std::scoped_lock (i.e. std::lock), which cannot deadlock against that.
+static void QueueCurrentNpStateForNewCallback() {
+    int user_id = Libraries::UserService::ORBIS_USER_SERVICE_USER_ID_INVALID;
+    if (Libraries::UserService::sceUserServiceGetInitialUser(&user_id) != ORBIS_OK ||
+        user_id == Libraries::UserService::ORBIS_USER_SERVICE_USER_ID_INVALID) {
+        LOG_WARNING(Lib_NpManager, "no initial user; cannot report current NP state");
+        return;
+    }
+    const auto state =
+        (g_shadnet_enabled && Libraries::Np::NpHandler::GetInstance().IsPsnSignedIn(user_id))
+            ? OrbisNpState::SignedIn
+            : OrbisNpState::SignedOut;
+    LOG_INFO(Lib_NpManager, "reporting current NP state to new callback: user_id={} state={}",
+             user_id, state == OrbisNpState::SignedIn ? "SignedIn" : "SignedOut");
+    QueueNpStateEvent(user_id, state);
+}
+
 void NotifyNpStateFromUserServiceEvent(Libraries::UserService::OrbisUserServiceEventType event_type,
                                        Libraries::UserService::OrbisUserServiceUserId user_id) {
     switch (event_type) {
@@ -878,6 +912,7 @@ static s32 RegisterStateCallbackA(OrbisNpStateCallbackA callback, void* userdata
         entry.func = callback;
         entry.userdata = userdata;
         entry.in_use = true;
+        QueueCurrentNpStateForNewCallback();
         return static_cast<s32>(i + 1);
     }
 
@@ -1031,6 +1066,8 @@ s32 PS4_SYSV_ABI sceNpRegisterNpReachabilityStateCallback(OrbisNpReachabilitySta
     NpReachabilityCb.userdata = userdata;
     // Reset the per-user cache so the next state transition reports fresh.
     g_np_reachability_last.clear();
+    // ...and offline there IS no next transition, so report the current state now.
+    QueueCurrentNpStateForNewCallback();
     return ORBIS_OK;
 }
 

@@ -188,12 +188,25 @@ void ImageInfo::UpdateSize() {
                 ImageSizeMicroTiled(mip_w, mip_h, thickness, num_bits, num_samples);
             break;
         }
+        // PRT (partially resident) modes use the same macro-tiled layout as their non-PRT
+        // counterparts; only residency differs, which does not affect the size arithmetic.
+        // Classification taken from AmdGpu::IsMacroTiled() in amdgpu/tiling.cpp.
         case AmdGpu::ArrayMode::Array2DTiledThick:
+        case AmdGpu::ArrayMode::ArrayPrtTiledThick:
+        case AmdGpu::ArrayMode::ArrayPrt2DTiledThick:
             thickness = 4;
             mip_d += (-mip_d) & (thickness - 1);
             [[fallthrough]];
-        case AmdGpu::ArrayMode::Array2DTiledThin1: {
-            ASSERT(!props.is_block);
+        case AmdGpu::ArrayMode::Array2DTiledThin1:
+        case AmdGpu::ArrayMode::ArrayPrtTiledThin1:
+        case AmdGpu::ArrayMode::ArrayPrt2DTiledThin1: {
+            // Block-coded (BCn) macro-tiled is fine through the same math: mip_w/mip_h arrive
+            // here already in BLOCK units and num_bits is per BLOCK (see the top of the loop),
+            // which is exactly how GCN addresses BCn - one block is one element. The linear and
+            // micro-tiled cases have always flowed block units through, and the post-switch
+            // `props.is_block` fixup converts pitch/height back to texels. The assert that stood
+            // here killed GT7 the first time its streaming got far enough to load a macro-tiled
+            // BCn texture (run 52, compile #206).
             std::tie(mip_info.pitch, mip_info.height, mip_info.size) = ImageSizeMacroTiled(
                 mip_w, mip_h, thickness, num_bits, num_samples, tile_mode, mip, alt_tile);
             break;

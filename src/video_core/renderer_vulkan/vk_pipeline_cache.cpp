@@ -183,7 +183,8 @@ const Shader::RuntimeInfo& PipelineCache::BuildRuntimeInfo(Stage stage, LogicalS
         const auto params_vc = AmdGpu::GetParams(regs.vs_program);
         gs_info.vs_copy = params_vc.code;
         gs_info.vs_copy_hash = params_vc.hash;
-        DumpShader(gs_info.vs_copy, gs_info.vs_copy_hash, Shader::Stage::Vertex, 0, "copy.bin");
+        DumpShader(gs_info.vs_copy, gs_info.vs_copy_hash, Shader::Stage::Vertex, 0, /*force=*/false,
+                   "copy.bin");
         break;
     }
     case Stage::Fragment: {
@@ -603,16 +604,149 @@ bool PipelineCache::RefreshComputeKey() {
     return true;
 }
 
+// A minimal valid Vulkan compute module: void main() {}. Substituted for shaders whose
+// resource descriptors are dynamically indexed (bindless) and therefore untrackable
+// (GT_BINDLESS_STUB=1): the dispatch runs and does nothing, the game survives.
+// The FRAGMENT twin of NOOP_COMPUTE_SPV: void main() {} with OriginUpperLeft and no outputs -
+// the material renders nothing (undefined/black) for the frames that use it, which beats dying.
+// GT7's material fragment shaders fetch their T#s through the same GPU-written record tables as
+// the compute producers (real bindless); fs_0x29681a2f was the first to arrive (run 53, #250).
+// The VERTEX stub: Position = (0,0,0,1) for every vertex, so every triangle is degenerate and
+// the draw simply vanishes. Its material's fragment twin is stubbed too (GT7 sends the pair -
+// vs_0x2df86cf8 + fs_0x29681a2f arrived back to back in run 54), so the empty vs->fs interface
+// stays consistent. Validated with spirv-val.
+constexpr std::array<u32, 67> NOOP_VERTEX_SPV = {
+    0x07230203, 0x00010000, 0x00000000, 0x0000000C, 0x00000000, // header: SPIR-V 1.0, bound 12
+    0x00020011, 0x00000001,                                     // OpCapability Shader
+    0x0003000E, 0x00000000, 0x00000001,                         // OpMemoryModel Logical GLSL450
+    0x0006000F, 0x00000000, 0x00000001, 0x6E69616D, 0x00000000,
+    0x00000004,                                                 // OpEntryPoint Vertex %1 "main" %4
+    0x00040047, 0x00000004, 0x0000000B, 0x00000000,             // OpDecorate %4 BuiltIn Position
+    0x00020013, 0x00000002,                                     // %2 = OpTypeVoid
+    0x00030021, 0x00000003, 0x00000002,                         // %3 = OpTypeFunction %2
+    0x00030016, 0x00000005, 0x00000020,                         // %5 = OpTypeFloat 32
+    0x00040017, 0x00000006, 0x00000005, 0x00000004,             // %6 = OpTypeVector %5 4
+    0x00040020, 0x00000007, 0x00000003, 0x00000006,             // %7 = OpTypePointer Output %6
+    0x0004003B, 0x00000007, 0x00000004, 0x00000003,             // %4 = OpVariable %7 Output
+    0x0004002B, 0x00000005, 0x00000008, 0x00000000,             // %8 = OpConstant %5 0.0
+    0x0004002B, 0x00000005, 0x00000009, 0x3F800000,             // %9 = OpConstant %5 1.0
+    0x0007002C, 0x00000006, 0x0000000A, 0x00000008, 0x00000008,
+    0x00000008, 0x00000009,                                     // %10 = (0, 0, 0, 1)
+    0x00050036, 0x00000002, 0x00000001, 0x00000000, 0x00000003, // %1 = OpFunction %2 None %3
+    0x000200F8, 0x0000000B,                                     // %11 = OpLabel
+    0x0003003E, 0x00000004, 0x0000000A,                         // OpStore %4 %10
+    0x000100FD,                                                 // OpReturn
+    0x00010038,                                                 // OpFunctionEnd
+};
+
+constexpr std::array<u32, 32> NOOP_FRAGMENT_SPV = {
+    0x07230203, 0x00010000, 0x00000000, 0x00000005, 0x00000000, // header: SPIR-V 1.0, bound 5
+    0x00020011, 0x00000001,                                     // OpCapability Shader
+    0x0003000E, 0x00000000, 0x00000001,                         // OpMemoryModel Logical GLSL450
+    0x0005000F, 0x00000004, 0x00000001, 0x6E69616D, 0x00000000, // OpEntryPoint Fragment %1 "main"
+    0x00030010, 0x00000001, 0x00000007,                         // OpExecutionMode %1 OriginUpperLeft
+    0x00020013, 0x00000002,                                     // %2 = OpTypeVoid
+    0x00030021, 0x00000003, 0x00000002,                         // %3 = OpTypeFunction %2
+    0x00050036, 0x00000002, 0x00000001, 0x00000000, 0x00000003, // %1 = OpFunction %2 None %3
+    0x000200F8, 0x00000004,                                     // %4 = OpLabel
+    0x000100FD,                                                 // OpReturn
+    0x00010038,                                                 // OpFunctionEnd
+};
+
+constexpr std::array<u32, 35> NOOP_COMPUTE_SPV = {
+    0x07230203, 0x00010000, 0x00000000, 0x00000005, 0x00000000, // header: SPIR-V 1.0, bound 5
+    0x00020011, 0x00000001,                                     // OpCapability Shader
+    0x0003000E, 0x00000000, 0x00000001,                         // OpMemoryModel Logical GLSL450
+    0x0005000F, 0x00000005, 0x00000001, 0x6E69616D, 0x00000000, // OpEntryPoint GLCompute %1 "main"
+    0x00060010, 0x00000001, 0x00000011, 0x00000001, 0x00000001,
+    0x00000001,                                                 // OpExecutionMode %1 LocalSize 1 1 1
+    0x00020013, 0x00000002,                                     // %2 = OpTypeVoid
+    0x00030021, 0x00000003, 0x00000002,                         // %3 = OpTypeFunction %2
+    0x00050036, 0x00000002, 0x00000001, 0x00000000, 0x00000003, // %1 = OpFunction %2 None %3
+    0x000200F8, 0x00000004,                                     // %4 = OpLabel
+    0x000100FD,                                                 // OpReturn
+    0x00010038,                                                 // OpFunctionEnd
+};
+
+// GT_STUB_SHADERS=hash1,hash2 (hex, 0x optional): force-substitute a NO-OP module for these
+// program hashes. The escape hatch for a shader that parks the GPU on garbage data - run 60:
+// windowed fs 0xacec97cd hung the draw scheduler on 4 normal DrawIndexed calls. One missing
+// material beats a dead device while the real fix (GPU-time descriptor fetch) is pending.
+static bool IsForcedStubShader(u64 hash) {
+    static const std::vector<u64> forced = [] {
+        std::vector<u64> list;
+        if (const char* env = std::getenv("GT_STUB_SHADERS")) {
+            const std::string s{env};
+            size_t pos = 0;
+            while (pos <= s.size()) {
+                size_t comma = s.find(',', pos);
+                if (comma == std::string::npos) {
+                    comma = s.size();
+                }
+                if (comma > pos) {
+                    list.push_back(std::strtoull(s.substr(pos, comma - pos).c_str(), nullptr, 16));
+                }
+                pos = comma + 1;
+            }
+        }
+        return list;
+    }();
+    return std::find(forced.begin(), forced.end(), hash) != forced.end();
+}
+
 vk::ShaderModule PipelineCache::CompileModule(Shader::Info& info, Shader::RuntimeInfo& runtime_info,
                                               const std::span<const u32>& code, size_t perm_idx,
                                               Shader::Backend::Bindings& binding) {
     LOG_INFO(Render_Vulkan, "Compiling {} shader {:#x} {}", info.stage, info.pgm_hash,
              perm_idx != 0 ? "(permutation)" : "");
-    DumpShader(code, info.pgm_hash, info.stage, perm_idx, "bin");
+    DumpShader(code, info.pgm_hash, info.stage, perm_idx, /*force=*/false, "bin");
 
+    const bool forced_stub = IsForcedStubShader(info.pgm_hash);
+    if (forced_stub) {
+        LOG_ERROR(Render_Vulkan,
+                  "{} shader {:#x} is listed in GT_STUB_SHADERS - substituting a NO-OP module",
+                  info.stage, info.pgm_hash);
+    }
     const auto ir_program = Shader::TranslateProgram(code, pools, info, runtime_info, profile);
-    auto spv = Shader::Backend::SPIRV::EmitSPIRV(profile, runtime_info, ir_program, binding);
-    DumpShader(spv, info.pgm_hash, info.stage, perm_idx, "spv");
+    std::vector<u32> spv;
+    if (info.has_bindless_sharp || forced_stub) {
+        // GT_BINDLESS_STUB: the tracker abandoned this program. Ship a no-op module and
+        // clear every resource list so nothing fetches descriptors off the half-built
+        // tracking state at bind time (the pipeline layout is built from these lists, so
+        // layout and module stay consistent: both empty).
+        ASSERT_MSG(info.stage == Shader::Stage::Compute ||
+                       info.stage == Shader::Stage::Fragment ||
+                       info.stage == Shader::Stage::Vertex,
+                   "GT_BINDLESS_STUB can only stub compute, fragment and vertex shaders, but {} "
+                   "shader {:#x} has bindless resources",
+                   info.stage, info.pgm_hash);
+        if (info.has_bindless_sharp) {
+            LOG_ERROR(Render_Vulkan,
+                      "{} shader {:#x} reads dynamically indexed (bindless) descriptors - "
+                      "substituting a NO-OP module; whatever this dispatch computes will be "
+                      "missing",
+                      info.stage, info.pgm_hash);
+            // Evidence for the real-bindless design: dump the raw GCN beside the
+            // bindless.irprogram.txt the recompiler already forced out.
+            DumpShader(code, info.pgm_hash, info.stage, perm_idx, /*force=*/true,
+                       "bindless.bin");
+        }
+        info.buffers.clear();
+        info.images.clear();
+        info.samplers.clear();
+        info.fmasks.clear();
+        info.srt_info = {};
+        if (info.stage == Shader::Stage::Fragment) {
+            spv.assign(NOOP_FRAGMENT_SPV.begin(), NOOP_FRAGMENT_SPV.end());
+        } else if (info.stage == Shader::Stage::Vertex) {
+            spv.assign(NOOP_VERTEX_SPV.begin(), NOOP_VERTEX_SPV.end());
+        } else {
+            spv.assign(NOOP_COMPUTE_SPV.begin(), NOOP_COMPUTE_SPV.end());
+        }
+    } else {
+        spv = Shader::Backend::SPIRV::EmitSPIRV(profile, runtime_info, ir_program, binding);
+    }
+    DumpShader(spv, info.pgm_hash, info.stage, perm_idx, /*force=*/false, "spv");
 
     vk::ShaderModule module;
 
@@ -721,8 +855,10 @@ std::string PipelineCache::GetShaderName(Shader::Stage stage, u64 hash,
 }
 
 void PipelineCache::DumpShader(std::span<const u32> code, u64 hash, Shader::Stage stage,
-                               size_t perm_idx, std::string_view ext) {
-    if (!EmulatorSettings.IsDumpShaders()) {
+                               size_t perm_idx, bool force, std::string_view ext) {
+    // `force` (GT7 bindless hunt): the GCN of an abandoned shader is evidence for the
+    // real-bindless design and must not depend on -DumpShaders being on.
+    if (!force && !EmulatorSettings.IsDumpShaders()) {
         return;
     }
 

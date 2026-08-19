@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <atomic>
 #include <map>
 #include "common/alignment.h"
 #include "common/arch.h"
@@ -545,21 +546,77 @@ struct AddressSpace::Impl {
         }
 
         const VAddr virtual_end = virtual_addr + size;
-        auto it = --regions.upper_bound(virtual_addr);
-        ASSERT_MSG(it != regions.end(), "addr {:#x} out of bounds", virtual_addr);
-        for (; it->first < virtual_end; it++) {
+        auto it = regions.upper_bound(virtual_addr);
+        if (it == regions.begin()) {
+            // A torn GPU-driven descriptor with base ~0 got a region at address ZERO registered
+            // and tracked (run 66: "Tracking memory region 0x0 - 0x400000"), and decrementing
+            // upper_bound(0) here is UB before the old assert even fired. Skipping the protect
+            // of a nonexistent region is strictly safer than either.
+            LOG_CRITICAL(Core, "[softclamp] Protect below the address space (addr {:#x}) - skipped",
+                         virtual_addr);
+            return;
+        }
+        --it;
+        // ⚠ The end() check was MISSING here since upstream: for a range near the TOP of the
+        // address space the walk steps past the last region and dereferences end() - UB that
+        // presented twice in one day (run 87: VirtualProtectEx "parameter is incorrect" on
+        // garbage; run 92: the GpuCommandProcessor thread SPINNING here forever, the game
+        // frozen mid-race with 4.5 cores pegged and no log line). Torn descriptors at
+        // 0xff43xxxxxx (page tracking of a "not fully GPU mapped" region) are what send
+        // Protect up there in the first place.
+        for (; it != regions.end() && it->first < virtual_end; it++) {
             if (!it->second.is_mapped) {
                 continue;
             }
             const auto& region = it->second;
             const u64 range_addr = std::max(region.base, virtual_addr);
             const u64 range_size = std::min(region.base + region.size, virtual_end) - range_addr;
+            // NEVER strip EXECUTE from a page that has it. A torn GPU-driven descriptor with a
+            // mapped-but-wrong base can register page tracking that SPANS THE GUEST'S OWN CODE;
+            // protecting those pages RW killed runs 67/69 with DEP faults on a dozen threads at
+            // once (misreported as "wild jumps"). Legitimate game DATA is never executable, so
+            // upgrading only ever affects bogus trackings over code.
+            DWORD range_flags = new_flags;
+            MEMORY_BASIC_INFORMATION mbi{};
+            if (VirtualQueryEx(process, LPCVOID(range_addr), &mbi, sizeof(mbi)) != 0) {
+                const DWORD oldp = mbi.Protect & 0xFFu;
+                const bool had_exec = oldp == PAGE_EXECUTE || oldp == PAGE_EXECUTE_READ ||
+                                      oldp == PAGE_EXECUTE_READWRITE ||
+                                      oldp == PAGE_EXECUTE_WRITECOPY;
+                if (had_exec) {
+                    if (range_flags == PAGE_READONLY) {
+                        range_flags = PAGE_EXECUTE_READ;
+                    } else if (range_flags == PAGE_READWRITE) {
+                        range_flags = PAGE_EXECUTE_READWRITE;
+                    } else if (range_flags == PAGE_NOACCESS) {
+                        range_flags = PAGE_EXECUTE_READ;
+                    }
+                    LOG_CRITICAL(Core,
+                                 "[softclamp] page tracking tried to strip EXECUTE at {:#x} "
+                                 "(+{:#x}) - kept executable",
+                                 range_addr, range_size);
+                }
+            }
             DWORD old_flags{};
-            if (!VirtualProtectEx(process, LPVOID(range_addr), range_size, new_flags, &old_flags)) {
-                UNREACHABLE_MSG(
-                    "Failed to change virtual memory protection for address {:#x}, size "
-                    "{:#x}, error {}",
-                    virtual_addr, size, Common::GetLastErrorMsg());
+            if (!VirtualProtectEx(process, LPVOID(range_addr), range_size, range_flags,
+                                  &old_flags)) {
+                // Run 87: a torn descriptor HIGH in the guest space (0xff43bf1000, 60 KiB) got
+                // tracked; the emulator's region map called it mapped but the HOST pages were
+                // not protectable ("parameter is incorrect") and the old UNREACHABLE killed a
+                // run that had outlived every device fault. Same family as the guest-floor and
+                // strip-EXECUTE guards above: a protect that cannot apply to a bogus tracking
+                // is a logged skip, never a process assert. If this ever fires on LEGITIMATE
+                // memory, readback tracking for that range is broken - which is why it stays
+                // CRITICAL and names the exact range.
+                static std::atomic<u32> protect_fail_logs{0};
+                if (protect_fail_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+                    LOG_CRITICAL(Core,
+                                 "[softclamp] VirtualProtectEx failed at {:#x} (+{:#x}) flags "
+                                 "{:#x} (requested {:#x}+{:#x}), error {} - skipped",
+                                 range_addr, range_size, range_flags, virtual_addr, size,
+                                 Common::GetLastErrorMsg());
+                }
+                continue;
             }
         }
     }

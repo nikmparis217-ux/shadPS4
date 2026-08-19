@@ -91,6 +91,7 @@ constexpr auto Lib_SaveDataDialog = "Lib.SaveDataDialog";           ///< The Lib
 constexpr auto Lib_Screenshot = "Lib.Screenshot";                   ///< The LibSceScreenshot implementation
 constexpr auto Lib_SharePlay = "Lib.SharePlay";                     ///< The LibSceSharePlay implemenation
 constexpr auto Lib_SigninDialog = "Lib.SigninDialog";               ///< The LibSigninDialog implementation.
+constexpr auto Lib_DeviceService = "Lib.DeviceService";             ///< The LibSceDeviceService implementation.
 constexpr auto Lib_Ssl = "Lib.Ssl";                                 ///< The LibSceSsl implementation.
 constexpr auto Lib_Ssl2 = "Lib.Ssl2";                               ///< The LibSceSsl2 implementation.
 constexpr auto Lib_SysModule = "Lib.SysModule";                     ///< The LibSceSysModule implementation

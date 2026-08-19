@@ -983,6 +983,7 @@ void EmitContext::DefineImagesAndSamplers() {
             .is_integer = is_integer,
             .is_storage = is_storage,
             .mip_fallback_mode = mip_fallback_mode,
+            .num_bindings = num_bindings,
         });
         interfaces.push_back(id);
     }
@@ -1167,13 +1168,18 @@ Id EmitContext::DefineGetBdaPointer() {
     const auto available_label{OpLabel()};
     const auto merge_label{OpLabel()};
 
-    // Get page BDA
+    // Get page BDA. GT7 (19 Aug): clamp the page index - the bindless lowering can chase
+    // a junk V# whose "address" lands beyond the 40-bit table, and an out-of-range
+    // OpAccessChain is undefined. Out-of-range = treated as an unmapped page.
     const auto page{OpShiftRightLogical(U64, address, caching_pagebits)};
-    const auto page32{OpUConvert(U32[1], page)};
+    const auto in_range{OpULessThan(U1[1], page,
+                                    Constant(U64, VideoCore::BufferCache::CACHING_NUMPAGES))};
+    const auto page32{OpSelect(U32[1], in_range, OpUConvert(U32[1], page), u32_zero_value)};
     const auto& bda_buffer{buffers[bda_pagetable_index]};
     const auto [bda_buffer_id, bda_pointer_type] = bda_buffer.Alias(PointerType::U64);
     const auto bda_ptr{OpAccessChain(bda_pointer_type, bda_buffer_id, u32_zero_value, page32)};
-    const auto bda{OpLoad(U64, bda_ptr)};
+    const auto bda_raw{OpLoad(U64, bda_ptr)};
+    const auto bda{OpSelect(U64, in_range, bda_raw, u64_zero_value)};
 
     // Check if page is GPU cached
     const auto is_fault{OpIEqual(U1[1], bda, u64_zero_value)};

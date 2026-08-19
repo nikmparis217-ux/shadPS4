@@ -120,6 +120,15 @@ struct Info : InfoPersistent {
     std::vector<u32> flattened_ud_buf;
     PersistentSrtInfo srt_info;
 
+    // GT_DYNRC_WINDOW diagnostics (runtime only, never serialized): where each bulk window
+    // sits in the flatbuf, so RefreshFlatBuf can MEASURE whether the walker's parse-time
+    // snapshot actually carried data. An all-zero window means the producer's table had not
+    // been written when the walker ran - no window SIZE can fix that, and the answer would
+    // be GPU-time reads (DMA) instead. Without this the "windowed" log line only proves the
+    // pass armed, not that the shader got real values.
+    boost::container::static_vector<std::pair<u32, u32>, 4> dynrc_windows;
+    u32 dynrc_log_budget{};
+
     AttributeFlags loads{};
     AttributeFlags stores{};
 
@@ -147,6 +156,14 @@ struct Info : InfoPersistent {
     bool stores_tess_level_outer{};
     bool stores_tess_level_inner{};
     bool translation_failed{};
+    // A resource descriptor was loaded through a dynamically indexed buffer (bindless) -
+    // impossible to map to a static binding. With GT_BINDLESS_STUB=1 the tracker abandons
+    // the program instead of asserting and CompileModule substitutes a no-op module.
+    bool has_bindless_sharp{};
+    // GT_BINDLESS_LOWER: at least one ReadConst carries SrtBindlessFlagBit (a GPU-time
+    // read through a GPU-fetched V#) - the shader needs the DMA machinery even when the
+    // global directMemoryAccess setting is off.
+    bool uses_bindless_reads{};
 
     std::array<Interpolation, IR::NumParams> fs_interpolation{};
 
@@ -195,6 +212,64 @@ struct Info : InfoPersistent {
         if (srt_info.walker_func) {
             srt_info.walker_func(user_data.data(), flattened_ud_buf.data());
         }
+        // GT_DYNRC_WINDOW: did the parse-time snapshot carry anything? Reported for the
+        // first few dispatches per shader only (this runs per dispatch - thousands of times
+        // for these producers). "nonzero" = the window is genuinely feeding the shader;
+        // "ALL ZERO" = the table is written later than the walker runs, which is a verdict
+        // about the whole approach, not a tuning problem.
+        for (const auto& [base_dw, size_dw] : dynrc_windows) {
+            if (dynrc_log_budget == 0) {
+                break;
+            }
+            if (base_dw + size_dw > flattened_ud_buf.size()) {
+                continue;
+            }
+            u32 nonzero = 0;
+            u32 first_nonzero_dw = 0;
+            for (u32 i = 0; i < size_dw; ++i) {
+                if (flattened_ud_buf[base_dw + i] != 0) {
+                    if (nonzero == 0) {
+                        first_nonzero_dw = i;
+                    }
+                    ++nonzero;
+                }
+            }
+            --dynrc_log_budget;
+            if (nonzero == 0) {
+                LOG_WARNING(Render_Recompiler,
+                            "shader {:#x}: dynrc window @{} ({} dw) is ALL ZERO - the guest "
+                            "table is not written yet at walker time",
+                            pgm_hash, base_dw, size_dw);
+            } else {
+                LOG_INFO(Render_Recompiler,
+                         "shader {:#x}: dynrc window @{} ({} dw): {} nonzero, first at dw {}",
+                         pgm_hash, base_dw, size_dw, nonzero, first_nonzero_dw);
+            }
+        }
+    }
+
+    /// True when any dynrc window in the CURRENT flatbuf snapshot is entirely zero - the
+    /// guest table this shader consumes has not been written yet, so a dispatch computes
+    /// guaranteed garbage (and, warm-cache-early, chased garbage descriptors into the
+    /// deterministic early ReadInvalid of runs 100/101/104). Cheap: the windows are a few
+    /// KB and only the GPU-driven producers carry any.
+    bool HasAllZeroDynrcWindow() const {
+        for (const auto& [base_dw, size_dw] : dynrc_windows) {
+            if (size_dw == 0 || base_dw + size_dw > flattened_ud_buf.size()) {
+                continue;
+            }
+            bool any_nonzero = false;
+            for (u32 i = 0; i < size_dw; ++i) {
+                if (flattened_ud_buf[base_dw + i] != 0) {
+                    any_nonzero = true;
+                    break;
+                }
+            }
+            if (!any_nonzero) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void ReadTessConstantBuffer(TessellationDataConstantBuffer& tess_constants) const {

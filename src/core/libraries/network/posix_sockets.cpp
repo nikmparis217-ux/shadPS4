@@ -434,9 +434,44 @@ int PosixSocket::Connect(const OrbisNetSockaddr* addr, u32 namelen) {
     // Winsock returns EWOULDBLOCK where real hardware returns EINPROGRESS
     // Step in here on errors to address this.
     if (result == -1) {
-        if (WSAGetLastError() == WSAEWOULDBLOCK) {
+        const int werr = WSAGetLastError();
+        if (werr == WSAEWOULDBLOCK) {
+            win_nb_connect_error = 0;
             WSASetLastError(WSAEINPROGRESS);
+        } else if (werr == WSAEALREADY || werr == WSAEINVAL) {
+            // BSD (= the PS4) lets a game poll a non-blocking connect by calling connect()
+            // again: EALREADY while pending, EISCONN once connected, and the REAL error
+            // (e.g. ECONNREFUSED) once the attempt has FAILED. Winsock never makes that
+            // last transition - it keeps answering WSAEALREADY - and a game polling this
+            // way (GT7's SimpleTcpClient) spins for eternity on a refused connection.
+            // Ask the socket what actually happened and answer like BSD would. SO_ERROR
+            // is cleared by the read, so the verdict is cached for the game's re-polls.
+            if (win_nb_connect_error != 0) {
+                WSASetLastError(win_nb_connect_error);
+            } else {
+                fd_set wfds, efds;
+                FD_ZERO(&wfds);
+                FD_ZERO(&efds);
+                FD_SET(sock, &wfds);
+                FD_SET(sock, &efds);
+                timeval tv{0, 0};
+                if (::select(0, nullptr, &wfds, &efds, &tv) > 0) {
+                    int so_err = 0;
+                    int so_len = sizeof(so_err);
+                    ::getsockopt(sock, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&so_err),
+                                 &so_len);
+                    if (so_err != 0) {
+                        win_nb_connect_error = so_err;
+                        WSASetLastError(so_err);
+                    } else if (FD_ISSET(sock, &wfds)) {
+                        win_nb_connect_error = WSAEISCONN;
+                        WSASetLastError(WSAEISCONN);
+                    }
+                }
+            }
         }
+    } else {
+        win_nb_connect_error = 0;
     }
 #endif
     LOG_DEBUG(Lib_Net, "raw connect result = {}, errno = {}", result,

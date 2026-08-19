@@ -244,8 +244,10 @@ int PS4_SYSV_ABI sceSslLoadRootCACert() {
 }
 
 int PS4_SYSV_ABI sceSslRead() {
-    LOG_ERROR(Lib_Ssl2, "(STUBBED) called");
-    return ORBIS_OK;
+    // Returning OK for a read that produced NOTHING makes callers poll forever. Fail
+    // honestly so the game's own TLS-error path runs (see ORBIS_SSL_ERROR_IO_FAILED).
+    LOG_DEBUG(Lib_Ssl2, "(STUBBED) called - reporting I/O failure");
+    return ORBIS_SSL_ERROR_IO_FAILED;
 }
 
 int PS4_SYSV_ABI sceSslRecv() {
@@ -294,8 +296,11 @@ int PS4_SYSV_ABI sceSslUnloadCert() {
 }
 
 int PS4_SYSV_ABI sceSslWrite() {
-    LOG_ERROR(Lib_Ssl2, "(STUBBED) called");
-    return ORBIS_OK;
+    // Returning OK for a write that wrote NOTHING is a lie the caller retries forever -
+    // GT7's downloader spun 19k+ calls on it with the boot frozen (run 15). Fail honestly:
+    // the game's TLS-failure path handles a dead server like real hardware would.
+    LOG_DEBUG(Lib_Ssl2, "(STUBBED) called - reporting I/O failure");
+    return ORBIS_SSL_ERROR_IO_FAILED;
 }
 
 int PS4_SYSV_ABI VLONG_freeVlongQueue() {

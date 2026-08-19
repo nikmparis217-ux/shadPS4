@@ -271,7 +271,14 @@ void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id 
         ASSERT(texture.mip_fallback_mode == MipStorageFallbackMode::DynamicIndex);
         const Id single_image_ptr_type =
             ctx.TypePointer(spv::StorageClass::UniformConstant, texture.image_type);
-        image_ptr = ctx.OpAccessChain(single_image_ptr_type, image_ptr, std::array{lod});
+        // CLAMP the runtime mip index to the descriptor array. The index comes from
+        // GPU-driven data (flatbuf/dynrc), and with a warm pipeline cache this shader runs
+        // before the game has written it - an unclamped garbage index reads a DESCRIPTOR
+        // past the array, which the driver dereferences as a raw address: the deterministic
+        // "IP 0x2000f1330 + ReadInvalid 0x300100000" device fault of runs 95-97, proven by
+        // substitution in run 98 (stubbing this shader removed exactly that fault).
+        const Id lod_clamped = ctx.OpUMin(ctx.U32[1], lod, ctx.ConstU32(texture.num_bindings - 1));
+        image_ptr = ctx.OpAccessChain(single_image_ptr_type, image_ptr, std::array{lod_clamped});
     }
     const Id image = ctx.OpLoad(texture.image_type, image_ptr);
     const Id texel = texture.is_integer ? ctx.OpBitcast(color_type, color) : color;

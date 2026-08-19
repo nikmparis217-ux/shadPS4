@@ -14,8 +14,16 @@
 
 namespace Core::FileSys {
 
+// ShareReadWrite, NOT the IOFile default (ShareReadOnly = _SH_DENYWR): a PS4 game may hold any
+// number of concurrent handles to one file - POSIX has no sharing restrictions at all - and GT7
+// opens /app0/contents/gt.idx from two threads during boot. Under _SH_DENYWR the second open
+// fails EACCES ("permission denied" on a file that is right there), the game's content provider
+// stays NULL, and its file worker (FWRKR) crashes on the null ~50-70% of boots - a race between
+// the two opens. Correctness fix, not env-gated, same class as PosixSocket::Connect.
 HostFile::HostFile(std::filesystem::path host_path, Common::FS::FileAccessMode mode, bool read_only)
-    : m_path(std::move(host_path)), m_file(m_path, mode), m_read_only(read_only) {}
+    : m_path(std::move(host_path)),
+      m_file(m_path, mode, Common::FS::FileType::BinaryFile, Common::FS::FileShareFlag::ShareReadWrite),
+      m_read_only(read_only) {}
 
 s64 HostFile::Read(void* dst, u64 size) {
     if (!m_file.IsOpen()) {

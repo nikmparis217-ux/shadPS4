@@ -115,6 +115,7 @@ std::unordered_map<std::string_view, std::shared_ptr<spdlog::logger>> ALL_LOGGER
     {Class::Lib_Screenshot, nullptr},
     {Class::Lib_SharePlay, nullptr},
     {Class::Lib_SigninDialog, nullptr},
+    {Class::Lib_DeviceService, nullptr},
     {Class::Lib_Ssl, nullptr},
     {Class::Lib_Ssl2, nullptr},
     {Class::Lib_SysModule, nullptr},

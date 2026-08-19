@@ -16,10 +16,14 @@
 
 namespace Shader::IR {
 
-void DumpProgram(const Program& program, const Info& info, const std::string& type) {
+void DumpProgram(const Program& program, const Info& info, const std::string& type,
+                 bool force) {
     using namespace Common::FS;
 
-    if (!EmulatorSettings.IsDumpShaders()) {
+    // `force` (GT7 bindless hunt): abandoned shaders dump their IR even without
+    // -DumpShaders - the IR chain is the ONLY record of WHY tracking failed, and the
+    // normal dump path never runs for them (they are substituted before EmitSPIRV).
+    if (!force && !EmulatorSettings.IsDumpShaders()) {
         return;
     }
 

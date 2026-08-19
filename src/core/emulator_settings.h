@@ -434,6 +434,9 @@ struct GPUSettings {
     Setting<bool> fsr_enabled{false};
     Setting<bool> rcas_enabled{true};
     Setting<int> rcas_attenuation{250};
+    /// Warn when one draw or dispatch asks for more than this many MILLION invocations. Recording
+    /// is always on and free; this only decides when a line is printed. 0 disables the warning.
+    Setting<u32> gpu_work_warn_minvocations{64};
     // TODO add overrides
     std::vector<OverrideItem> GetOverrideableFields() const {
         return std::vector<OverrideItem>{
@@ -464,7 +467,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GPUSettings, window_width, window_height, int
                                    readbacks_mode, readback_linear_images_enabled,
                                    direct_memory_access_enabled, dump_shaders, patch_shaders,
                                    vblank_frequency, full_screen, full_screen_mode, present_mode,
-                                   hdr_allowed, fsr_enabled, rcas_enabled, rcas_attenuation)
+                                   hdr_allowed, fsr_enabled, rcas_enabled, rcas_attenuation,
+                                   gpu_work_warn_minvocations)
 // -------------------------------
 // Vulkan settings
 // -------------------------------
@@ -738,6 +742,7 @@ public:
     SETTING_FORWARD_BOOL(m_gpu, HdrAllowed, hdr_allowed)
     SETTING_FORWARD_BOOL(m_gpu, FsrEnabled, fsr_enabled)
     SETTING_FORWARD_BOOL(m_gpu, RcasEnabled, rcas_enabled)
+    SETTING_FORWARD(m_gpu, GpuWorkWarnMInvocations, gpu_work_warn_minvocations)
     SETTING_FORWARD(m_gpu, RcasAttenuation, rcas_attenuation)
     SETTING_FORWARD(m_gpu, ReadbacksMode, readbacks_mode)
     SETTING_FORWARD_BOOL(m_gpu, ReadbackLinearImagesEnabled, readback_linear_images_enabled)

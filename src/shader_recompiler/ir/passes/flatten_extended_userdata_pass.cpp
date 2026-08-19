@@ -134,6 +134,12 @@ struct PassInfo {
     // pick a single inst for a given value number
     std::unordered_map<u32, IR::Inst*> vn_to_inst;
 
+    // GT_DYNRC_WINDOW: ReadConsts with RUNTIME-computed offsets, grouped by their
+    // deduplicated base pointer. VisitPointer emits one bulk window copy per pointer and
+    // stamps every user's flags with the window's location (see srt.h for the encoding).
+    std::unordered_map<IR::Inst*, boost::container::small_vector<Shader::IR::Inst*, 4>>
+        dyn_window_uses;
+
     // Bumped during codegen to assign offsets to readconsts
     u32 dst_off_dw;
 
@@ -159,6 +165,26 @@ namespace Shader::Optimization {
 
 namespace {
 
+// GT_DYNRC_WINDOW: 0/absent = off (a dynamic ReadConst keeps the legacy read-flatbuf[0]
+// fallback); "1" = on with the default 2048 dwords (8 KiB) per base pointer; any other
+// number = that many dwords (capped to fit the 16-bit size field). Measured need (GT7,
+// cs_0x2a0cfcd2 dump): 12-byte records at byte offsets 160..304+ off one static base -
+// small tables, 8 KiB covers them with room to spare.
+static u32 DynReadConstWindowDw() {
+    static const u32 window_dw = [] {
+        const char* v = std::getenv("GT_DYNRC_WINDOW");
+        if (v == nullptr || v[0] == '0') {
+            return 0u;
+        }
+        const unsigned long parsed = std::strtoul(v, nullptr, 10);
+        if (parsed <= 1) {
+            return 2048u;
+        }
+        return static_cast<u32>(std::min<unsigned long>(parsed, 0xFFFFu));
+    }();
+    return window_dw;
+}
+
 static inline void PushPtr(Xbyak::CodeGenerator& c, u32 off_dw) {
     c.push(rdi);
     c.mov(rdi, ptr[rdi + (off_dw << 2)]);
@@ -170,7 +196,7 @@ static inline void PopPtr(Xbyak::CodeGenerator& c) {
     c.pop(rdi);
 };
 
-static void VisitPointer(u32 off_dw, IR::Inst* subtree, PassInfo& pass_info,
+static void VisitPointer(u32 off_dw, IR::Inst* subtree, Info& info, PassInfo& pass_info,
                          Xbyak::CodeGenerator& c) {
     PushPtr(c, off_dw);
     PassInfo::PtrUserList* use_list = pass_info.GetUsesAsPointer(subtree);
@@ -189,10 +215,43 @@ static void VisitPointer(u32 off_dw, IR::Inst* subtree, PassInfo& pass_info,
         pass_info.dst_off_dw++;
     }
 
+    // GT_DYNRC_WINDOW: dynamic readers of this pointer index into it at runtime, so no
+    // field list exists to copy - reserve a window in the flattened buffer and bulk-copy
+    // it. The copy is a dword loop through r10d ON PURPOSE: `mov r10d, [rdi + ...]` is
+    // exactly the instruction SrtWalkerSignalHandler knows how to patch, so a window that
+    // overruns the game's table into unmapped memory degrades to zeros (one patch, one
+    // warning) instead of killing the walker.
+    if (const auto dyn_it = pass_info.dyn_window_uses.find(subtree);
+        dyn_it != pass_info.dyn_window_uses.end() && !dyn_it->second.empty()) {
+        const u32 window_dw = DynReadConstWindowDw();
+        const u32 window_base_dw = pass_info.dst_off_dw;
+        ASSERT_MSG(window_base_dw < 0x8000 && window_dw <= 0xFFFF,
+                   "flatbuf window does not fit the flag encoding");
+        Xbyak::Label copy_loop;
+        c.xor_(ecx, ecx);
+        c.L(copy_loop);
+        c.mov(r10d, ptr[rdi + rcx * 4]);
+        c.mov(ptr[rsi + rcx * 4 + (window_base_dw << 2)], r10d);
+        c.inc(ecx);
+        c.cmp(ecx, window_dw);
+        c.jb(copy_loop);
+        pass_info.dst_off_dw += window_dw;
+        const u32 flags = MakeSrtWindowFlags(window_base_dw, window_dw);
+        for (IR::Inst* use : dyn_it->second) {
+            use->SetFlags<u32>(flags);
+        }
+        // Hand the window to RefreshFlatBuf so it can report, for the first few dispatches,
+        // whether the snapshot carried real data (see info.h).
+        if (info.dynrc_windows.size() < info.dynrc_windows.capacity()) {
+            info.dynrc_windows.emplace_back(window_base_dw, window_dw);
+            info.dynrc_log_budget = 4;
+        }
+    }
+
     // Then visit any children used as pointers
     for (const auto [src_off_dw, use] : *use_list) {
         if (pass_info.GetUsesAsPointer(use)) {
-            VisitPointer(src_off_dw, use, pass_info, c);
+            VisitPointer(src_off_dw, use, info, pass_info, c);
         }
     }
 
@@ -220,7 +279,7 @@ static void GenerateSrtProgram(Info& info, PassInfo& pass_info) {
     ASSERT(pass_info.dst_off_dw == info.srt_info.flattened_bufsize_dw);
 
     for (const auto& [sgpr_base, root] : pass_info.srt_roots) {
-        VisitPointer(static_cast<u32>(sgpr_base), root, pass_info, c);
+        VisitPointer(static_cast<u32>(sgpr_base), root, info, pass_info, c);
     }
 
     c.ret();
@@ -253,6 +312,64 @@ void FlattenExtendedUserdataPass(IR::Program& program) {
         for (IR::Inst& inst : *block) {
             if (inst.GetOpcode() == IR::Opcode::ReadConst) {
                 if (!inst.Arg(1).IsImmediate()) {
+                    // The SRT walker only pre-copies statically known regions; a ReadConst
+                    // with a runtime-computed offset reads whatever happens to sit in the
+                    // flattened buffer. GT7: cs_0xda05e7f8 / 0x18256c0 / 0x2a0cfcd2.
+                    // ⚠ RUN 35 PROVED STUBBING THESE IS WRONG: they are PRODUCERS in the
+                    // GPU-driven pipeline (they write descriptor tables downstream work
+                    // consumes) - as no-ops the game fed garbage to BindBuffers (assert at
+                    // vk_rasterizer.cpp:967, the run-19 signature). They were NOT the 19x
+                    // hang either (run 34: stubbed, still hung; run 35: split+defer, no hang).
+                    // So this stub sits behind ITS OWN switch, default OFF - a diagnostic,
+                    // not a fix. GT_BINDLESS_STUB (the tracker path) stays separate: those
+                    // shaders CANNOT compile at all, stubbing them is the only option.
+                    static const bool stub_dynamic = [] {
+                        const char* v = std::getenv("GT_DYNREADCONST_STUB");
+                        return v && v[0] == '1';
+                    }();
+                    if (stub_dynamic) {
+                        LOG_ERROR(Render_Recompiler,
+                                  "shader {:#x}: ReadConst has non-immediate offset - shader "
+                                  "will be stubbed",
+                                  info.pgm_hash);
+                        info.has_bindless_sharp = true;
+                        return;
+                    }
+                    if (const u32 window_dw = DynReadConstWindowDw(); window_dw != 0) {
+                        // GT_DYNRC_WINDOW: resolve the BASE the same way the static path
+                        // below does; the walker will bulk-copy `window_dw` dwords from it
+                        // (see VisitPointer) and EmitReadConst indexes inside that window.
+                        IR::Inst* ptr_composite = inst.Arg(0).InstRecursive();
+                        const auto pred = [](IR::Inst* i) -> std::optional<IR::Inst*> {
+                            if (i->GetOpcode() == IR::Opcode::GetUserData ||
+                                i->GetOpcode() == IR::Opcode::ReadConst) {
+                                return i;
+                            }
+                            return std::nullopt;
+                        };
+                        const auto base0 = IR::BreadthFirstSearch(ptr_composite->Arg(0), pred);
+                        const auto base1 = IR::BreadthFirstSearch(ptr_composite->Arg(1), pred);
+                        if (base0 && base1) {
+                            IR::Inst* ptr_lo = pass_info.DeduplicateInstruction(base0.value());
+                            // The pointer must exist in the walker's graph even when no
+                            // static read uses it, or VisitPointer never descends into it.
+                            pass_info.pointer_uses.try_emplace(ptr_lo,
+                                                               PassInfo::PtrUserList{});
+                            pass_info.dyn_window_uses[ptr_lo].push_back(&inst);
+                            if (ptr_lo->GetOpcode() == IR::Opcode::GetUserData) {
+                                pass_info.srt_roots[ptr_lo->Arg(0).ScalarReg()] = ptr_lo;
+                            }
+                            LOG_INFO(Render_Recompiler,
+                                     "shader {:#x}: dynamic ReadConst windowed ({} dwords)",
+                                     info.pgm_hash, window_dw);
+                            continue;
+                        }
+                        LOG_WARNING(Render_Recompiler,
+                                    "shader {:#x}: dynamic ReadConst base not resolvable - "
+                                    "keeping the flatbuf[0] fallback",
+                                    info.pgm_hash);
+                        continue;
+                    }
                     LOG_WARNING(Render_Recompiler, "ReadConst has non-immediate offset");
                     continue;
                 }

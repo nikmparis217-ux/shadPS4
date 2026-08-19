@@ -198,8 +198,22 @@ int IOFile::Open(const fs::path& path, FileAccessMode mode, FileType type, FileS
 
     if (!IsOpen()) {
         const auto ec = std::error_code{result, std::generic_category()};
+#ifdef _WIN32
+        // errno alone CONFLATES the two failure stories that matter here: EACCES is what both
+        // ERROR_SHARING_VIOLATION (32: another HANDLE holds the file - a sharing-mode bug or an
+        // external locker like Defender) and ERROR_ACCESS_DENIED (5: ACLs / the path really is
+        // forbidden) map to. GT7's boot crash was chased for a day as "permission denied" on a
+        // file that opens fine; the OS error names the real story in one line.
+        LOG_ERROR(Common_Filesystem,
+                  "Failed to open the file at path={}, error_message={} (os error {}{})",
+                  PathToUTF8String(file_path), ec.message(), _doserrno,
+                  _doserrno == 32   ? " = SHARING VIOLATION: another handle holds the file"
+                  : _doserrno == 5  ? " = ACCESS DENIED: ACL / genuinely forbidden"
+                                    : "");
+#else
         LOG_ERROR(Common_Filesystem, "Failed to open the file at path={}, error_message={}",
                   PathToUTF8String(file_path), ec.message());
+#endif
     }
 
     return result;

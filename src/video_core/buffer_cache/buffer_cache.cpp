@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <atomic>
+#include <cstdlib>
 #include "common/alignment.h"
 #include "common/debug.h"
 #include "common/scope_exit.h"
@@ -38,6 +40,14 @@ BufferCache::BufferCache(const Vulkan::Instance& instance_, Vulkan::Scheduler& s
     Vulkan::SetObjectName(instance.GetDevice(), gds_buffer.Handle(), "GDS Buffer");
     Vulkan::SetObjectName(instance.GetDevice(), bda_pagetable_buffer.Handle(),
                           "BDA Page Table Buffer");
+    // GT7 (19 Aug, run 77 WriteInvalid device-lost): the pagetable is DeviceLocal and was
+    // never cleared, so any page no registered buffer ever covered holds uninitialized
+    // VRAM. Upstream DMA only ever dereferences real SRT pointers, but the bindless
+    // lowering can chase a junk V# (its producer may itself still be stubbed) - a junk
+    // guest address then reads a GARBAGE non-zero "device address" here and a GPU write
+    // through it kills the device. Zero entries = the fault path, which is the designed
+    // answer for an unmapped page.
+    bda_pagetable_buffer.Fill(0, BDA_PAGETABLE_SIZE, 0);
 
     memory_tracker = std::make_unique<MemoryTracker>(tracker);
 
@@ -95,6 +105,14 @@ void BufferCache::ReadMemory(VAddr device_addr, u64 size, bool is_write) {
 
 template <bool async>
 void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 size) {
+    // Same clamp as SynchronizeBuffer, on the read side: a window past the buffer's end
+    // becomes a vkCmdCopyBuffer srcOffset outside the allocation - a raw device read with
+    // no robustness (the ReadInvalid family).
+    const VAddr dl_end = buffer.CpuAddr() + buffer.SizeBytes();
+    if (device_addr >= dl_end) {
+        return;
+    }
+    size = std::min<u64>(size, dl_end - device_addr);
     boost::container::small_vector<vk::BufferCopy, 1> copies;
     u64 total_size_bytes = 0;
     memory_tracker->ForEachDownloadRange<false>(
@@ -139,7 +157,23 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
         memory_tracker->UnmarkRegionAsGpuModified(device_addr, size);
     };
     if constexpr (async) {
-        scheduler.DeferOperation(write_data);
+        // The obvious `DeferOperation(write_data)` is a use-after-free: write_data captures the
+        // LOCALS (copies, offset, download, device_addr, size) BY REFERENCE, and a deferred op
+        // runs after this frame is gone. Latent forever upstream because the only <true> caller
+        // is the GC's clean_up, which upstream never invoked - the first GT_BUFFER_GC pass fired
+        // it and the parser thread died reading a dead stack (non-canonical rdi, fault addr -1).
+        scheduler.DeferOperation([this, own_copies = std::move(copies), own_offset = offset,
+                                  own_download = download, buffer_addr = buffer.CpuAddr(),
+                                  device_addr, size]() {
+            auto* memory = Core::Memory::Instance();
+            for (const auto& copy : own_copies) {
+                const VAddr copy_device_addr = buffer_addr + copy.srcOffset;
+                const u64 dst_offset = copy.dstOffset - own_offset;
+                memory->TryWriteBacking(std::bit_cast<u8*>(copy_device_addr),
+                                        own_download + dst_offset, copy.size);
+            }
+            memory_tracker->UnmarkRegionAsGpuModified(device_addr, size);
+        });
     } else {
         scheduler.Finish();
         write_data();
@@ -207,6 +241,22 @@ void BufferCache::BindVertexBuffers(
     // Map buffers for merged ranges
     for (auto& range : ranges_merged) {
         const u64 size = memory->ClampRangeSize(range.base_address, range.GetSize());
+        if (size == 0) {
+            // GT_SOFT_CLAMP survivor: torn vertex range - leave it unbound for this draw.
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] vertex range base {:#x} unmapped - left unbound",
+                         range.base_address);
+            continue;
+        }
+        if (size > 1_GB) {
+            // GT_SOFT_CLAMP symptom #4 (run 64): torn V# with a valid base and a garbage SIZE -
+            // one 2.6 GiB vmaCreateBuffer killed the run with ErrorOutOfDeviceMemory. No real
+            // vertex range is this big; leave it unbound for this draw.
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] vertex range base {:#x} size {} MB - torn size, left unbound",
+                         range.base_address, size >> 20);
+            continue;
+        }
         const auto [buffer, offset] = ObtainBuffer(range.base_address, size, false);
         range.vk_buffer = buffer->buffer;
         range.offset = offset;
@@ -454,6 +504,23 @@ BufferId BufferCache::FindBuffer(VAddr device_addr, u32 size) {
 }
 
 BufferCache::OverlapResult BufferCache::ResolveOverlaps(VAddr device_addr, u32 wanted_size) {
+    // GT7 (19 Aug, runs 78+81): this walked page_table with a wild index and took the
+    // process down twice - the address arrived from a junk descriptor some path had not
+    // guarded. Refuse anything outside the guest space or small enough to underflow the
+    // expand-begin math, and SAY which address so the unguarded caller can be found.
+    if (device_addr < CACHING_PAGESIZE + DEVICE_PAGESIZE ||
+        device_addr + wanted_size >= (u64{1} << 40)) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "ResolveOverlaps: refusing suspicious range {:#x}+{:#x} - junk descriptor "
+                     "reached the buffer cache unguarded",
+                     device_addr, wanted_size);
+        return OverlapResult{
+            .ids = {},
+            .begin = device_addr,
+            .end = device_addr + wanted_size,
+            .has_stream_leap = false,
+        };
+    }
     static constexpr int STREAM_LEAP_THRESHOLD = 16;
     boost::container::small_vector<BufferId, 16> overlap_ids;
     VAddr begin = device_addr;
@@ -462,7 +529,9 @@ BufferCache::OverlapResult BufferCache::ResolveOverlaps(VAddr device_addr, u32 w
     bool has_stream_leap = false;
     const auto expand_begin = [&](VAddr add_value) {
         static constexpr VAddr min_page = CACHING_PAGESIZE + DEVICE_PAGESIZE;
-        if (add_value > begin - min_page) {
+        // (begin - min_page) UNDERFLOWS for begin < min_page and the guard then never
+        // fires - device_addr wraps past 2^64 and page_table reads wild memory.
+        if (begin < min_page || add_value > begin - min_page) {
             begin = min_page;
             device_addr = DEVICE_PAGESIZE;
             return;
@@ -586,6 +655,20 @@ BufferId BufferCache::CreateBuffer(VAddr device_addr, u32 wanted_size) {
     const VAddr device_addr_end = Common::AlignUp(device_addr + wanted_size, CACHING_PAGESIZE);
     device_addr = Common::AlignDown(device_addr, CACHING_PAGESIZE);
     wanted_size = static_cast<u32>(device_addr_end - device_addr);
+    // GT7 (19 Aug, run 82): a junk descriptor base (bindless chase) aligned down to 0 got a
+    // 256 MB buffer created AND REGISTERED at guest address 0 - poisoning page_table and the
+    // BDA pagetable for the whole low 256 MB. Hand back an unregistered 1-page dummy: the
+    // caller gets a valid device buffer, nothing is claimed, nothing syncs from wild memory.
+    if (device_addr < CACHING_PAGESIZE || device_addr + wanted_size >= (u64{1} << 40)) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "CreateBuffer: junk range {:#x}+{:#x} - substituting an unregistered "
+                     "dummy page",
+                     device_addr, wanted_size);
+        return slot_buffers.insert(instance, scheduler, MemoryUsage::DeviceLocal,
+                                   CACHING_PAGESIZE,
+                                   AllFlags | vk::BufferUsageFlagBits::eShaderDeviceAddress,
+                                   CACHING_PAGESIZE);
+    }
     const OverlapResult overlap = ResolveOverlaps(device_addr, wanted_size);
     const u32 size = static_cast<u32>(overlap.end - overlap.begin);
     const BufferId new_buffer_id =
@@ -601,6 +684,10 @@ BufferId BufferCache::CreateBuffer(VAddr device_addr, u32 wanted_size) {
 
 void BufferCache::ProcessFaultBuffer() {
     fault_manager.ProcessFaultBuffer();
+}
+
+bool BufferCache::IsFaultAddressValid(VAddr addr, u64 size) {
+    return memory->IsValidGpuMapping(addr, size) && memory->IsValidMapping(addr, size);
 }
 
 void BufferCache::Register(BufferId buffer_id) {
@@ -653,6 +740,27 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
     boost::container::small_vector<vk::BufferCopy, 4> copies;
     size_t total_size_bytes = 0;
     VAddr buffer_start = buffer.CpuAddr();
+    const VAddr buffer_end = buffer_start + buffer.SizeBytes();
+    // Clamp the sync window to the VkBuffer that will receive the copies. A tail-clamped
+    // bind (256 MB window) over a smaller cache buffer used to hand ForEachUploadRange a
+    // range past the buffer's end, and the tracker's dirty ranges then became vkCmdCopyBuffer
+    // regions BEYOND the destination - GpuAV run 103 caught it red-handed, 20x
+    // "pRegions[8].dstOffset (33554432) is greater than size of dstBuffer (33554432)" plus a
+    // 4 MiB write past the end. Transfer ops have NO robustness; that is a raw device write
+    // out of the allocation, the same class as the ReadInvalid 0x300100000 family.
+    if (device_addr >= buffer_end) {
+        return false;
+    }
+    if (device_addr + size > buffer_end) {
+        static std::atomic<u32> sync_clamp_logs{0};
+        if (sync_clamp_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] SynchronizeBuffer window {:#x}+{:#x} exceeds buffer "
+                         "{:#x}+{:#x} - clamped",
+                         device_addr, size, buffer_start, buffer.SizeBytes());
+        }
+        size = static_cast<u32>(buffer_end - device_addr);
+    }
     vk::Buffer src_buffer = VK_NULL_HANDLE;
     memory_tracker->ForEachUploadRange(
         device_addr, size, is_written,
@@ -854,23 +962,79 @@ void BufferCache::RunGarbageCollector() {
     if (instance.CanReportMemoryUsage()) {
         total_used_memory = instance.GetDeviceMemoryUsage();
     }
+    // The number the "every next step drops fps massively" report needs: a periodic VRAM
+    // line (roughly every 10 s of guest frames), so the next slowdown correlates with a
+    // MEASUREMENT instead of an impression. Past the card's physical VRAM the driver pages
+    // to system RAM and that is what a progressive massive drop looks like.
+    if ((gc_tick % 600) == 0) {
+        u64 vma_bytes = 0;
+        u32 vma_allocs = 0;
+        instance.GetVmaStatistics(vma_bytes, vma_allocs);
+        LOG_INFO(Render_Vulkan,
+                 "[vram] device {} MB, VMA-owned {} MB in {} allocs, pending deaths {} "
+                 "(GC trigger {} MB)",
+                 total_used_memory >> 20, vma_bytes >> 20, vma_allocs, pending_deaths.size(),
+                 trigger_gc_memory >> 20);
+    }
     if (total_used_memory < trigger_gc_memory) {
         return;
     }
+    // Upstream defines clean_up and never calls it - the buffer GC has never deleted a single
+    // buffer, so a streaming-heavy title fills VRAM with stale buffers until vmaCreateBuffer
+    // (WITHIN_BUDGET_BIT) refuses: that is the ErrorOutOfDeviceMemory at ~650 compiles in GT7.
+    // Wired up behind GT_BUFFER_GC=1 because upstream may have parked it on purpose (note the
+    // commented-out InvalidateMemory in clean_up).
+    // ON BY DEFAULT since the all-timelines death gate exists (ProcessPendingDeaths):
+    // the cross-scheduler use-after-free that forced it off (runs 60-63) is closed, and
+    // the user's "every next step drops fps massively" is exactly what a never-freeing
+    // VRAM footprint does past the card's 12 GB. GT_BUFFER_GC=0 opts back out.
+    static const bool gc_enabled = [] {
+        const char* v = std::getenv("GT_BUFFER_GC");
+        return !(v && v[0] == '0');
+    }();
+    if (!gc_enabled) {
+        return;
+    }
     const bool aggressive = total_used_memory >= critical_gc_memory;
-    const u64 ticks_to_destroy = std::min<u64>(aggressive ? 80 : 160, gc_tick);
-    int max_deletions = aggressive ? 64 : 32;
+    // Runs 60/61 died as DEVICE LOST with usage at 9-11 GB of a 12 GB card: 64 deletions of
+    // 80-tick-old buffers per guest frame cannot outrun GT7's streaming, and the driver dies of
+    // memory pressure before our own allocation would fail. When over CRITICAL, delete YOUNG
+    // buffers too (they re-upload on demand - that costs a hitch, a dead device costs the run).
+    const u64 ticks_to_destroy = std::min<u64>(aggressive ? 8 : 160, gc_tick);
+    // Run 62: 256 deletions freed 119 MB while usage sat at 9.7 GB - the cap was the bottleneck,
+    // and the device died of pressure anyway. Aggressive mode is now bounded by the LRU itself.
+    int max_deletions = aggressive ? 4096 : 32;
+    const int allowed_deletions = max_deletions;
+    u64 freed_bytes = 0;
     const auto clean_up = [&](BufferId buffer_id) {
         if (max_deletions == 0) {
             return;
         }
         --max_deletions;
         Buffer& buffer = slot_buffers[buffer_id];
+        freed_bytes += buffer.SizeBytes();
         // InvalidateMemory(buffer.CpuAddr(), buffer.SizeBytes());
         DownloadBufferMemory<true>(buffer, buffer.CpuAddr(), buffer.SizeBytes());
         memory_tracker->MarkRegionAsCpuModified(buffer.CpuAddr(), buffer.SizeBytes());
         DeleteBuffer(buffer_id);
     };
+    lru_cache.ForEachItemBelow(gc_tick - ticks_to_destroy, clean_up);
+    const int deleted = allowed_deletions - max_deletions;
+    if (deleted > 0) {
+        LOG_WARNING(Render_Vulkan,
+                    "[buffergc] freed {} stale buffer(s) / {} MB ({}): used {} MB, trigger {} MB",
+                    deleted, freed_bytes >> 20, aggressive ? "aggressive" : "normal",
+                    total_used_memory >> 20, trigger_gc_memory >> 20);
+    }
+    if (aggressive) {
+        // The census the pressure deaths need: how much of the device figure is OURS (VMA) -
+        // the rest is the driver's. Says whether more cache GC can even help.
+        u64 vma_bytes = 0;
+        u32 vma_allocs = 0;
+        instance.GetVmaStatistics(vma_bytes, vma_allocs);
+        LOG_WARNING(Render_Vulkan, "[buffergc] census: device {} MB, VMA-owned {} MB in {} allocs",
+                    total_used_memory >> 20, vma_bytes >> 20, vma_allocs);
+    }
 }
 
 void BufferCache::TouchBuffer(const Buffer& buffer) {
@@ -880,8 +1044,44 @@ void BufferCache::TouchBuffer(const Buffer& buffer) {
 void BufferCache::DeleteBuffer(BufferId buffer_id) {
     Buffer& buffer = slot_buffers[buffer_id];
     Unregister(buffer_id);
-    scheduler.DeferOperation([this, buffer_id] { slot_buffers.erase(buffer_id); });
+    // Snapshot what the tick gate is being asked to protect, so the graveyard printed on a lost
+    // device can say whether the gate was satisfied AND on whose timeline it was measured - there
+    // are three Schedulers and each has its own MasterSemaphore, so a tick from one says nothing
+    // about the progress of another.
+    Vulkan::GpuBufferDeath death{};
+    death.handle = std::bit_cast<u64>(static_cast<VkBuffer>(buffer.Handle()));
+    death.guest_addr = buffer.CpuAddr();
+    death.size = static_cast<u32>(buffer.SizeBytes());
+    death.timeline = reinterpret_cast<u64>(scheduler.GetMasterSemaphore());
+    death.defer_tick = scheduler.CurrentTick();
+    // THE GATE, at last on ALL THREE timelines (the Act 2 3c prerequisite): the erase is
+    // queued into pending_deaths with a snapshot of every timeline's CurrentTick, and
+    // ProcessPendingDeaths (per submit, same thread) only erases once EVERY timeline has
+    // passed its snapshot - a tick from the draw scheduler alone says nothing about the
+    // present/flip command buffers that may still reference the buffer.
+    pending_deaths.push_back({buffer_id, instance.SnapshotTimelines(), death});
     buffer.is_deleted = true;
+}
+
+void BufferCache::ProcessPendingDeaths() {
+    if (pending_deaths.empty()) {
+        return;
+    }
+    // Once any timeline is lost, ticks are not lifetime guarantees and AllTimelinesPast
+    // deliberately refuses forever - erase unconditionally, the device is gone anyway and
+    // RecordBufferDeath marks these deaths as untrustworthy on its own.
+    const bool lost = instance.AnyTimelineLost();
+    std::erase_if(pending_deaths, [&](PendingBufferDeath& d) {
+        if (!lost && !instance.AllTimelinesPast(d.gate)) {
+            return false;
+        }
+        // Recorded HERE, when the erase actually happens: the interesting number is
+        // KnownGpuTick at this moment, not at the moment the deletion was queued.
+        d.death.known_gpu = scheduler.GetMasterSemaphore()->KnownGpuTick();
+        instance.RecordBufferDeath(d.death);
+        slot_buffers.erase(d.buffer_id);
+        return true;
+    });
 }
 
 } // namespace VideoCore

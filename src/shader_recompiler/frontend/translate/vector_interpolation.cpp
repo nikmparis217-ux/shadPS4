@@ -98,7 +98,13 @@ void Translator::V_INTERP_MOV_F32(const GcnInst& inst) {
     const IR::Attribute attrib = IR::Attribute::Param0 + attr_index;
     const auto& attr = runtime_info.fs_info.inputs[attr_index];
     auto& interp = info.fs_interpolation[attr_index];
-    ASSERT(attr.is_flat || inst.src[0].code == 2);
+    // GT7 (fs_0x74f5f10c) reads P10/P20 of a NON-flat attribute - per-vertex fetch for its own
+    // edge/derivative math. The branch below translates exactly that correctly via barycentrics
+    // ((src+1)%3 picks the vertex), so the assert only has teeth when NEITHER extension exists
+    // and the flat fallback would silently return vertex 0 for a P10/P20 read.
+    ASSERT(attr.is_flat || inst.src[0].code == 2 ||
+           profile.supports_amd_shader_explicit_vertex_parameter ||
+           profile.supports_fragment_shader_barycentric);
     if (profile.supports_amd_shader_explicit_vertex_parameter ||
         profile.supports_fragment_shader_barycentric) {
         // VSRC 0=P10, 1=P20, 2=P0

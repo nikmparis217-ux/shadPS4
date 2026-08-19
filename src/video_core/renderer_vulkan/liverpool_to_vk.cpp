@@ -384,7 +384,11 @@ vk::SamplerMipmapMode MipFilter(AmdGpu::MipFilter filter) {
     case AmdGpu::MipFilter::None:
         return vk::SamplerMipmapMode::eNearest;
     default:
-        UNREACHABLE();
+        // GT_SOFT_CLAMP family: a torn GPU-driven SAMPLER descriptor (S#) carries a garbage
+        // mip filter (run 68 died here mid-race). One wrong sampler beats a dead process.
+        LOG_CRITICAL(Render_Vulkan, "[softclamp] invalid S# mip filter {} - defaulting to Linear",
+                     static_cast<u32>(filter));
+        return vk::SamplerMipmapMode::eLinear;
     }
 }
 

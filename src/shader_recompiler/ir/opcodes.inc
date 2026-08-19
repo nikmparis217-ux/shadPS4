@@ -18,6 +18,8 @@ OPCODE(DebugPrint,                                          Void,           Stri
 
 // Constant memory operations
 OPCODE(ReadConst,                                           U32,            U32x2,          U32,                                                            )
+OPCODE(WriteConst,                                          Void,           U32x2,          U32,            U32,                                            )
+OPCODE(ConstAtomicIAdd32,                                   U32,            U32x2,          U32,            U32,                                            )
 OPCODE(ReadConstBuffer,                                     U32,            Opaque,         U32,                                                            )
 
 // Barriers

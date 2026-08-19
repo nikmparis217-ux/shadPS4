@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <atomic>
 #include <boost/container/small_vector.hpp>
+#include "common/alignment.h"
 #include "common/assert.h"
 #include "common/debug.h"
 #include "common/div_ceil.h"
@@ -88,6 +90,7 @@ struct PageManager::Impl {
     static constexpr size_t NUM_ADDRESS_PAGES = 1ULL << (40 - PM_PAGE_BITS);
     static constexpr size_t NUM_ADDRESS_LOCKS = NUM_ADDRESS_PAGES / PAGES_PER_LOCK;
     inline static Vulkan::Rasterizer* rasterizer;
+    inline static Impl* self;
 #ifdef ENABLE_USERFAULTFD
     Impl(Vulkan::Rasterizer* rasterizer_) {
         rasterizer = rasterizer_;
@@ -183,6 +186,7 @@ struct PageManager::Impl {
 #else
     Impl(Vulkan::Rasterizer* rasterizer_) {
         rasterizer = rasterizer_;
+        self = this;
 
         // Should be called first.
         constexpr auto priority = std::numeric_limits<u32>::min();
@@ -209,12 +213,59 @@ struct PageManager::Impl {
 
     static bool GuestFaultSignalHandler(void* context, void* fault_address) {
         const auto addr = reinterpret_cast<VAddr>(fault_address);
-        if (Common::IsWriteError(context)) {
-            return rasterizer->InvalidateMemory(addr, 8);
-        } else {
-            return rasterizer->ReadMemory(addr, 8);
+        const bool is_write = Common::IsWriteError(context);
+        const bool claimed =
+            is_write ? rasterizer->InvalidateMemory(addr, 8) : rasterizer->ReadMemory(addr, 8);
+        if (claimed) {
+            return true;
         }
-        return false;
+        // The rasterizer refused the fault because the address is not GPU-mapped - but if WE
+        // hold a protection on that page, the fault is still OURS. A tracked region that spans
+        // past the GPU-mapped area (the "Tracking memory region ... which is not fully GPU
+        // mapped" warning above) write-protects pages the rasterizer will never claim, and the
+        // guest then dies ON ITS OWN HEAP: runs 88/90 took an unhandled write AV at the last
+        // dword of the newest 2 MB direct-memory block, right at race start, reproducibly.
+        // Restore the page and claim the fault - there is no GPU data to keep coherent there,
+        // which is exactly why the rasterizer declined.
+        return self && self->ClaimOrphanedProtection(addr, is_write);
+    }
+
+    bool ClaimOrphanedProtection(VAddr addr, bool is_write) {
+        if ((addr >> PM_PAGE_BITS) >= NUM_ADDRESS_PAGES) {
+            return false;
+        }
+        const size_t page = addr >> PM_PAGE_BITS;
+        std::scoped_lock lk(locks[page / PAGES_PER_LOCK]);
+        const auto perms = cached_pages[page].Perms();
+        const bool restricted_by_us = is_write ? !True(perms & Core::MemoryPermission::Write)
+                                               : !True(perms & Core::MemoryPermission::Read);
+        if (!restricted_by_us) {
+            // The tracker grants this access, so the fault is not from our protection -
+            // a genuine guest wild access. Let the crash-dump path have it.
+            return false;
+        }
+        // Refuse to claim a fault on memory the guest never mapped: retrying the instruction
+        // there would fault forever. IsMappedMemory, NOT IsValidMapping - the latter counts
+        // FREE VMAs as valid (the run-94 lesson) and a claim on a free page would be exactly
+        // that infinite fault loop. (Unlocked read of the VMA map from a fault handler - the
+        // alternative is a certain crash, and the map is only ever grown here.)
+        if (!Core::Memory::Instance()->IsMappedMemory(addr, 1)) {
+            return false;
+        }
+        static std::atomic<u32> orphan_logs{0};
+        if (orphan_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+            LOG_CRITICAL(Render,
+                         "[softclamp] orphaned page protection at {:#x} ({} fault, page perms "
+                         "{:#x}) - restoring RW and claiming the fault",
+                         addr, is_write ? "write" : "read", static_cast<u32>(perms));
+        }
+        Protect(Common::AlignDown(addr, PM_PAGE_SIZE), PM_PAGE_SIZE,
+                Core::MemoryPermission::ReadWrite);
+        // The watcher counts are left alone on purpose: zeroing them would trip the
+        // "Not enough watchers" assert when the buffer that registered them unregisters.
+        // A later UpdatePageWatchers pass may re-protect this page; the guest then faults
+        // once more and we claim it again - forward progress either way.
+        return true;
     }
 #endif
 
@@ -248,6 +299,19 @@ struct PageManager::Impl {
         // Iterate requested pages
         const u64 aligned_addr = page << PM_PAGE_BITS;
         const u64 aligned_end = page_end << PM_PAGE_BITS;
+        // A torn GPU-driven descriptor got a region REGISTERED at guest address ZERO (run 66:
+        // "Tracking memory region 0x0 - 0x400000", then Protect(0x0) died). Worse, once that
+        // Protect learned to skip instead of assert, the sweep CONTINUED across the address
+        // space and stripped EXECUTE off the guest's own code pages - run 67 collapsed with
+        // "wild jump" DEP faults on a dozen threads at once. No legitimate guest data lives
+        // below 64 KiB; refuse the whole (un)tracking symmetrically.
+        if (aligned_addr < 0x10000) {
+            LOG_CRITICAL(Render,
+                         "[softclamp] refusing to (un)track region {:#x} - {:#x} (below the "
+                         "guest floor - torn descriptor registration)",
+                         aligned_addr, aligned_end);
+            return;
+        }
         if (!rasterizer->IsMapped(aligned_addr, aligned_end - aligned_addr)) {
             LOG_WARNING(Render,
                         "Tracking memory region {:#x} - {:#x} which is not fully GPU mapped.",

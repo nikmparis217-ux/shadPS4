@@ -61,6 +61,7 @@
 #include "core/libraries/rudp/rudp.h"
 #include "core/libraries/save_data/dialog/savedatadialog.h"
 #include "core/libraries/save_data/savedata.h"
+#include "core/libraries/device_service/device_service.h"
 #include "core/libraries/screenshot/screenshot.h"
 #include "core/libraries/share_play/shareplay.h"
 #include "core/libraries/signin_dialog/signindialog.h"
@@ -163,6 +164,7 @@ void InitHLELibs(Core::Loader::SymbolsResolver* sym) {
             {"libSceDiscMap.sprx", Libraries::DiscMap::RegisterLib},
             {"ulobjmgr.sprx", Libraries::Ulobjmgr::RegisterLib},
             {"libSceSigninDialog.sprx", Libraries::SigninDialog::RegisterLib},
+            {"libSceDeviceService.sprx", Libraries::DeviceService::RegisterLib},
             {"libSceCamera.sprx", Libraries::Camera::RegisterLib},
             {"libSceCompanionHttpd.sprx", Libraries::CompanionHttpd::RegisterLib},
             {"libSceCompanionUtil.sprx", Libraries::CompanionUtil::RegisterLib},

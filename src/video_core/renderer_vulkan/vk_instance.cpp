@@ -1,17 +1,25 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+#include <limits>
+
 #include <boost/container/static_vector.hpp>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include "common/assert.h"
 #include "common/debug.h"
+#include "common/io_file.h"
+#include "common/path_util.h"
 #include "common/types.h"
+#include "core/emulator_settings.h"
 #include "imgui/renderer/imgui_core.h"
 #include "sdl_window.h"
+#include "video_core/buffer_cache/bda_registry.h"
 #include "video_core/renderer_vulkan/liverpool_to_vk.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
+#include "video_core/renderer_vulkan/vk_master_semaphore.h"
 #include "video_core/renderer_vulkan/vk_platform.h"
 
 #include <vk_mem_alloc.h>
@@ -19,6 +27,48 @@
 namespace Vulkan {
 
 namespace {
+
+/// Same table as fmt::formatter<Shader::Stage> (runtime_info.h:295), copied rather than included so
+/// a lost device can be described without pulling the shader recompiler into this file. Keeping the
+/// spelling identical is what lets a hash printed here be matched against a dumped .spv by name.
+constexpr std::string_view StageShortName(u8 stage) {
+    constexpr std::string_view names[] = {"fs", "vs", "gs", "es", "hs", "ls", "cs"};
+    return stage < std::size(names) ? names[stage] : std::string_view{"??"};
+}
+
+constexpr std::string_view GpuWorkKindName(GpuWorkKind kind) {
+    switch (kind) {
+    case GpuWorkKind::Draw:
+        return "Draw";
+    case GpuWorkKind::DrawIndexed:
+        return "DrawIndexed";
+    case GpuWorkKind::DrawIndirect:
+        return "DrawIndirect";
+    case GpuWorkKind::DrawIndexedIndirect:
+        return "DrawIndexedIndirect";
+    case GpuWorkKind::DispatchDirect:
+        return "DispatchDirect";
+    case GpuWorkKind::DispatchIndirect:
+        return "DispatchIndirect";
+    case GpuWorkKind::HostDetile:
+        return "HOST-detile";
+    case GpuWorkKind::HostTile:
+        return "HOST-tile";
+    case GpuWorkKind::HostFsr:
+        return "HOST-fsr";
+    case GpuWorkKind::HostPostProcess:
+        return "HOST-postprocess";
+    case GpuWorkKind::HostBlit:
+        return "HOST-blit";
+    }
+    return "Unknown";
+}
+
+/// True for the emulator's own passes. They have no guest pgm_hash, so the census must name them by
+/// KIND - printing "cs_0x0" for five different host shaders would merge them into one useless row.
+constexpr bool IsHostWork(GpuWorkKind kind) {
+    return kind >= GpuWorkKind::HostDetile;
+}
 
 std::vector<vk::PhysicalDevice> EnumeratePhysicalDevices(vk::UniqueInstance& instance) {
     auto [devices_result, devices] = instance->enumeratePhysicalDevices();
@@ -167,6 +217,16 @@ Instance::Instance(Frontend::WindowSDL& window, s32 physical_device_index,
     CollectPhysicalMemoryInfo();
     CollectImageFormatInfo();
     CollectToolingInfo();
+
+    // Read the setting ONCE. RecordGpuWork runs on every draw and dispatch, so it must never touch
+    // the settings object.
+    const u64 warn_minvocations = EmulatorSettings.GetGpuWorkWarnMInvocations();
+    gpu_work_journal.warn_threshold = GpuWorkSatMul(warn_minvocations, 1'000'000);
+    if (gpu_work_journal.warn_threshold != 0) {
+        LOG_INFO(Render_Vulkan,
+                 "GPU work journal armed: last {} submissions kept, warning above {} M invocations",
+                 GpuWorkJournal::Capacity, warn_minvocations);
+    }
 }
 
 Instance::~Instance() {
@@ -203,7 +263,8 @@ bool Instance::CreateDevice() {
                           vk::PhysicalDevicePrimitiveTopologyListRestartFeaturesEXT,
                           vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT,
                           vk::PhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR,
-                          vk::PhysicalDeviceImage2DViewOf3DFeaturesEXT>();
+                          vk::PhysicalDeviceImage2DViewOf3DFeaturesEXT,
+                          vk::PhysicalDeviceFaultFeaturesEXT>();
     features = feature_chain.get().features;
 
     const vk::StructureChain properties_chain = physical_device.getProperties2<
@@ -336,6 +397,17 @@ bool Instance::CreateDevice() {
     }
     image_view_min_lod = add_extension(VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME);
     supports_memory_budget = add_extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+
+    // VK_EXT_device_fault turns "the device was lost" into an address and a fault type. It costs
+    // nothing while nothing goes wrong: the driver only fills anything in after a device loss.
+    const auto fault_features = feature_chain.get<vk::PhysicalDeviceFaultFeaturesEXT>();
+    device_fault =
+        add_extension(VK_EXT_DEVICE_FAULT_EXTENSION_NAME) && fault_features.deviceFault;
+    device_fault_vendor_binary = device_fault && fault_features.deviceFaultVendorBinary;
+    if (device_fault) {
+        LOG_INFO(Render_Vulkan, "Device fault reporting enabled (vendor binary dumps: {})",
+                 device_fault_vendor_binary ? "yes" : "no");
+    }
     const bool calibrated_timestamps =
         TRACY_GPU_ENABLED ? add_extension(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME) : false;
 
@@ -503,6 +575,10 @@ bool Instance::CreateDevice() {
         vk::PhysicalDeviceImageViewMinLodFeaturesEXT{
             .minLod = true,
         },
+        vk::PhysicalDeviceFaultFeaturesEXT{
+            .deviceFault = true,
+            .deviceFaultVendorBinary = device_fault_vendor_binary,
+        },
     };
 
     if (!custom_border_color) {
@@ -547,6 +623,9 @@ bool Instance::CreateDevice() {
     }
     if (!image_view_min_lod) {
         device_chain.unlink<vk::PhysicalDeviceImageViewMinLodFeaturesEXT>();
+    }
+    if (!device_fault) {
+        device_chain.unlink<vk::PhysicalDeviceFaultFeaturesEXT>();
     }
 
     auto [device_result, dev] = physical_device.createDeviceUnique(device_chain.get());
@@ -740,6 +819,967 @@ void Instance::CollectToolingInfo() const {
         const std::string_view name = tool.name;
         LOG_INFO(Render_Vulkan, "Attached debugging tool: {}", name);
     }
+}
+
+void Instance::LogDeviceFaultInfo() const {
+    // Anything recorded from here on is post-mortem. assert_fail_impl() runs Emulator::Shutdown()
+    // before it traps, and that shutdown flushes the deferred-operation queues against a dead GPU -
+    // so those deletions must be told apart from the ones that happened during normal play.
+    fault_already_logged.store(true, std::memory_order_release);
+    if (!device_fault) {
+        LOG_ERROR(Render_Vulkan, "Device lost, and VK_EXT_device_fault is not enabled on this "
+                                 "device - the driver cannot say where or why.");
+        // The driver has nothing to say, but WE still know what we last handed it.
+        DumpGpuWorkJournal();
+        return;
+    }
+
+    // A lost device stays lost, so every later submit reports the same loss. Query once: the
+    // driver is only required to answer, and the answer is the same for every caller.
+    std::call_once(device_fault_once, [this] {
+        // First call asks for the sizes only.
+        vk::DeviceFaultCountsEXT counts{};
+        if (const auto result = device->getFaultInfoEXT(&counts, nullptr);
+            result != vk::Result::eSuccess) {
+            LOG_ERROR(Render_Vulkan, "vkGetDeviceFaultInfoEXT (counts) failed: {}",
+                      vk::to_string(result));
+            return;
+        }
+
+        std::vector<vk::DeviceFaultAddressInfoEXT> address_infos(counts.addressInfoCount);
+        std::vector<vk::DeviceFaultVendorInfoEXT> vendor_infos(counts.vendorInfoCount);
+        std::vector<u8> vendor_binary(device_fault_vendor_binary ? counts.vendorBinarySize : 0);
+        if (!device_fault_vendor_binary) {
+            // Telling the driver we have no room for it is how the binary blob is declined.
+            counts.vendorBinarySize = 0;
+        }
+
+        vk::DeviceFaultInfoEXT info{};
+        info.pAddressInfos = address_infos.empty() ? nullptr : address_infos.data();
+        info.pVendorInfos = vendor_infos.empty() ? nullptr : vendor_infos.data();
+        info.pVendorBinaryData = vendor_binary.empty() ? nullptr : vendor_binary.data();
+
+        const auto result = device->getFaultInfoEXT(&counts, &info);
+        if (result != vk::Result::eSuccess && result != vk::Result::eIncomplete) {
+            LOG_ERROR(Render_Vulkan, "vkGetDeviceFaultInfoEXT (data) failed: {}",
+                      vk::to_string(result));
+            return;
+        }
+
+        const std::string_view description{info.description};
+        LOG_CRITICAL(Render_Vulkan, "==== DEVICE FAULT ({} address record(s), {} vendor record(s)) ====",
+                     counts.addressInfoCount, counts.vendorInfoCount);
+        LOG_CRITICAL(Render_Vulkan, "Driver description: {}",
+                     description.empty() ? "(none given)" : description);
+        if (result == vk::Result::eIncomplete) {
+            LOG_WARNING(Render_Vulkan, "The driver had more to report than it first said - "
+                                       "the records below are incomplete.");
+        }
+        if (counts.addressInfoCount == 0 && counts.vendorInfoCount == 0) {
+            LOG_CRITICAL(Render_Vulkan, "The driver reported NO records. It supports the "
+                                        "extension but knows nothing about this loss.");
+        }
+
+        // reportedAddress is only accurate to addressPrecision, which is a power of two. The
+        // useful output is the range, not the single number - a bare address invites a
+        // false-precision hunt for a byte the driver never claimed.
+        for (u32 i = 0; i < counts.addressInfoCount; ++i) {
+            const auto& addr = address_infos[i];
+            const u64 precision = addr.addressPrecision;
+            const u64 mask = precision ? ~(precision - 1) : ~u64{0};
+            const u64 lower = addr.reportedAddress & mask;
+            const u64 upper = precision ? lower + precision - 1 : lower;
+            LOG_CRITICAL(Render_Vulkan, "  address[{}] {}: 0x{:x} (in [0x{:x}, 0x{:x}], "
+                                        "precision 0x{:x})",
+                         i, vk::to_string(addr.addressType), addr.reportedAddress, lower, upper,
+                         precision);
+            // Attribute memory-access faults against the live buffer-BDA registry - until
+            // run 86 these addresses could not be joined to ANYTHING (no BDA was ever
+            // logged), which left "WriteInvalid 0x3fa37f000" a dead end three runs running.
+            // Instruction pointers are shader ISA in driver-owned memory - the registry has
+            // nothing to say about those.
+            switch (addr.addressType) {
+            case vk::DeviceFaultAddressTypeEXT::eReadInvalid:
+            case vk::DeviceFaultAddressTypeEXT::eWriteInvalid:
+            case vk::DeviceFaultAddressTypeEXT::eExecuteInvalid:
+                LOG_CRITICAL(Render_Vulkan, "  address[{}] against the buffer registry:\n{}", i,
+                             VideoCore::DescribeBdaAddressForFault(addr.reportedAddress));
+                break;
+            default:
+                break;
+            }
+        }
+        for (u32 i = 0; i < counts.vendorInfoCount; ++i) {
+            const auto& vendor = vendor_infos[i];
+            const std::string_view vendor_description{vendor.description};
+            LOG_CRITICAL(Render_Vulkan, "  vendor[{}] code 0x{:x} data 0x{:x}: {}", i,
+                         vendor.vendorFaultCode, vendor.vendorFaultData, vendor_description);
+        }
+
+        // The two families of record want OPPOSITE investigations, and the difference is easy to
+        // miss in a wall of hex - so classify it here rather than leaving it to the reader.
+        //   memory-access records  -> something read/wrote/executed an address it should not have
+        //   instruction-pointer    -> where the shaders WERE when the device died; on its own it
+        //                             says nothing was caught accessing bad memory
+        u32 mem_faults = 0, ip_records = 0;
+        u64 ip_lo = std::numeric_limits<u64>::max(), ip_hi = 0;
+        for (u32 i = 0; i < counts.addressInfoCount; ++i) {
+            switch (address_infos[i].addressType) {
+            case vk::DeviceFaultAddressTypeEXT::eReadInvalid:
+            case vk::DeviceFaultAddressTypeEXT::eWriteInvalid:
+            case vk::DeviceFaultAddressTypeEXT::eExecuteInvalid:
+                ++mem_faults;
+                break;
+            case vk::DeviceFaultAddressTypeEXT::eInstructionPointerUnknown:
+            case vk::DeviceFaultAddressTypeEXT::eInstructionPointerInvalid:
+            case vk::DeviceFaultAddressTypeEXT::eInstructionPointerFault:
+                ++ip_records;
+                ip_lo = std::min(ip_lo, static_cast<u64>(address_infos[i].reportedAddress));
+                ip_hi = std::max(ip_hi, static_cast<u64>(address_infos[i].reportedAddress));
+                break;
+            default:
+                break;
+            }
+        }
+        if (counts.addressInfoCount > 0) {
+            LOG_CRITICAL(Render_Vulkan, "SUMMARY: {} memory-access fault(s), {} instruction "
+                                        "pointer(s){}",
+                         mem_faults, ip_records,
+                         ip_records > 1 ? fmt::format(" spanning 0x{:x} bytes (0x{:x}..0x{:x})",
+                                                      ip_hi - ip_lo, ip_lo, ip_hi)
+                                        : std::string{});
+        }
+        if (mem_faults == 0 && ip_records > 0) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "SUMMARY: NO bad memory access was reported. These are only the shader "
+                         "instruction pointers that were live when the device died, so this looks "
+                         "like a HANG/TIMEOUT rather than an out-of-bounds access. Confirm in the "
+                         "Windows System event log: an nvlddmkm/amdkmdag reset at the same minute "
+                         "means the driver reset a hung engine.");
+            if (ip_records > 1 && (ip_hi - ip_lo) < 0x1000) {
+                // ⚠⚠ THIS LINE USED TO SAY "most likely one loop", AND THAT COST SIX RUNS. Clustered
+                // pointers support exactly one claim - one shader, with its live invocations parked
+                // close together - and "loop" was an inference printed in the voice of a measurement.
+                // Acting on it, every loop in every dumped shader was capped and the hang survived
+                // all of it, because at least two other mechanisms park invocations the same way and
+                // one of them is IMMUNE to an iteration cap:
+                //   - a loop that does not terminate            (a cap fixes this)
+                //   - OpControlBarrier reached non-uniformly:   (a cap CANNOT fix this - it changes
+                //     invocations that exited the loop early never arrive, so the ones still
+                //     looping wait for them for ever            WHEN they exit, not that they do)
+                //   - a shader that is merely enormous, whose hot block holds every live invocation
+                // Name the possibilities; do not pick one.
+                LOG_CRITICAL(Render_Vulkan,
+                             "SUMMARY: all {} pointers sit inside 0x{:x} bytes - that is ONE shader "
+                             "with {} invocations parked together. It does NOT by itself say a loop: "
+                             "a non-uniform OpControlBarrier and a merely-enormous shader look "
+                             "identical here, and the barrier case cannot be ruled out by capping "
+                             "iterations.",
+                             ip_records, ip_hi - ip_lo, ip_records);
+            }
+        }
+
+        // The driver has now said WHERE it died; the journal says WHAT it was running. Print it
+        // before the vendor blob, which nothing here can read anyway.
+        DumpGpuWorkJournal();
+
+        if (!vendor_binary.empty() && counts.vendorBinarySize > 0) {
+            // Trim to what the driver actually wrote, then hand it to disk - the contents are
+            // only readable by the vendor's own tooling, so there is nothing to parse here.
+            const auto written = std::min<u64>(counts.vendorBinarySize, vendor_binary.size());
+            const auto path =
+                Common::FS::GetUserPath(Common::FS::PathType::LogDir) / "device_fault.bin";
+            // NOT FileAccessMode::Write - in this codebase that maps to "r+b", i.e. open an
+            // EXISTING file, and fails with ENOENT the first time. "Create" is the one that
+            // makes the file (io_file.cpp:45-51).
+            Common::FS::IOFile file{path, Common::FS::FileAccessMode::Create};
+            if (file.IsOpen() && file.WriteRaw<u8>(vendor_binary.data(), written) == written) {
+                LOG_CRITICAL(Render_Vulkan, "Vendor crash dump ({} bytes) written to {}", written,
+                             Common::FS::PathToUTF8String(path));
+            } else {
+                LOG_ERROR(Render_Vulkan, "Could not write the {}-byte vendor crash dump to {}",
+                          written, Common::FS::PathToUTF8String(path));
+            }
+        }
+    });
+}
+
+void Instance::RecordGpuWork(const GpuWorkPayload& payload) const {
+    auto& journal = gpu_work_journal;
+    const u64 seq = journal.next_seq.fetch_add(1, std::memory_order_relaxed) + 1;
+    auto& entry = journal.entries[(seq - 1) & (GpuWorkJournal::Capacity - 1)];
+
+    // Seqlock-lite. Invalidate, write, publish - so a reader can never pair an old sequence number
+    // with a new payload. Every hook currently runs on the one GPU command processor thread, but a
+    // hook added on the present thread (fsr_pass/pp_pass) would make this undefined behaviour, and
+    // it costs two lines.
+    entry.seq.store(0, std::memory_order_relaxed);
+    std::atomic_thread_fence(std::memory_order_release);
+    entry.payload = payload;
+    entry.seq.store(seq, std::memory_order_release);
+
+    // Warn AT RECORD TIME, not only in the dump: most runs do not lose the device, and a monstrous
+    // dispatch should be visible in those too.
+    if (journal.warn_threshold == 0 || payload.work_estimate < journal.warn_threshold) {
+        return;
+    }
+    // Bound by MaxWarned, not by warned_count: the counter is deliberately allowed to run one past
+    // the table so the "table full" line can fire exactly once.
+    const u32 scanned = std::min(journal.warned_count, GpuWorkJournal::MaxWarned);
+    for (u32 i = 0; i < scanned; ++i) {
+        if (journal.warned_hashes[i] == payload.primary_hash) {
+            return;
+        }
+    }
+    if (journal.warned_count >= GpuWorkJournal::MaxWarned) {
+        // The table is full. Say so ONCE and then stop: without this the 33rd distinct shader
+        // would never be remembered and so would warn on every single frame. Recording continues
+        // regardless - the journal is the part that matters.
+        if (journal.warned_count == GpuWorkJournal::MaxWarned) {
+            ++journal.warned_count;
+            LOG_WARNING(Render_Vulkan,
+                        "{} different shaders have already been reported as huge - no more of "
+                        "these warnings this run. The work journal keeps recording.",
+                        GpuWorkJournal::MaxWarned);
+        }
+        return;
+    }
+    journal.warned_hashes[journal.warned_count++] = payload.primary_hash;
+
+    const bool saturated = payload.work_estimate == std::numeric_limits<u64>::max();
+    const bool is_dispatch = payload.kind == GpuWorkKind::DispatchDirect ||
+                             payload.kind == GpuWorkKind::DispatchIndirect;
+    LOG_WARNING(Render_Vulkan, "HUGE {} on {}_{:#018x}: {} = {} invocations{}",
+                GpuWorkKindName(payload.kind), StageShortName(payload.primary_stage),
+                payload.primary_hash,
+                is_dispatch ? fmt::format("groups {}x{}x{} threads {}x{}x{}", payload.groups[0],
+                                          payload.groups[1], payload.groups[2],
+                                          payload.threads_per_group[0],
+                                          payload.threads_per_group[1],
+                                          payload.threads_per_group[2])
+                            : fmt::format("{} vertices x {} instances x {} command(s), render "
+                                          "target {}x{}x{} = up to {} fragment",
+                                          payload.count_a, payload.count_b,
+                                          std::max(payload.groups[0], 1u), payload.rt_width,
+                                          payload.rt_height, payload.rt_layers,
+                                          payload.pixel_estimate),
+                payload.work_estimate,
+                saturated ? " (SATURATED - the counts themselves are garbage)" : "");
+    if (payload.flags & GpuWorkFlag::IndirectArgsGpuModified) {
+        LOG_WARNING(Render_Vulkan, "  ...and those counts are a STALE HOST VIEW: a shader wrote the "
+                                   "indirect arguments, so the GPU may have used other numbers.");
+    }
+}
+
+void Instance::RegisterTimeline(MasterSemaphore* semaphore) const {
+    if (semaphore == nullptr) {
+        return;
+    }
+    std::scoped_lock lk{timelines_mutex};
+    const u32 n = num_timelines.load(std::memory_order_relaxed);
+    for (u32 i = 0; i < n; ++i) {
+        if (timelines[i] == semaphore) {
+            return;
+        }
+    }
+    if (n >= GpuTimelineSet::MaxTimelines) {
+        LOG_ERROR(Render_Vulkan, "More than {} timelines exist; a lifetime gate can no longer wait "
+                                 "on all of them and resources WILL be freed while in use",
+                  GpuTimelineSet::MaxTimelines);
+        return;
+    }
+    timelines[n] = semaphore;
+    num_timelines.store(n + 1, std::memory_order_release);
+}
+
+void Instance::RegisterCommandBuffer(u64 cmdbuf, const MasterSemaphore* semaphore) const {
+    if (cmdbuf == 0) {
+        return;
+    }
+    std::scoped_lock lk{timelines_mutex};
+    u32 owner = GpuTimelineSet::MaxTimelines; // sentinel: an unregistered timeline
+    const u32 nt = num_timelines.load(std::memory_order_relaxed);
+    for (u32 i = 0; i < nt; ++i) {
+        if (timelines[i] == semaphore) {
+            owner = i;
+            break;
+        }
+    }
+    const u32 n = num_tracked_cmdbufs.load(std::memory_order_relaxed);
+    for (u32 i = 0; i < n; ++i) {
+        if (tracked_cmdbufs[i] == cmdbuf) {
+            // A pool recycles handles, but always back to the same Scheduler - if that ever stops
+            // being true the ownership table is meaningless, so say so rather than overwrite it.
+            if (tracked_cmdbuf_owner[i] != owner) {
+                LOG_ERROR(Render_Vulkan,
+                          "Command buffer {:#x} changed owner from scheduler {} to {} - command "
+                          "buffer ownership is not stable and the graveyard's attribution is void",
+                          cmdbuf, tracked_cmdbuf_owner[i], owner);
+            }
+            return;
+        }
+    }
+    if (n >= MaxTrackedCmdBufs) {
+        return;
+    }
+    tracked_cmdbufs[n] = cmdbuf;
+    tracked_cmdbuf_owner[n] = owner;
+    num_tracked_cmdbufs.store(n + 1, std::memory_order_release);
+}
+
+GpuTimelineSet Instance::SnapshotTimelines() const {
+    GpuTimelineSet set{};
+    set.count = num_timelines.load(std::memory_order_acquire);
+    for (u32 i = 0; i < set.count; ++i) {
+        set.ticks[i] = timelines[i]->CurrentTick();
+    }
+    return set;
+}
+
+u32 Instance::CountTimelinesPast(const GpuTimelineSet& set) const {
+    u32 past = 0;
+    for (u32 i = 0; i < set.count; ++i) {
+        past += timelines[i]->IsFree(set.ticks[i]) ? 1 : 0;
+    }
+    return past;
+}
+
+bool Instance::AnyTimelineLost() const {
+    const u32 n = num_timelines.load(std::memory_order_acquire);
+    for (u32 i = 0; i < n; ++i) {
+        // A refused impossible tick counts too: the timeline is still correct, but it proves the
+        // driver handed out a value that would have disabled every lifetime gate at once, and a
+        // deletion recorded around that moment should not be read as "the gate was satisfied".
+        if (timelines[i]->HasDeviceLost() || timelines[i]->HasSeenBogusTick()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Instance::AllTimelinesPast(const GpuTimelineSet& set) const {
+    // A tick sampled after the device is lost is not a lifetime guarantee, so refuse rather than
+    // report progress the GPU never made.
+    if (AnyTimelineLost()) {
+        return false;
+    }
+    return CountTimelinesPast(set) == set.count;
+}
+
+void Instance::RecordBufferDeath(GpuBufferDeath death) const {
+    // Filled in HERE rather than by the caller, because only the Instance knows about every timeline
+    // and about whether the fault has already been logged.
+    death.tick_trustworthy = !AnyTimelineLost();
+    death.during_shutdown = fault_already_logged.load(std::memory_order_acquire);
+    auto& ring = gpu_buffer_deaths;
+    const u64 n = ring.next.fetch_add(1, std::memory_order_relaxed);
+
+    // ⚠ Do NOT let the teardown flush overwrite the ring. On the measured run 764 buffers were freed
+    // into 256 slots and the tail was entirely post-mortem, so the 24 entries printed were the only
+    // ones that could say nothing - the interesting deletions had already been scrolled out.
+    if (death.during_shutdown && n >= GpuBufferDeathRing::Capacity) {
+        return;
+    }
+    ring.entries[n & (GpuBufferDeathRing::Capacity - 1)] = death;
+}
+
+void Instance::MarkGpuWorkSubmitted(u64 upto, u64 tick, u64 cmdbuf,
+                                    const MasterSemaphore* semaphore) const {
+    {
+        // Resolve which timeline this tick counts on. No lock: registration happens in the Scheduler
+        // constructors before any submit, and num_timelines is released after the slot is written.
+        u32 owner = GpuTimelineSet::MaxTimelines; // sentinel: an unregistered timeline
+        const u32 nt = num_timelines.load(std::memory_order_acquire);
+        for (u32 i = 0; i < nt; ++i) {
+            if (timelines[i] == semaphore) {
+                owner = i;
+                break;
+            }
+        }
+        auto& j = gpu_work_journal;
+        const u64 n = j.next_submit.fetch_add(1, std::memory_order_relaxed);
+        j.submits[n % GpuWorkJournal::SubmitHistory] = GpuWorkJournal::SubmitRecord{
+            .tick = tick, .seq_end = upto, .cmdbuf = cmdbuf, .timeline = owner};
+    }
+    // Monotonic: several Schedulers submit, and a later submit must never move the line backwards.
+    u64 current = gpu_work_journal.submitted_upto_seq.load(std::memory_order_relaxed);
+    while (upto > current && !gpu_work_journal.submitted_upto_seq.compare_exchange_weak(
+                                 current, upto, std::memory_order_release,
+                                 std::memory_order_relaxed)) {
+    }
+}
+
+void Instance::DumpGpuWorkJournal() const {
+    // LOG_CRITICAL, not WARNING: the logger is asynchronous and assert_fail_impl aborts, so only
+    // the levels in flush_on are guaranteed to reach the file.
+    std::call_once(gpu_work_dump_once, [this] {
+        const auto& journal = gpu_work_journal;
+        const u64 newest = journal.next_seq.load(std::memory_order_acquire);
+        const u64 submitted = journal.submitted_upto_seq.load(std::memory_order_acquire);
+        if (newest == 0) {
+            LOG_CRITICAL(Render_Vulkan, "==== LAST GPU WORK: the journal is EMPTY - no draw or "
+                                        "dispatch was ever recorded ====");
+            return;
+        }
+
+        const u64 kept = std::min<u64>(newest, GpuWorkJournal::Capacity);
+        // The DEPTH of the open command buffer is the number the previous run could not report, and
+        // it is what says whether this ring is long enough to reach the guilty submission at all.
+        const u64 open_depth = newest - std::min(newest, submitted);
+        LOG_CRITICAL(Render_Vulkan,
+                     "==== LAST GPU WORK ({} of {} submissions kept; {} of them are still in the "
+                     "OPEN command buffer, i.e. not yet handed to the driver) ====",
+                     kept, newest, open_depth);
+        if (open_depth >= kept) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "==== The open command buffer is DEEPER than the journal, so the last "
+                         "SUBMITTED work is out of reach. Raise GpuWorkJournal::Capacity above {} "
+                         "and run again. ====",
+                         open_depth);
+        }
+
+        // Whole-ring statistics first: they answer "was anything huge?" independently of how much
+        // gets printed below, and that is the question the journal exists for.
+        // TWO maxima, deliberately. One combined figure would be dominated by whichever kind of
+        // work is bigger in this scene and would silently hide the other - and "one number hid the
+        // other" is a mistake this project has already paid for more than once.
+        u64 max_disp = 0, max_disp_hash = 0;
+        u8 max_disp_stage = 0;
+        u64 max_draw = 0, max_draw_hash = 0;
+        u8 max_draw_stage = 0;
+        u64 num_submitted = 0, num_lost = 0;
+        u64 newest_submitted_seq = 0;
+        // A per-DRAW threshold cannot see a command buffer holding a thousand passes: each one is
+        // modest, the batch is not. But ⚠⚠ ONLY QUANTITIES THAT ADD UP ARE ADDED HERE.
+        // Dispatch invocations and vertex invocations are separate real work, so a sum is a sum.
+        // FRAGMENT figures are UPPER BOUNDS ON ONE RENDER AREA, and a thousand draws into the same
+        // 4096x4096 target cover that target once (times overdraw), NOT a thousand times - summing
+        // them over-reports by about the number of draws, which is how the first version of this
+        // line produced a headline "16 billion invocations" that meant nothing at all.
+        // Instead, the render targets are COUNTED per size, which is a fact.
+        u64 newest_cmdbuf = 0, cmdbuf_entries = 0;
+        u64 cmdbuf_disp_invocations = 0, cmdbuf_vertex_invocations = 0;
+        u64 cmdbuf_draws = 0, cmdbuf_dispatches = 0;
+        struct RtBucket {
+            u32 w, h;
+            u64 count;
+        };
+        std::array<RtBucket, 8> rt_hist{};
+        u32 rt_hist_used = 0;
+        u64 rt_hist_overflow = 0;
+
+        const auto read_entry = [&](u64 seq, GpuWorkPayload& out) -> bool {
+            const auto& entry = journal.entries[(seq - 1) & (GpuWorkJournal::Capacity - 1)];
+            const u64 s1 = entry.seq.load(std::memory_order_acquire);
+            if (s1 != seq) {
+                return false; // overwritten while we walked
+            }
+            out = entry.payload;
+            std::atomic_thread_fence(std::memory_order_acquire);
+            return entry.seq.load(std::memory_order_acquire) == s1; // false = torn
+        };
+
+        for (u64 i = 0; i < kept; ++i) {
+            const u64 seq = newest - i;
+            GpuWorkPayload p{};
+            if (!read_entry(seq, p)) {
+                ++num_lost;
+                continue;
+            }
+            const bool entry_is_dispatch = p.kind == GpuWorkKind::DispatchDirect ||
+                                           p.kind == GpuWorkKind::DispatchIndirect;
+            if (entry_is_dispatch) {
+                if (p.work_estimate > max_disp) {
+                    max_disp = p.work_estimate;
+                    max_disp_hash = p.primary_hash;
+                    max_disp_stage = p.primary_stage;
+                }
+            } else if (p.work_estimate > max_draw) {
+                max_draw = p.work_estimate;
+                max_draw_hash = p.primary_hash;
+                max_draw_stage = p.primary_stage;
+            }
+            if (seq <= submitted) {
+                ++num_submitted;
+                newest_submitted_seq = std::max(newest_submitted_seq, seq);
+            }
+            if (i == 0) {
+                newest_cmdbuf = p.cmdbuf;
+            }
+            if (p.cmdbuf != newest_cmdbuf) {
+                continue;
+            }
+            ++cmdbuf_entries;
+            if (entry_is_dispatch) {
+                ++cmdbuf_dispatches;
+                cmdbuf_disp_invocations =
+                    GpuWorkSatAdd(cmdbuf_disp_invocations, p.work_estimate);
+                continue;
+            }
+            ++cmdbuf_draws;
+            cmdbuf_vertex_invocations =
+                GpuWorkSatAdd(cmdbuf_vertex_invocations, GpuWorkSatMul(p.count_a, p.count_b));
+            if (p.rt_width == 0) {
+                continue; // no render target was identified for this draw
+            }
+            bool counted = false;
+            for (u32 b = 0; b < rt_hist_used; ++b) {
+                if (rt_hist[b].w == p.rt_width && rt_hist[b].h == p.rt_height) {
+                    ++rt_hist[b].count;
+                    counted = true;
+                    break;
+                }
+            }
+            if (!counted) {
+                if (rt_hist_used < rt_hist.size()) {
+                    rt_hist[rt_hist_used++] = {p.rt_width, p.rt_height, 1};
+                } else {
+                    ++rt_hist_overflow;
+                }
+            }
+        }
+        LOG_CRITICAL(Render_Vulkan,
+                     "==== Across all {} kept entries: {} submitted, {} lost to overwrite ====",
+                     kept, num_submitted, num_lost);
+        LOG_CRITICAL(Render_Vulkan,
+                     "==== BIGGEST DISPATCH: {} invocations on {}_{:#018x} | BIGGEST DRAW: {} "
+                     "(max of vertex and the render-area upper bound) on {}_{:#018x} ====",
+                     max_disp, StageShortName(max_disp_stage), max_disp_hash, max_draw,
+                     StageShortName(max_draw_stage), max_draw_hash);
+        LOG_CRITICAL(Render_Vulkan,
+                     "==== NEWEST BATCH (cmdbuf {:#x}): {} entries in the journal - {} dispatches "
+                     "totalling {} invocations, and {} draws totalling {} VERTEX invocations ====",
+                     newest_cmdbuf, cmdbuf_entries, cmdbuf_dispatches, cmdbuf_disp_invocations,
+                     cmdbuf_draws, cmdbuf_vertex_invocations);
+        {
+            // The render targets are COUNTED, never summed: N draws into one target cover it once
+            // times overdraw, so a sum of per-draw areas over-reports by roughly N.
+            std::string hist;
+            for (u32 b = 0; b < rt_hist_used; ++b) {
+                hist += fmt::format("{}{} draw(s) into {}x{}", hist.empty() ? "" : ", ",
+                                    rt_hist[b].count, rt_hist[b].w, rt_hist[b].h);
+            }
+            if (rt_hist_overflow > 0) {
+                hist += fmt::format(", plus {} draw(s) into further sizes not listed",
+                                    rt_hist_overflow);
+            }
+            LOG_CRITICAL(Render_Vulkan,
+                         "==== ITS RENDER TARGETS: {} ==== (fragment work is NOT summed - a "
+                         "per-draw area is an upper bound on ONE target, so adding them up "
+                         "over-reports by about the number of draws)",
+                         hist.empty() ? "none identified" : hist);
+        }
+
+        // Print the newest PrintDetailed in full, plus the newest SUBMITTED one even if it falls
+        // outside that window - that single entry is the whole point of the journal.
+        const auto print_entry = [&](u64 seq, const GpuWorkPayload& p) {
+            const bool was_submitted = seq <= submitted;
+            LOG_CRITICAL(Render_Vulkan, "[seq {}] {} {} {}_{:#018x}{}", seq,
+                         was_submitted ? "SUBMITTED"
+                                       : "NOT SUBMITTED (still in the open command buffer)",
+                         GpuWorkKindName(p.kind), StageShortName(p.primary_stage), p.primary_hash,
+                         p.secondary_hash != 0
+                             ? fmt::format(" + {}_{:#018x}", StageShortName(p.secondary_stage),
+                                           p.secondary_hash)
+                             : std::string{});
+            const bool is_dispatch = p.kind == GpuWorkKind::DispatchDirect ||
+                                     p.kind == GpuWorkKind::DispatchIndirect;
+            const bool is_indirect_draw = p.kind == GpuWorkKind::DrawIndirect ||
+                                          p.kind == GpuWorkKind::DrawIndexedIndirect;
+            const auto shape =
+                is_dispatch
+                    ? fmt::format("groups {}x{}x{} threads {}x{}x{}, lds {} B, vgprs {}",
+                                  p.groups[0], p.groups[1], p.groups[2], p.threads_per_group[0],
+                                  p.threads_per_group[1], p.threads_per_group[2], p.lds_bytes,
+                                  p.num_vgprs)
+                    : (is_indirect_draw
+                           ? fmt::format("{} command(s) of stride {}, first is {} vertices x {} "
+                                         "instances (the rest ASSUMED the same size)",
+                                         p.groups[0], p.groups[1], p.count_a, p.count_b)
+                           : fmt::format("{} vertices x {} instances", p.count_a, p.count_b));
+            if (is_dispatch) {
+                LOG_CRITICAL(Render_Vulkan, "         {} -> {} total invocations{}, cmdbuf {:#x}",
+                             shape, p.work_estimate,
+                             p.work_estimate == std::numeric_limits<u64>::max() ? " (SATURATED)"
+                                                                               : "",
+                             p.cmdbuf);
+            } else {
+                // Vertex and pixel are reported SEPARATELY: they are different pipeline stages, and
+                // the pixel figure is an upper bound on the render area, not a measured count.
+                LOG_CRITICAL(Render_Vulkan,
+                             "         {} -> {} vertex invocations; render target {}x{}x{} = up to "
+                             "{} fragment invocations{}, cmdbuf {:#x}",
+                             shape, GpuWorkSatMul(p.count_a, p.count_b), p.rt_width, p.rt_height,
+                             p.rt_layers, p.pixel_estimate,
+                             p.work_estimate == std::numeric_limits<u64>::max() ? " (SATURATED)"
+                                                                               : "",
+                             p.cmdbuf);
+            }
+            if (p.guest_addr != 0) {
+                const char* trust =
+                    (p.flags & GpuWorkFlag::IndirectArgsGpuModified)
+                        ? "HOST VIEW, POSSIBLY STALE - a shader wrote these arguments"
+                        : ((p.flags & GpuWorkFlag::IndirectArgsRead)
+                               ? "read from guest memory"
+                               : ((p.flags & GpuWorkFlag::IndirectArgsUnmapped)
+                                      ? "NOT MAPPED - the counts above are unknown"
+                                      : "not read"));
+                LOG_CRITICAL(Render_Vulkan, "         indirect args at {:#x} ({})", p.guest_addr,
+                             trust);
+            }
+        };
+
+        const u64 detailed = std::min<u64>(kept, GpuWorkJournal::PrintDetailed);
+        for (u64 i = 0; i < detailed; ++i) {
+            const u64 seq = newest - i;
+            GpuWorkPayload p{};
+            if (read_entry(seq, p)) {
+                print_entry(seq, p);
+            } else {
+                LOG_CRITICAL(Render_Vulkan, "[seq {}] (overwritten or torn while reading)", seq);
+            }
+        }
+        if (kept > detailed) {
+            LOG_CRITICAL(Render_Vulkan, "         ... {} older entries kept but not printed ...",
+                         kept - detailed);
+        }
+
+        u64 newest_submitted_hash = 0;
+        u8 newest_submitted_stage = 0;
+        if (newest_submitted_seq != 0) {
+            GpuWorkPayload p{};
+            if (read_entry(newest_submitted_seq, p)) {
+                newest_submitted_hash = p.primary_hash;
+                newest_submitted_stage = p.primary_stage;
+                if (newest - newest_submitted_seq >= detailed) {
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "---- and the newest SUBMITTED entry, {} entries further back ----",
+                                 newest - newest_submitted_seq);
+                    print_entry(newest_submitted_seq, p);
+                }
+            }
+        }
+
+        if (newest_submitted_hash != 0) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "==== The newest SUBMITTED entry is {}_{:#018x} at seq {}. ⚠ THAT IS NOT "
+                         "NECESSARILY THE GUILTY WORK - it is only the last entry recorded before "
+                         "the fault, so a shader that appears in nearly every command buffer will "
+                         "land here every run. See the IN FLIGHT section below, which is the set the "
+                         "GPU had actually started. ====",
+                         StageShortName(newest_submitted_stage), newest_submitted_hash,
+                         newest_submitted_seq);
+        } else {
+            LOG_CRITICAL(Render_Vulkan,
+                         "==== NOTHING in the journal had been submitted yet, so the work that "
+                         "killed the device was submitted more than {} entries ago. ====",
+                         GpuWorkJournal::Capacity);
+        }
+        // ==== WHAT THE GPU HAD ACTUALLY STARTED ====
+        // A lost device is reported asynchronously, so the guilty command buffer is one of those
+        // between the last COMPLETED tick and the one still being recorded. Everything above only
+        // says what was recorded most recently, which is a different question.
+        {
+            const u32 nt = num_timelines.load(std::memory_order_acquire);
+            const u64 nsub = gpu_work_journal.next_submit.load(std::memory_order_acquire);
+            u32 total_in_flight = 0;
+            for (u32 t = 0; t < nt; ++t) {
+                const u64 done = timelines[t]->KnownGpuTick();
+                const u64 open = timelines[t]->CurrentTick();
+                // Ticks strictly between the last completed one and the open one are in flight. Note
+                // `done` may itself be stale - Refresh refuses an impossible answer rather than
+                // believing it - so this errs towards naming one command buffer too many, which is
+                // the safe direction for a suspect list.
+                const u64 first = done + 1;
+                if (open <= first) {
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "==== IN FLIGHT on scheduler {}: nothing - the GPU had finished "
+                                 "tick {} and only tick {} was open. ====",
+                                 t, done, open);
+                    continue;
+                }
+                LOG_CRITICAL(Render_Vulkan,
+                             "==== IN FLIGHT on scheduler {} ({}): ticks {}..{} were started and "
+                             "unfinished (GPU had completed {}, tick {} was still recording). One of "
+                             "these is the work that hung. ====",
+                             t, t == 0 ? "draw" : t == 1 ? "present" : "flip", first, open - 1, done,
+                             open);
+                for (u64 tick = first; tick < open; ++tick) {
+                    // Find this tick's record and the one before it ON THE SAME TIMELINE, to bound
+                    // its seq range. Matching on the tick alone matches other schedulers' records -
+                    // see SubmitRecord::timeline.
+                    const GpuWorkJournal::SubmitRecord* self = nullptr;
+                    bool have_prev = false;
+                    u64 prev_end = 0;
+                    const u64 kept = std::min<u64>(nsub, GpuWorkJournal::SubmitHistory);
+                    for (u64 i = 0; i < kept; ++i) {
+                        const auto& r =
+                            gpu_work_journal.submits[(nsub - 1 - i) % GpuWorkJournal::SubmitHistory];
+                        if (r.timeline != t) {
+                            continue;
+                        }
+                        if (r.tick == tick) {
+                            self = &r;
+                        } else if (self && r.tick < tick) {
+                            prev_end = r.seq_end;
+                            have_prev = true;
+                            break;
+                        }
+                    }
+                    if (!self) {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "  tick {}: no submit record kept (older than the last {} "
+                                     "submits) - its work has scrolled out of the journal",
+                                     tick, GpuWorkJournal::SubmitHistory);
+                        continue;
+                    }
+                    ++total_in_flight;
+                    const u64 span = self->seq_end > prev_end ? self->seq_end - prev_end : 0;
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "  tick {} on cmdbuf {:#x}: journal seq {}..{} ({} entries){}", tick,
+                                 self->cmdbuf, prev_end, self->seq_end, span,
+                                 have_prev ? ""
+                                           : " ⚠ NO PRECEDING SUBMIT ON THIS TIMELINE IS STILL KEPT, "
+                                             "so the START of this range is a floor of 0, not a "
+                                             "measurement - the census below covers too much");
+                    // Census by shader over that range, so the suspect is named rather than inferred.
+                    //
+                    // ⚠⚠ The table used to hold EIGHT shaders and count every further ENTRY into one
+                    // `other`, which was then printed as "N further distinct shader(s)". On the run
+                    // that motivated this fix it read "870 further distinct shader(s)" for a command
+                    // buffer whose real distinct count is a fraction of that - 870 was the number of
+                    // ENTRIES not among the first eight shaders seen. Distinct shaders and entries
+                    // are different quantities and mislabelling one as the other invented a field of
+                    // 878 shaders that does not exist. Count both, and name them both.
+                    /// MEASURED: at 64 the hung command buffer overflowed by 45 entries, and those
+                    /// 45 are exactly where a rarely-used shader hides - which is the kind of shader
+                    /// a hang is most likely to be, since a common one would have been caught long
+                    /// ago. A complete census is the difference between naming the suspect and
+                    /// narrowing to "one of these plus whatever I could not see". 256 covered the
+                    /// same buffer with room to spare (65 distinct were needed).
+                    static constexpr u32 MaxCensus = 256;
+                    u64 hashes[MaxCensus]{};
+                    u8 stages[MaxCensus]{};
+                    u8 kinds[MaxCensus]{};
+                    u32 counts[MaxCensus]{};
+                    u32 nh = 0;              ///< distinct shaders TRACKED
+                    u32 overflow_entries = 0; ///< entries whose shader did not fit the table
+                    u32 readable = 0;
+                    for (u64 s = prev_end; s < self->seq_end; ++s) {
+                        GpuWorkPayload p{};
+                        if (!read_entry(s, p)) {
+                            continue;
+                        }
+                        ++readable;
+                        // The OLDEST unfinished tick is the work that hung, and a name alone
+                        // cannot separate the two remaining stories: a normal-sized dispatch
+                        // parked on a bad descriptor, or a garbage-sized one (recycled indirect
+                        // args) that is simply grinding. The dimensions decide it - print every
+                        // entry of THAT tick in full. Runs 42-47: thousands of identical
+                        // cs_0xda05e7f8 dispatches succeed, then ONE parks; what distinguishes
+                        // that one is exactly what this line exists to show.
+                        if (tick == first) {
+                            // Draw entries keep their size in count_a/count_b (indices x
+                            // instances), not in the dispatch dims - run 60 printed
+                            // "DrawIndexed ... groups 0x0x0" and could not say whether the parked
+                            // draw was normal-sized (shader loop on garbage data) or a
+                            // garbage-count monster. Print both interpretations.
+                            LOG_CRITICAL(Render_Vulkan,
+                                         "    OLDEST-TICK ENTRY seq {}: {} {:#x} groups {}x{}x{} "
+                                         "threads {}x{}x{} counts {}x{} guest_addr {:#x} lds {} "
+                                         "vgprs {}",
+                                         s, GpuWorkKindName(p.kind), p.primary_hash, p.groups[0],
+                                         p.groups[1], p.groups[2], p.threads_per_group[0],
+                                         p.threads_per_group[1], p.threads_per_group[2], p.count_a,
+                                         p.count_b, p.guest_addr, p.lds_bytes, p.num_vgprs);
+                        }
+                        // Host passes carry no guest hash, so they must be distinguished by KIND
+                        // or all five of them collapse into one row named cs_0x0.
+                        const bool host = IsHostWork(p.kind);
+                        bool found = false;
+                        for (u32 h = 0; h < nh; ++h) {
+                            if (hashes[h] == p.primary_hash && stages[h] == p.primary_stage &&
+                                (!host || kinds[h] == static_cast<u8>(p.kind))) {
+                                ++counts[h];
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            if (nh < MaxCensus) {
+                                hashes[nh] = p.primary_hash;
+                                stages[nh] = p.primary_stage;
+                                kinds[nh] = static_cast<u8>(p.kind);
+                                counts[nh] = 1;
+                                ++nh;
+                            } else {
+                                ++overflow_entries;
+                            }
+                        }
+                    }
+                    // What the ring could not answer bounds every conclusion drawn from the census,
+                    // so it is stated rather than left to be inferred from two other numbers.
+                    if (span > readable) {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "    ⚠ {} of these {} entries have already scrolled out of the "
+                                     "{}-entry journal ring and CANNOT be censused - the shader that "
+                                     "hung may be among them",
+                                     span - readable, span, GpuWorkJournal::Capacity);
+                    }
+                    if (readable == 0) {
+                        LOG_CRITICAL(Render_Vulkan, "    (no entries of this range are still in the "
+                                                    "journal ring)");
+                        continue;
+                    }
+                    for (u32 h = 0; h < nh; ++h) {
+                        const auto k = static_cast<GpuWorkKind>(kinds[h]);
+                        if (IsHostWork(k)) {
+                            LOG_CRITICAL(Render_Vulkan, "    {}x {}   <-- EMULATOR pass, not guest",
+                                         counts[h], GpuWorkKindName(k));
+                        } else {
+                            LOG_CRITICAL(Render_Vulkan, "    {}x {}_{:#018x}", counts[h],
+                                         StageShortName(stages[h]), hashes[h]);
+                        }
+                    }
+                    if (overflow_entries > 0) {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "    ...and {} further ENTRIES (not shaders - the table holds "
+                                     "{} distinct shaders and this range used more than that)",
+                                     overflow_entries, MaxCensus);
+                    } else {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "    ({} distinct shader(s) in {} readable entries - the census "
+                                     "above is COMPLETE for this range)",
+                                     nh, readable);
+                    }
+                }
+            }
+            // ⚠ Only the DRAW scheduler records journal entries: host passes (tile_manager, fsr_pass,
+            // pp_pass), blits and clears are not journaled, so the present and flip schedulers have
+            // no work of their own here. Their ranges therefore re-report whatever the draw scheduler
+            // recorded since their own last flush, and "appears in all three" is trivially true of
+            // every draw. Compare the DRAW command buffers only.
+            LOG_CRITICAL(Render_Vulkan,
+                         "==== {} in-flight command buffer(s) named above. Compare the DRAW ones "
+                         "across SEVERAL runs: a shader present in every one is a suspect, one "
+                         "present in only some is not. The present/flip ranges are NOT independent "
+                         "evidence - those schedulers journal no work of their own, so their census "
+                         "is a copy of the draw work done since their last flush. ====",
+                         total_in_flight);
+        }
+
+        // The buffer graveyard. The validation layer reports which VkBuffer was destroyed while a
+        // command buffer still referenced it; this says on WHOSE timeline the gate was measured and
+        // whether it was even satisfied - which is what separates "the gate is wrong" from "the
+        // gate was measured against the wrong Scheduler".
+        {
+            const auto& ring = gpu_buffer_deaths;
+            const u64 total = ring.next.load(std::memory_order_acquire);
+            if (total == 0) {
+                LOG_CRITICAL(Render_Vulkan, "==== BUFFER GRAVEYARD: empty - no buffer was freed "
+                                            "through DeleteBuffer this run ====");
+            } else {
+                const u64 kept_d = std::min<u64>(total, GpuBufferDeathRing::Capacity);
+                const u64 show = std::min<u64>(kept_d, GpuBufferDeathRing::PrintDetailed);
+                LOG_CRITICAL(Render_Vulkan,
+                             "==== BUFFER GRAVEYARD: {} buffers freed, newest {} shown. Join the "
+                             "handle against the validation layer's \"VkBuffer 0x... was "
+                             "destroyed\" lines. ====",
+                             total, show);
+                u64 own_tick_unmet = 0;
+                u64 shutdown_entries = 0;
+                std::array<u64, 4> seen_timelines{};
+                u32 num_seen = 0;
+                for (u64 i = 0; i < kept_d; ++i) {
+                    const auto& d = ring.entries[(total - 1 - i) & (GpuBufferDeathRing::Capacity - 1)];
+                    if (d.known_gpu < d.defer_tick) {
+                        ++own_tick_unmet;
+                    }
+                    shutdown_entries += d.during_shutdown ? 1 : 0;
+                    bool seen = false;
+                    for (u32 t = 0; t < num_seen; ++t) {
+                        seen |= seen_timelines[t] == d.timeline;
+                    }
+                    if (!seen && num_seen < seen_timelines.size()) {
+                        seen_timelines[num_seen++] = d.timeline;
+                    }
+                    if (i < show) {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "  buffer {:#x} guest {:#x}:{:#x} timeline {:#x} "
+                                     "defer_tick {} known_gpu {}{}{}",
+                                     d.handle, d.guest_addr, d.size, d.timeline, d.defer_tick,
+                                     d.known_gpu,
+                                     d.tick_trustworthy ? "" : "  TICKS UNTRUSTWORTHY",
+                                     d.during_shutdown ? "  (teardown flush)" : "");
+                    }
+                }
+                // ⚠ THE QUESTION THIS SECTION ANSWERS CHANGED, because the first version could only
+                // ever answer "no violations": it compared known_gpu against the CALLER'S OWN tick,
+                // which is exactly the comparison that is insufficient, and it did so over a window
+                // that the teardown flush had already overwritten. It reported 0 of 256 on a run
+                // whose log carried 2616 use-after-free references.
+                LOG_CRITICAL(Render_Vulkan,
+                             "==== GRAVEYARD VERDICT: {} of the newest {} entries had their OWN "
+                             "scheduler's tick unmet, {} were the teardown flush, and {} distinct "
+                             "timeline value(s) appear in this window. Registered timelines: {}. "
+                             "====",
+                             own_tick_unmet, kept_d, shutdown_entries, num_seen,
+                             GetNumTimelines());
+
+                // ⚠⚠ NO TICK COMPARISON IS PRINTED AS A VERDICT HERE, and the two that were are
+                // deleted rather than kept as extra evidence, because both were degenerate: against
+                // the caller's own tick the answer could only be "sound" (0 of 256 on a run whose log
+                // held 2616 use-after-free references), and against another Scheduler's CurrentTick
+                // it could only be "unsound" (689 of 689 on a run that was no different), since
+                // CurrentTick belongs to a command buffer that has not been submitted and
+                // KnownGpuTick is at most CurrentTick-1. A measure that saturates at 0% or at 100%
+                // separates nothing.
+                //
+                // What IS decidable is ownership. The validation layer prints the VkCommandBuffer
+                // holding a resource it saw destroyed; this table says whose it is.
+                {
+                    const u32 nc = num_tracked_cmdbufs.load(std::memory_order_acquire);
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "==== COMMAND BUFFER OWNERSHIP ({} handle(s) seen). Scheduler "
+                                 "indices are construction order, which in vk_presenter.h is 0=draw, "
+                                 "1=present, 2=flip. BufferCache and TextureCache are bound to the "
+                                 "DRAW scheduler alone (vk_presenter.cpp:502), so a handle owned by "
+                                 "1 or 2 in a \"was destroyed\" report is a resource freed against a "
+                                 "timeline that never covered it. ====",
+                                 nc);
+                    for (u32 i = 0; i < nc; ++i) {
+                        const u32 owner = tracked_cmdbuf_owner[i];
+                        LOG_CRITICAL(Render_Vulkan, "  cmdbuf {:#x} belongs to scheduler {} ({})",
+                                     tracked_cmdbufs[i], owner,
+                                     owner == 0   ? "draw - the one the caches gate against"
+                                     : owner == 1 ? "present"
+                                     : owner == 2 ? "flip"
+                                                  : "UNREGISTERED TIMELINE");
+                    }
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "==== TO FINISH THE PROOF: grep the log for "
+                                 "\"VUID-vkDestroyBuffer-buffer-00922\" and "
+                                 "\"VUID-vkDestroyImage-image-01000\", take the VkCommandBuffer each "
+                                 "one names, and look it up above. Needs a validation run - the "
+                                 "layer is the only thing that knows which command buffer still "
+                                 "referenced the resource. ====");
+                }
+            }
+        }
+
+        LOG_CRITICAL(Render_Vulkan,
+                     "==== Not in this journal: host passes (tile_manager, fsr_pass, pp_pass) and "
+                     "any blit or clear. The cmdbuf value tells you which queue an entry is on. "
+                     "A draw's estimate counts VERTEX invocations only - it says nothing about "
+                     "pixel work, so a fullscreen triangle legitimately reads as 3. ====");
+    });
+}
+
+void Instance::GetVmaStatistics(u64& used_bytes, u32& alloc_count) const {
+    VmaTotalStatistics stats{};
+    vmaCalculateStatistics(allocator, &stats);
+    used_bytes = stats.total.statistics.allocationBytes;
+    alloc_count = stats.total.statistics.allocationCount;
 }
 
 u64 Instance::GetDeviceMemoryUsage() const {

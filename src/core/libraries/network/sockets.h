@@ -98,6 +98,15 @@ struct PosixSocket : public Socket {
     int sockopt_ip_ttlchk = 0;
     int sockopt_ip_maxttl = 0;
     int sockopt_tcp_mss_to_advertise = 0;
+#ifdef _WIN32
+    // Verdict of a finished non-blocking connect. Winsock answers WSAEALREADY to every
+    // connect() re-poll even after the attempt has FAILED, and SO_ERROR is cleared by the
+    // first read - so the real result is cached here and PosixSocket::Connect() replays it,
+    // giving the game the BSD semantics it expects (EISCONN / the real error, not EALREADY
+    // forever). Without this a game polling connect() (GT7's SimpleTcpClient) spins eternally
+    // on a refused connection.
+    int win_nb_connect_error = 0;
+#endif
     int socket_type;
     explicit PosixSocket(int domain, int type, int protocol)
         : Socket(domain, type, protocol), sock(socket(domain, type, protocol)) {

@@ -136,12 +136,28 @@ void Visit(Info& info, const IR::Inst& inst) {
                 .buffer_type = BufferType::Flatbuf,
             });
         }
-        if (inst.Flags<u32>() != 0) {
+        // A windowed dynamic ReadConst (GT_DYNRC_WINDOW, bit 31 - see srt.h) has non-zero
+        // flags but is still DYNAMIC: under DMA it must call read_const_dynamic, which only
+        // exists when ReadConstType::Dynamic is set here. A BINDLESS read (bit 30, made by
+        // GT_BINDLESS_LOWER) is dynamic ALWAYS - it reads through a GPU-fetched V# that no
+        // flatbuf snapshot can stand in for.
+        if (const u32 rc_flags = inst.Flags<u32>(); rc_flags & SrtBindlessFlagBit) {
+            info.readconst_types |= Info::ReadConstType::Dynamic;
+            info.uses_bindless_reads = true;
+        } else if (rc_flags != 0 && (rc_flags & SrtWindowFlagBit) == 0) {
             info.readconst_types |= Info::ReadConstType::Immediate;
         } else {
             info.readconst_types |= Info::ReadConstType::Dynamic;
         }
         info.uses_dma = true;
+        break;
+    case IR::Opcode::WriteConst:
+    case IR::Opcode::ConstAtomicIAdd32:
+        // Only the bindless lowering creates these - GPU-time store through the BDA
+        // pagetable. Needs get_bda_pointer (uses_dma) and survives global-DMA-off via
+        // the same keep-alive as the lowered reads.
+        info.uses_dma = true;
+        info.uses_bindless_reads = true;
         break;
     case IR::Opcode::PackUfloat10_11_11:
         info.uses_pack_10_11_11 = true;
@@ -163,8 +179,17 @@ void CollectShaderInfoPass(IR::Program& program, const Profile& profile) {
     }
 
     if (!EmulatorSettings.IsDirectMemoryAccessEnabled()) {
-        info.uses_dma = false;
-        info.readconst_types = Info::ReadConstType::None;
+        if (info.uses_bindless_reads) {
+            // Selective DMA (GT_BINDLESS_LOWER): keep the BDA pagetable + fault buffer +
+            // read_const_dynamic for THIS shader only. Every static ReadConst still reads
+            // the flatbuf snapshot (EmitReadConst routes on the flag bits), so Dynamic is
+            // the only type needed - and only the handful of bindless shaders pay the
+            // rasterizer's per-submit DMA synchronization, not the whole game (run 74).
+            info.readconst_types = Info::ReadConstType::Dynamic;
+        } else {
+            info.uses_dma = false;
+            info.readconst_types = Info::ReadConstType::None;
+        }
     }
 
     if (info.uses_dma) {

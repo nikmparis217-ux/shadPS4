@@ -56,8 +56,83 @@ Id EmitGetUserData(EmitContext& ctx, IR::ScalarReg reg) {
     return ud_reg;
 }
 
+// GT_BINDLESS_LOWER: the write half of the GPU-time path. Resolve the guest address
+// through the BDA pagetable and store one dword; a page that is not resident records a
+// fault (get_bda_pointer does that) and the store is dropped this frame - the page will
+// exist on the next one, mirroring what the read path does with its zero fallback.
+void EmitWriteConst(EmitContext& ctx, IR::Inst* inst, Id base, Id offset, Id value) {
+    const Id base_lo{ctx.OpUConvert(ctx.U64, ctx.OpCompositeExtract(ctx.U32[1], base, 0))};
+    const Id base_hi{ctx.OpUConvert(ctx.U64, ctx.OpCompositeExtract(ctx.U32[1], base, 1))};
+    const Id base_addr{
+        ctx.OpBitwiseOr(ctx.U64, base_lo, ctx.OpShiftLeftLogical(ctx.U64, base_hi, ctx.ConstU32(32U)))};
+    const Id offset_bytes{ctx.OpShiftLeftLogical(ctx.U32[1], offset, ctx.ConstU32(2U))};
+    const Id addr{ctx.OpIAdd(ctx.U64, base_addr, ctx.OpUConvert(ctx.U64, offset_bytes))};
+
+    const Id ptr64 = ctx.OpFunctionCall(ctx.U64, ctx.get_bda_pointer, addr);
+    const Id is_available = ctx.OpINotEqual(ctx.U1[1], ptr64, ctx.u64_zero_value);
+    const Id store_label = ctx.OpLabel();
+    const Id merge_label = ctx.OpLabel();
+    ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
+    ctx.OpBranchConditional(is_available, store_label, merge_label);
+    ctx.AddLabel(store_label);
+    const Id addr_ptr = ctx.OpConvertUToPtr(ctx.physical_pointer_type_u32, ptr64);
+    ctx.OpStore(addr_ptr, value, spv::MemoryAccessMask::Aligned, 4u);
+    ctx.OpBranch(merge_label);
+    ctx.AddLabel(merge_label);
+}
+
+// GT_BINDLESS_LOWER: atomic add through the BDA path (buffer_atomic_add off a GPU-fetched
+// V#). Non-resident page: fault recorded by get_bda_pointer, op dropped, returns 0.
+Id EmitConstAtomicIAdd32(EmitContext& ctx, IR::Inst* inst, Id base, Id offset, Id value) {
+    const Id base_lo{ctx.OpUConvert(ctx.U64, ctx.OpCompositeExtract(ctx.U32[1], base, 0))};
+    const Id base_hi{ctx.OpUConvert(ctx.U64, ctx.OpCompositeExtract(ctx.U32[1], base, 1))};
+    const Id base_addr{
+        ctx.OpBitwiseOr(ctx.U64, base_lo, ctx.OpShiftLeftLogical(ctx.U64, base_hi, ctx.ConstU32(32U)))};
+    const Id offset_bytes{ctx.OpShiftLeftLogical(ctx.U32[1], offset, ctx.ConstU32(2U))};
+    const Id addr{ctx.OpIAdd(ctx.U64, base_addr, ctx.OpUConvert(ctx.U64, offset_bytes))};
+
+    const Id ptr64 = ctx.OpFunctionCall(ctx.U64, ctx.get_bda_pointer, addr);
+    const Id is_available = ctx.OpINotEqual(ctx.U1[1], ptr64, ctx.u64_zero_value);
+    const Id op_label = ctx.OpLabel();
+    const Id skip_label = ctx.OpLabel();
+    const Id merge_label = ctx.OpLabel();
+    ctx.OpSelectionMerge(merge_label, spv::SelectionControlMask::MaskNone);
+    ctx.OpBranchConditional(is_available, op_label, skip_label);
+    ctx.AddLabel(op_label);
+    const Id addr_ptr = ctx.OpConvertUToPtr(ctx.physical_pointer_type_u32, ptr64);
+    const Id scope = ctx.ConstU32(static_cast<u32>(spv::Scope::Device));
+    const Id result =
+        ctx.OpAtomicIAdd(ctx.U32[1], addr_ptr, scope, ctx.u32_zero_value, value);
+    ctx.OpBranch(merge_label);
+    ctx.AddLabel(skip_label);
+    ctx.OpBranch(merge_label);
+    ctx.AddLabel(merge_label);
+    return ctx.OpPhi(ctx.U32[1], result, op_label, ctx.u32_zero_value, skip_label);
+}
+
 Id EmitReadConst(EmitContext& ctx, IR::Inst* inst, Id addr, Id offset) {
-    const u32 flatbuf_off_dw = inst->Flags<u32>();
+    const u32 flags = inst->Flags<u32>();
+    if (flags & SrtBindlessFlagBit) {
+        // GT_BINDLESS_LOWER: this read's base is a V# the shader itself fetched at GPU
+        // time - there is no flatbuf snapshot of it, the ONLY correct source is guest
+        // memory through the BDA walk, whatever the global DMA setting says.
+        return ctx.OpFunctionCall(ctx.U32[1], ctx.read_const_dynamic, addr, offset);
+    }
+    if (flags & SrtWindowFlagBit) {
+        // GT_DYNRC_WINDOW (GT7): the SRT walker bulk-copied a window of this pointer's
+        // guest memory into the flatbuf. The offset operand is the shader's own runtime
+        // dword offset into the pointer; clamp it inside the window so a stray index can
+        // never read another window's data. Under DMA the honest dynamic read exists -
+        // prefer it (it sees GPU-time memory, the window is a dispatch-time snapshot).
+        if (EmulatorSettings.IsDirectMemoryAccessEnabled()) {
+            return ctx.OpFunctionCall(ctx.U32[1], ctx.read_const_dynamic, addr, offset);
+        }
+        const Id clamped =
+            ctx.OpUMin(ctx.U32[1], offset, ctx.ConstU32(SrtWindowSizeDw(flags) - 1u));
+        return ctx.EmitFlatbufferLoad(
+            ctx.OpIAdd(ctx.U32[1], ctx.ConstU32(SrtWindowBaseDw(flags)), clamped));
+    }
+    const u32 flatbuf_off_dw = flags;
     if (!EmulatorSettings.IsDirectMemoryAccessEnabled()) {
         return ctx.EmitFlatbufferLoad(ctx.ConstU32(flatbuf_off_dw));
     }

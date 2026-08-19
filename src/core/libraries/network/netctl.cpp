@@ -96,7 +96,15 @@ int PS4_SYSV_ABI sceNetCtlUnregisterCallbackV6() {
 }
 
 int PS4_SYSV_ABI sceNetCtlCheckCallback() {
-    LOG_DEBUG(Lib_NetCtl, "(STUBBED) called");
+    // This is the PS4's dispatch point for pending network-state-change callbacks: a game
+    // registers one with sceNetCtlRegisterCallback and then polls this every frame to have it
+    // delivered on its own thread. It was a no-op, so a registered callback could never fire.
+    // NetCtlInternal::CheckCallback() was already written and correct, and NOTHING in the whole
+    // tree called it (grep: zero callers) - unlike the NP side, which dispatches properly in
+    // sceNpCheckCallback. Found because GT7 hangs at "INITIALIZING..." having called this
+    // 6486 times in one run while five threads spun at 100% waiting for a state that never came.
+    LOG_DEBUG(Lib_NetCtl, "called");
+    netctl.CheckCallback();
     return ORBIS_OK;
 }
 

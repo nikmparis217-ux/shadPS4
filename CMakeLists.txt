@@ -718,6 +718,8 @@ set(MISC_LIBS  src/core/libraries/screenshot/screenshot.cpp
                src/core/libraries/ulobjmgr/ulobjmgr.h
                src/core/libraries/signin_dialog/signindialog.cpp
                src/core/libraries/signin_dialog/signindialog.h
+               src/core/libraries/device_service/device_service.cpp
+               src/core/libraries/device_service/device_service.h
 )
 
 set(CAMERA_LIBS  src/core/libraries/camera/camera.cpp
@@ -1080,6 +1082,7 @@ set(VIDEO_CORE src/video_core/amdgpu/cb_db_extent.h
                src/video_core/amdgpu/resource.h
                src/video_core/amdgpu/tiling.cpp
                src/video_core/amdgpu/tiling.h
+               src/video_core/buffer_cache/bda_registry.h
                src/video_core/buffer_cache/buffer.cpp
                src/video_core/buffer_cache/buffer.h
                src/video_core/buffer_cache/buffer_cache.cpp
@@ -1330,7 +1333,7 @@ elseif (${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
 endif()
 
 if (WIN32)
-    target_link_libraries(shadps4 PRIVATE mincore wepoll wbemuuid)
+    target_link_libraries(shadps4 PRIVATE mincore wepoll wbemuuid dbghelp)
 
     if (MSVC)
         # MSVC likes putting opinions on what people can use, disable:

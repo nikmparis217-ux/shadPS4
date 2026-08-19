@@ -50,11 +50,15 @@ struct UniqueBuffer {
     UniqueBuffer(UniqueBuffer&& other)
         : allocator{std::exchange(other.allocator, VK_NULL_HANDLE)},
           allocation{std::exchange(other.allocation, VK_NULL_HANDLE)},
-          buffer{std::exchange(other.buffer, VK_NULL_HANDLE)} {}
+          buffer{std::exchange(other.buffer, VK_NULL_HANDLE)},
+          bda_addr{std::exchange(other.bda_addr, 0)} {}
     UniqueBuffer& operator=(UniqueBuffer&& other) {
         buffer = std::exchange(other.buffer, VK_NULL_HANDLE);
         allocator = std::exchange(other.allocator, VK_NULL_HANDLE);
         allocation = std::exchange(other.allocation, VK_NULL_HANDLE);
+        // Without this, the moved-from wrapper kept the BDA and its destructor would
+        // unregister the range while the moved-to buffer was still alive.
+        bda_addr = std::exchange(other.bda_addr, 0);
         return *this;
     }
 

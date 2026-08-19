@@ -1,6 +1,11 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+#include <bit>
+#include <cstring>
+#include <iterator>
+
 #include "common/debug.h"
 #include "core/debug_state.h"
 #include "core/emulator_settings.h"
@@ -46,6 +51,10 @@ Rasterizer::Rasterizer(const Instance& instance_, Scheduler& scheduler_,
 }
 
 Rasterizer::~Rasterizer() = default;
+
+bool Rasterizer::HasPendingGpuWork() const noexcept {
+    return instance.PeekGpuWorkSeq() != instance.SubmittedUptoGpuWorkSeq();
+}
 
 void Rasterizer::CpSync() {
     scheduler.EndRendering();
@@ -186,6 +195,84 @@ void Rasterizer::EliminateFastClear() {
     ScopeMarkerEnd();
 }
 
+/// The command buffer handle is kept in the journal only so entries can be grouped per queue - it
+/// is never dereferenced, which is what makes it safe to hold on a dying device.
+static u64 CmdBufValue(vk::CommandBuffer cmdbuf) {
+    static_assert(sizeof(VkCommandBuffer) == sizeof(u64),
+                  "the journal stores a command buffer handle as an opaque u64");
+    return std::bit_cast<u64>(static_cast<VkCommandBuffer>(cmdbuf));
+}
+
+void Rasterizer::CollectShaderIdentity(const Pipeline* pipeline, GpuWorkPayload& out) const {
+    u32 found = 0;
+    for (const auto* stage : pipeline->GetStages()) {
+        if (!stage) {
+            continue;
+        }
+        if (found == 0) {
+            out.primary_hash = stage->pgm_hash;
+            out.primary_stage = static_cast<u8>(stage->stage);
+        } else {
+            out.secondary_hash = stage->pgm_hash;
+            out.secondary_stage = static_cast<u8>(stage->stage);
+        }
+        if (++found == 2) {
+            break;
+        }
+    }
+}
+
+void Rasterizer::NoteDrawPixelWork(const RenderState& state, u64 vertex_invocations,
+                                   GpuWorkPayload& out) const {
+    // ⚠⚠ BeginRendering SEEDS width/height with the DEVICE MAXIMUM (vk_rasterizer.cpp:1024) and
+    // then min()s them down against each attachment. A draw with no colour and no depth attachment
+    // therefore leaves them at 32768x32768, and reading that as a render area reports 1.07 BILLION
+    // fragments for a 4-vertex draw - which is exactly what the first run of this code did. Note
+    // that num_layers IS normalised back to 1 a few lines later (:1138) but the extent is NOT, so
+    // "layers looks sane" is no evidence that the extent does.
+    const bool has_target = state.num_color_attachments > 0 ||
+                            static_cast<bool>(state.depth_stencil_attachment.image_view);
+    const bool extent_is_device_max = state.width >= instance.GetMaxFramebufferWidth() ||
+                                      state.height >= instance.GetMaxFramebufferHeight();
+    if (!has_target || extent_is_device_max) {
+        // No render target to bound the work, so there is no honest pixel figure. Leave it zero -
+        // an unmarked guess reads as a fact.
+        out.rt_width = 0;
+        out.rt_height = 0;
+        out.rt_layers = 0;
+        out.pixel_estimate = 0;
+        out.work_estimate = vertex_invocations;
+        return;
+    }
+    out.rt_width = state.width;
+    out.rt_height = state.height;
+    out.rt_layers = std::max<u32>(state.num_layers, 1u);
+    out.pixel_estimate =
+        GpuWorkSatMul(GpuWorkSatMul(out.rt_width, out.rt_height), out.rt_layers);
+    // MAX, not sum: the two numbers measure different pipeline stages, and adding them would invent
+    // a quantity that is neither. The threshold should fire on whichever half is monstrous.
+    out.work_estimate = std::max(vertex_invocations, out.pixel_estimate);
+}
+
+bool Rasterizer::TryReadIndirectArgs(VAddr addr, u32 num_dwords, u32* out, bool* gpu_modified) {
+    *gpu_modified = false;
+    if (addr == 0 || num_dwords == 0 || (addr % sizeof(u32)) != 0) {
+        return false;
+    }
+    const u64 num_bytes = u64{num_dwords} * sizeof(u32);
+    // IsMapped, not MemoryManager::IsValidMapping - the latter walks vma_map without its lock.
+    if (!IsMapped(addr, num_bytes)) {
+        return false;
+    }
+    // memcpy rather than a struct cast: the guest buffer is only guaranteed dword aligned.
+    std::memcpy(out, std::bit_cast<const u32*>(addr), num_bytes);
+    // A plain staleness STAMP, never a readback. Downloading the buffer for accuracy would put a
+    // GPU->CPU stall inside the very submission being measured, which is exactly the class of
+    // change that made the CDL run stop reproducing the bug.
+    *gpu_modified = buffer_cache.IsRegionGpuModified(addr, num_bytes);
+    return true;
+}
+
 void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
     RENDERER_TRACE;
 
@@ -222,6 +309,17 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
 
     const auto cmdbuf = scheduler.CommandBuffer();
     cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->Handle());
+
+    // Record only work that actually reaches the command buffer, so the journal's order is the
+    // order the GPU was given - hence after every early-out above, not at function entry.
+    GpuWorkPayload work{};
+    work.kind = is_indexed ? GpuWorkKind::DrawIndexed : GpuWorkKind::Draw;
+    work.cmdbuf = CmdBufValue(cmdbuf);
+    work.count_a = regs.num_indices;
+    work.count_b = regs.num_instances.NumInstances();
+    NoteDrawPixelWork(state, GpuWorkSatMul(work.count_a, work.count_b), work);
+    CollectShaderIdentity(pipeline, work);
+    instance.RecordGpuWork(work);
 
     if (is_indexed) {
         cmdbuf.drawIndexed(regs.num_indices, regs.num_instances.NumInstances(), 0,
@@ -291,6 +389,43 @@ void Rasterizer::DrawIndirect(bool is_indexed, VAddr arg_address, u32 offset, u3
     const auto cmdbuf = scheduler.CommandBuffer();
     cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->Handle());
 
+    {
+        GpuWorkPayload work{};
+        work.kind = is_indexed ? GpuWorkKind::DrawIndexedIndirect : GpuWorkKind::DrawIndirect;
+        work.cmdbuf = CmdBufValue(cmdbuf);
+        work.guest_addr = arg_address + offset;
+        // max_count is load-bearing, not bookkeeping: drawIndirect issues that MANY commands, so
+        // total work is per-command work TIMES max_count. Kept in groups[] because count_a/count_b
+        // carry the per-command numbers read below; the dump prints them for indirect draws.
+        work.groups[0] = max_count;
+        work.groups[1] = stride;
+        work.count_a = 0;
+        work.count_b = 0;
+        // Only the FIRST command of the array, deliberately: walking max_count of them would read
+        // an unbounded amount of guest memory on every indirect draw. So the estimate ASSUMES the
+        // other commands are the same size - it is an order of magnitude, not a count.
+        u32 args[8]{};
+        const u32 num_dwords = std::min<u32>(stride / sizeof(u32), std::size(args));
+        bool stale = false;
+        if (num_dwords > 0 && TryReadIndirectArgs(work.guest_addr, num_dwords, args, &stale)) {
+            work.flags |= GpuWorkFlag::IndirectArgsRead;
+            if (stale) {
+                work.flags |= GpuWorkFlag::IndirectArgsGpuModified;
+            }
+            // VkDraw(Indexed)IndirectCommand both start with a count then an instance count.
+            work.count_a = args[0];
+            if (num_dwords > 1) {
+                work.count_b = args[1];
+            }
+        } else {
+            work.flags |= GpuWorkFlag::IndirectArgsUnmapped;
+        }
+        NoteDrawPixelWork(
+            state, GpuWorkSatMul(GpuWorkSatMul(work.count_a, work.count_b), max_count), work);
+        CollectShaderIdentity(pipeline, work);
+        instance.RecordGpuWork(work);
+    }
+
     if (is_indexed) {
         ASSERT(sizeof(VkDrawIndexedIndirectCommand) == stride);
 
@@ -336,15 +471,113 @@ void Rasterizer::DispatchDirect() {
         return;
     }
 
+    // GT_SKIP_EMPTY_DYNRC (default on, '0' = off): a producer dispatched while its dynrc
+    // window is ALL ZERO consumes a guest table that has not been written yet - guaranteed
+    // garbage, and with a WARM pipeline cache these dispatches run seconds earlier than any
+    // cold boot ever did (no compile stalls), which is the race behind the deterministic
+    // early ReadInvalid of runs 100/101/104 (cold run 99 was clean; stubbing the producer
+    // removed the fault in run 98). The game re-dispatches every frame, so skipping the
+    // unfed ones costs nothing once the table exists.
+    static const bool skip_empty_dynrc = [] {
+        const char* v = std::getenv("GT_SKIP_EMPTY_DYNRC");
+        return !(v && v[0] == '0');
+    }();
+    if (skip_empty_dynrc && cs.HasAllZeroDynrcWindow()) {
+        static std::atomic<u32> empty_dynrc_logs{0};
+        if (empty_dynrc_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] cs {:#x}: dynrc window ALL ZERO - dispatch skipped "
+                         "(guest table not written yet)",
+                         cs.pgm_hash);
+        }
+        return;
+    }
+
     scheduler.EndRendering();
     pipeline->BindResources(set_writes, buffer_barriers, push_data);
 
     const auto cmdbuf = scheduler.CommandBuffer();
     cmdbuf.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline->Handle());
+
+    GpuWorkPayload work{};
+    work.kind = GpuWorkKind::DispatchDirect;
+    work.cmdbuf = CmdBufValue(cmdbuf);
+    work.groups[0] = cs_program.dim_x;
+    work.groups[1] = cs_program.dim_y;
+    work.groups[2] = cs_program.dim_z;
+    work.threads_per_group[0] = cs_program.num_thread_x.full;
+    work.threads_per_group[1] = cs_program.num_thread_y.full;
+    work.threads_per_group[2] = cs_program.num_thread_z.full;
+    work.lds_bytes = cs_program.SharedMemSize();
+    work.num_vgprs = static_cast<u32>(cs_program.settings.num_vgprs);
+    work.work_estimate = GpuWorkSatMul(
+        GpuWorkSatMul(GpuWorkSatMul(work.groups[0], work.groups[1]), work.groups[2]),
+        GpuWorkSatMul(GpuWorkSatMul(work.threads_per_group[0], work.threads_per_group[1]),
+                      work.threads_per_group[2]));
+    work.primary_hash = cs.pgm_hash;
+    work.primary_stage = static_cast<u8>(cs.stage);
+    instance.RecordGpuWork(work);
+
     cmdbuf.dispatch(cs_program.dim_x, cs_program.dim_y, cs_program.dim_z);
     DebugState.IncDispatch();
 
     ResetBindings();
+
+    // GT_DISPATCH_BARRIER=1: a full memory barrier after every dispatch, WITHOUT splitting the
+    // submission. Companion experiment to GT_SPLIT_DISPATCH, and the pair is what separates the
+    // mechanism: splitting made the game run PAST the point where seven consecutive runs hung
+    // (182 shader compiles, byte-stable fault signature - this run reached 203 and died on an
+    // unrelated recompiler limit). A submit boundary changes several things at once; a barrier
+    // changes exactly one - the visibility/ordering of this dispatch's writes for everything after
+    // it, indirect argument reads included.
+    //     barrier alone also passes the wall -> a MISSING BARRIER after some dispatch is the bug
+    //         (a consumer - e.g. an indirect draw/dispatch reading GPU-written arguments - runs on
+    //         garbage and the garbage is unbounded work, which is a TDR with zero memory faults)
+    //     barrier alone still hangs         -> the cure was something else a submit does, and the
+    //         search moves there (per-submit host work, descriptor timing, queue pacing)
+    static const bool barrier_after_dispatch = [] {
+        const char* v = std::getenv("GT_DISPATCH_BARRIER");
+        return v && std::atoi(v) != 0;
+    }();
+    // GT_BINDLESS_LOWER (19 Aug, run 83 device fault): a shader with GPU-time BDA WRITES
+    // (WriteConst / ConstAtomicIAdd32) bypasses every buffer-cache barrier - the next pass
+    // reads those pages with no ordering at all. Always fence THESE dispatches; they are a
+    // handful per frame, so this is not the global GT_DISPATCH_BARRIER cost.
+    if (barrier_after_dispatch || cs.uses_dma) {
+        const vk::MemoryBarrier2 mem_barrier = {
+            .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+            .srcAccessMask = vk::AccessFlagBits2::eShaderWrite,
+            .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+            .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
+        };
+        cmdbuf.pipelineBarrier2(vk::DependencyInfo{
+            .memoryBarrierCount = 1,
+            .pMemoryBarriers = &mem_barrier,
+        });
+    }
+
+    // GT_SPLIT_DISPATCH=N: submit after every Nth dispatch, so each gets its own timeline tick.
+    //
+    // WHY: the device-fault census can only bound the hung work by TICK, and a tick normally covers
+    // a whole command buffer - measured at ~6400 draws/dispatches here, 70 distinct shaders, which
+    // is a suspect LIST, not a suspect. Splitting at dispatch boundaries (safe: EndRendering has
+    // already run on this path, so no render pass is open) shrinks each tick's range to the work
+    // between two dispatches - about 14 entries in the hung region - and the census then NAMES the
+    // guilty range instead of narrowing it by one shader-patch experiment per run. Diagnostic only:
+    // hundreds of extra submits per frame is real overhead, so it is env-gated, default off.
+    // Read once - getenv on every dispatch would be thousands of libc calls a frame.
+    static const int split_every = [] {
+        const char* v = std::getenv("GT_SPLIT_DISPATCH");
+        return v ? std::atoi(v) : 0;
+    }();
+    if (split_every > 0) {
+        static int since_split = 0;
+        if (++since_split >= split_every) {
+            since_split = 0;
+            SubmitInfo info{};
+            scheduler.Flush(info);
+        }
+    }
 }
 
 void Rasterizer::DispatchIndirect(VAddr address, u32 offset, u32 size) {
@@ -374,10 +607,97 @@ void Rasterizer::DispatchIndirect(VAddr address, u32 offset, u32 size) {
 
     const auto cmdbuf = scheduler.CommandBuffer();
     cmdbuf.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline->Handle());
+
+    // The group counts of an indirect dispatch NEVER pass through the host - the GPU takes them
+    // straight out of a buffer - so a dispatch of 2^32 workgroups is otherwise entirely invisible.
+    // This is the one place that can see it at all.
+    GpuWorkPayload work{};
+    work.kind = GpuWorkKind::DispatchIndirect;
+    work.cmdbuf = CmdBufValue(cmdbuf);
+    work.guest_addr = address + offset;
+    work.threads_per_group[0] = cs_program.num_thread_x.full;
+    work.threads_per_group[1] = cs_program.num_thread_y.full;
+    work.threads_per_group[2] = cs_program.num_thread_z.full;
+    work.lds_bytes = cs_program.SharedMemSize();
+    work.num_vgprs = static_cast<u32>(cs_program.settings.num_vgprs);
+    {
+        u32 args[3]{};
+        bool stale = false;
+        if (TryReadIndirectArgs(work.guest_addr, 3, args, &stale)) {
+            work.flags |= GpuWorkFlag::IndirectArgsRead;
+            if (stale) {
+                work.flags |= GpuWorkFlag::IndirectArgsGpuModified;
+            }
+            work.groups[0] = args[0];
+            work.groups[1] = args[1];
+            work.groups[2] = args[2];
+            work.work_estimate = GpuWorkSatMul(
+                GpuWorkSatMul(GpuWorkSatMul(work.groups[0], work.groups[1]), work.groups[2]),
+                GpuWorkSatMul(GpuWorkSatMul(work.threads_per_group[0], work.threads_per_group[1]),
+                              work.threads_per_group[2]));
+        } else {
+            work.flags |= GpuWorkFlag::IndirectArgsUnmapped;
+        }
+    }
+    CollectShaderIdentity(pipeline, work);
+    instance.RecordGpuWork(work);
+
     cmdbuf.dispatchIndirect(buffer->Handle(), base);
     DebugState.IncDispatch();
 
     ResetBindings();
+
+    // GT_DISPATCH_BARRIER=1: a full memory barrier after every dispatch, WITHOUT splitting the
+    // submission. Companion experiment to GT_SPLIT_DISPATCH, and the pair is what separates the
+    // mechanism: splitting made the game run PAST the point where seven consecutive runs hung
+    // (182 shader compiles, byte-stable fault signature - this run reached 203 and died on an
+    // unrelated recompiler limit). A submit boundary changes several things at once; a barrier
+    // changes exactly one - the visibility/ordering of this dispatch's writes for everything after
+    // it, indirect argument reads included.
+    //     barrier alone also passes the wall -> a MISSING BARRIER after some dispatch is the bug
+    //         (a consumer - e.g. an indirect draw/dispatch reading GPU-written arguments - runs on
+    //         garbage and the garbage is unbounded work, which is a TDR with zero memory faults)
+    //     barrier alone still hangs         -> the cure was something else a submit does, and the
+    //         search moves there (per-submit host work, descriptor timing, queue pacing)
+    static const bool barrier_after_dispatch = [] {
+        const char* v = std::getenv("GT_DISPATCH_BARRIER");
+        return v && std::atoi(v) != 0;
+    }();
+    if (barrier_after_dispatch) {
+        const vk::MemoryBarrier2 mem_barrier = {
+            .srcStageMask = vk::PipelineStageFlagBits2::eComputeShader,
+            .srcAccessMask = vk::AccessFlagBits2::eShaderWrite,
+            .dstStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+            .dstAccessMask = vk::AccessFlagBits2::eMemoryRead | vk::AccessFlagBits2::eMemoryWrite,
+        };
+        cmdbuf.pipelineBarrier2(vk::DependencyInfo{
+            .memoryBarrierCount = 1,
+            .pMemoryBarriers = &mem_barrier,
+        });
+    }
+
+    // GT_SPLIT_DISPATCH=N: submit after every Nth dispatch, so each gets its own timeline tick.
+    //
+    // WHY: the device-fault census can only bound the hung work by TICK, and a tick normally covers
+    // a whole command buffer - measured at ~6400 draws/dispatches here, 70 distinct shaders, which
+    // is a suspect LIST, not a suspect. Splitting at dispatch boundaries (safe: EndRendering has
+    // already run on this path, so no render pass is open) shrinks each tick's range to the work
+    // between two dispatches - about 14 entries in the hung region - and the census then NAMES the
+    // guilty range instead of narrowing it by one shader-patch experiment per run. Diagnostic only:
+    // hundreds of extra submits per frame is real overhead, so it is env-gated, default off.
+    // Read once - getenv on every dispatch would be thousands of libc calls a frame.
+    static const int split_every = [] {
+        const char* v = std::getenv("GT_SPLIT_DISPATCH");
+        return v ? std::atoi(v) : 0;
+    }();
+    if (split_every > 0) {
+        static int since_split = 0;
+        if (++since_split >= split_every) {
+            since_split = 0;
+            SubmitInfo info{};
+            scheduler.Flush(info);
+        }
+    }
 }
 
 u64 Rasterizer::Flush() {
@@ -399,6 +719,10 @@ void Rasterizer::OnSubmit() {
     texture_cache.ProcessDownloadImages();
     texture_cache.RunGarbageCollector();
     buffer_cache.RunGarbageCollector();
+    // Drain the all-timelines-gated buffer graveyard here (per submit, on the one thread
+    // every DeleteBuffer caller uses) - NOT via DeferOperation, whose callbacks run under
+    // pending_ops_mutex and cannot re-queue themselves.
+    buffer_cache.ProcessPendingDeaths();
 }
 
 bool Rasterizer::BindResources(const Pipeline* pipeline) {
@@ -608,7 +932,63 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
     for (const auto& desc : stage.buffers) {
         const auto vsharp = desc.GetSharp(stage);
         if (!desc.IsSpecial() && vsharp.base_address != 0 && vsharp.GetSize() > 0) {
-            const u64 size = memory->ClampRangeSize(vsharp.base_address, vsharp.GetSize());
+            // A V# whose base sits below the guest floor (or within a page of the top of the
+            // 40-bit guest space) is torn, full stop - no legitimate guest data lives there;
+            // the page manager refuses trackings under 64 KiB for the same reason. Runs
+            // 83/84/86 postmortem: base 0x24 passed the base!=0 entry guard above, took the
+            // tail clamp, CreateBuffer aligned it down to 0 and substituted the 16 KiB dummy,
+            // and Buffer::Offset(0x24 - 0x4000) underflowed into a ~4 GiB descriptor offset
+            // on a 16 KiB buffer - the IP+WriteInvalid device fault of all three runs.
+            // Null-bind it here, before any of that machinery can run.
+            constexpr VAddr GuestFloor = 64_KB;
+            if (vsharp.base_address < GuestFloor ||
+                vsharp.base_address >= (1ULL << 40) - GuestFloor) {
+                static std::atomic<u32> floor_logs{0};
+                if (floor_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "[softclamp] shader {:#x}: V# base {:#x} size {:#x} outside the "
+                                 "guest floor/ceiling - null-bound (seq {})",
+                                 stage.pgm_hash, vsharp.base_address, vsharp.GetSize(),
+                                 instance.PeekGpuWorkSeq());
+                }
+                buffer_bindings.emplace_back(VideoCore::BufferId{}, vsharp, 0);
+                continue;
+            }
+            // NOT torn after all - run 65 measured it: dozens of V#s at DIFFERENT bases inside a
+            // ~2.6 GiB heap, each sized "whatever remains to the end of the heap" (561/584 MB,
+            // 2.62 GiB in run 64). Classic TAIL DESCRIPTORS - legitimate engine practice. The
+            // emulator's mistake was mirroring the whole tail into a device buffer per bind:
+            // that is the 2.62 GiB vmaCreateBuffer OOM of run 64 (and likely runs 55/56).
+            // Null-binding them (the first cap) broke every material instead. The honest middle:
+            // bind the FIRST 256 MB of the tail - shaders index near their base, robustness
+            // zero-fills anything past the clamp - and never ask VMA for a GiB again.
+            static const bool soft_size = [] {
+                const char* v = std::getenv("GT_SOFT_CLAMP");
+                return v && v[0] == '1';
+            }();
+            constexpr u64 TailBindCap = 256_MB;
+            u64 wanted_size = vsharp.GetSize();
+            if (soft_size && wanted_size > TailBindCap) {
+                static std::atomic<u32> tail_logs{0};
+                if (tail_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "[softclamp] shader {:#x}: V# base {:#x} size {} MB - tail "
+                                 "descriptor, binding the first {} MB",
+                                 stage.pgm_hash, vsharp.base_address, wanted_size >> 20,
+                                 TailBindCap >> 20);
+                }
+                wanted_size = TailBindCap;
+            }
+            const u64 size = memory->ClampRangeSize(vsharp.base_address, wanted_size);
+            if (size == 0) {
+                // GT_SOFT_CLAMP survivor: a torn V# (see ClampRangeSize). Null-bind it loudly
+                // instead of asking the buffer cache for a buffer at an unmapped address.
+                LOG_CRITICAL(Render_Vulkan,
+                             "[softclamp] shader {:#x}: V# base {:#x} unmapped - null-bound",
+                             stage.pgm_hash, vsharp.base_address);
+                buffer_bindings.emplace_back(VideoCore::BufferId{}, vsharp, 0);
+                continue;
+            }
             const auto buffer_id = buffer_cache.FindBuffer(vsharp.base_address, size);
             buffer_bindings.emplace_back(buffer_id, vsharp, size);
         } else {
@@ -674,9 +1054,47 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                 vsharp.base_address, size, desc.is_written, desc.is_formatted, buffer_id);
             const u32 offset_aligned = Common::AlignDown(offset, alignment);
             const u32 adjust = offset - offset_aligned;
+            // GT_SOFT_CLAMP family, symptom #2: a V# whose base is MAPPED but garbage-misaligned
+            // (the run-19/35/50 `adjust % 4` assert). Same torn GPU-driven descriptor as the
+            // unmapped 0x24 case, wearing a base the validity check cannot reject. Null-bind one
+            // frame, loudly, instead of killing the process.
+            static const bool soft_misaligned = [] {
+                const char* v = std::getenv("GT_SOFT_CLAMP");
+                return v && v[0] == '1';
+            }();
+            // Never emit a descriptor whose window lies outside the VkBuffer that backs it: a
+            // torn V# that survives every base guard (or an underflowed Offset) otherwise
+            // becomes an out-of-range VkDescriptorBufferInfo - undefined behaviour that
+            // robustness does NOT cover (robustness bounds accesses against the DECLARED
+            // range; a range past the allocation is invalid usage) and the measured
+            // WriteInvalid family of runs 83/84/86. Clamp against the real backing size.
+            const u64 backing_size = vk_buffer->SizeBytes();
+            const bool offset_past_end = offset_aligned >= backing_size;
+            if ((soft_misaligned && (adjust % 4) != 0) || offset_past_end) {
+                LOG_CRITICAL(Render_Vulkan,
+                             "[softclamp] shader {:#x}: V# base {:#x} {} - null-bound",
+                             stage.pgm_hash, vsharp.base_address,
+                             offset_past_end
+                                 ? fmt::format("descriptor offset {:#x} past backing size {:#x}",
+                                               offset_aligned, backing_size)
+                                 : fmt::format("misaligned (adjust {})", adjust));
+                buffer_infos.emplace_back(VK_NULL_HANDLE, 0, VK_WHOLE_SIZE);
+            } else {
             ASSERT(adjust % 4 == 0);
+            u64 bind_range = size + adjust;
+            if (offset_aligned + bind_range > backing_size) {
+                static std::atomic<u32> range_logs{0};
+                if (range_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "[softclamp] shader {:#x}: V# base {:#x} descriptor range {:#x} "
+                                 "at offset {:#x} exceeds backing size {:#x} - clamped",
+                                 stage.pgm_hash, vsharp.base_address, bind_range, offset_aligned,
+                                 backing_size);
+                }
+                bind_range = backing_size - offset_aligned;
+            }
             push_data.AddOffset(binding.buffer, adjust);
-            buffer_infos.emplace_back(vk_buffer->Handle(), offset_aligned, size + adjust);
+            buffer_infos.emplace_back(vk_buffer->Handle(), offset_aligned, bind_range);
             if (auto barrier =
                     vk_buffer->GetBarrier(desc.is_written ? vk::AccessFlagBits2::eShaderWrite
                                                           : vk::AccessFlagBits2::eShaderRead,
@@ -685,6 +1103,7 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
             }
             if (desc.is_written && desc.is_formatted) {
                 texture_cache.InvalidateMemoryFromGPU(vsharp.base_address, size);
+            }
             }
         }
 
@@ -703,6 +1122,26 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
 void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindings& binding) {
     image_bindings.clear();
     const u32 first_image_idx = image_infos.size();
+    // GT_IMG_TRACE=1: one line per image binding of the three GT7 producer shaders, carrying the
+    // journal seq so it JOINS the stall dump's "OLDEST-TICK ENTRY seq N" exactly. Written because
+    // the parked dispatch (cs_0xda05e7f8, 4x4x6 - dims normal, data real, fences honest) can only
+    // be waiting on ITS images: cs_img31 is a mip-fallback descriptor ARRAY indexed by
+    // flatbuf[29], and an index past NumBindings is a GPU-side OOB descriptor read - parked
+    // invocations, no CPU-visible fault, and only the deep-mip dispatches would break, which is
+    // exactly the one-in-thousands profile.
+    static const bool img_trace = [] {
+        const char* v = std::getenv("GT_IMG_TRACE");
+        return v && v[0] == '1';
+    }();
+    const bool trace_this =
+        img_trace && (stage.pgm_hash == 0xda05e7f8u || stage.pgm_hash == 0x018256c0u ||
+                      stage.pgm_hash == 0x2a0cfcd2u);
+    if (trace_this) {
+        const auto& fb = stage.flattened_ud_buf;
+        LOG_CRITICAL(Render_Vulkan, "[imgtrace] seq {} cs {:#x}: fb29 {} fb39 {}",
+                     instance.PeekGpuWorkSeq(), stage.pgm_hash,
+                     fb.size() > 29 ? fb[29] : 0xdeadu, fb.size() > 39 ? fb[39] : 0xdeadu);
+    }
     // For loading/storing to explicit mip levels, when no native instruction support, bind an array
     // of descriptors consecutively, 1 for each mip level. The shader can index this with LOD
     // operand.
@@ -717,6 +1156,17 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
         }
 
         if (tsharp.Address() == 0 || tsharp.GetDataFmt() == AmdGpu::DataFormat::FormatInvalid) {
+            image_bindings.emplace_back(std::piecewise_construct, std::tuple{}, std::tuple{});
+            image_descriptor_array_sizes.push_back(1);
+            continue;
+        }
+        if (!memory->IsValidMapping(tsharp.Address())) {
+            // A torn T# (same disease as the softclamp V# case): the address is nonzero but
+            // nothing is mapped there - the game has not written this descriptor yet. FindImage
+            // would die in ClampRangeSize; null-bind one frame instead, loudly.
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] shader {:#x}: T# address {:#x} unmapped - null-bound",
+                         stage.pgm_hash, tsharp.Address());
             image_bindings.emplace_back(std::piecewise_construct, std::tuple{}, std::tuple{});
             image_descriptor_array_sizes.push_back(1);
             continue;
@@ -740,6 +1190,15 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
 
             image_id = texture_cache.FindImage(desc);
             auto* image = &texture_cache.GetImage(image_id);
+            if (trace_this) {
+                LOG_CRITICAL(Render_Vulkan,
+                             "[imgtrace]   img: va {:#x} dfmt {} type {} bindings {} bind_i {} "
+                             "mips {} base_mip {}",
+                             tsharp.Address(), static_cast<u32>(tsharp.GetDataFmt()),
+                             static_cast<u32>(desc.type), num_bindings, i,
+                             static_cast<u32>(tsharp.last_level - tsharp.base_level + 1),
+                             static_cast<u32>(desc.view_info.range.base.level));
+            }
             if (auto depth_image_id = texture_cache.GetAssociatedDepth(*image)) {
                 // If this image has an associated depth image, it's a stencil attachment.
                 // Redirect the access to the actual depth-stencil buffer.

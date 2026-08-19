@@ -11,6 +11,7 @@
 #include "video_core/buffer_cache/fault_manager.h"
 #include "video_core/buffer_cache/range_set.h"
 #include "video_core/multi_level_page_table.h"
+#include "video_core/renderer_vulkan/vk_instance.h"
 
 namespace AmdGpu {
 struct Liverpool;
@@ -146,6 +147,12 @@ public:
     /// Processes the fault buffer.
     void ProcessFaultBuffer();
 
+    /// GT7 (19 Aug): true when the address range is real, mapped guest memory. The fault
+    /// buffer can carry junk pages when a bindless-lowered shader chases a garbage V#
+    /// (its producer may itself still be stubbed) - creating buffers for those crashed
+    /// the CPU in ResolveOverlaps (run 78).
+    bool IsFaultAddressValid(VAddr addr, u64 size);
+
     /// Synchronizes all buffers in the specified range.
     void SynchronizeBuffersInRange(VAddr device_addr, u64 size);
 
@@ -198,6 +205,28 @@ private:
     void TouchBuffer(const Buffer& buffer);
 
     void DeleteBuffer(BufferId buffer_id);
+
+public:
+    /// Erase every queued buffer death whose gate has been satisfied by ALL timelines.
+    /// Called once per submit from Rasterizer::OnSubmit - the same thread every
+    /// DeleteBuffer caller runs on, so no locking. NOT a DeferOperation: those callbacks
+    /// run under pending_ops_mutex and re-queueing from inside one deadlocks.
+    void ProcessPendingDeaths();
+
+private:
+    /// One deferred buffer destruction, gated on EVERY timeline (draw, present, flip).
+    /// The old DeferOperation-based erase waited on the DRAW tick alone while present and
+    /// flip command buffers could still reference the buffer - the documented reason the
+    /// buffer GC had to stay off (Act 2 3c) and the "2616 use-after-free references" of the
+    /// validation runs. The gate snapshots CurrentTick of all timelines at DeleteBuffer
+    /// time; while the game presents, present/flip tick every frame, so a gate passes
+    /// within a frame or two. Deaths only accumulate while presentation idles.
+    struct PendingBufferDeath {
+        BufferId buffer_id;
+        Vulkan::GpuTimelineSet gate;
+        Vulkan::GpuBufferDeath death;
+    };
+    std::vector<PendingBufferDeath> pending_deaths;
 
     const Vulkan::Instance& instance;
     Vulkan::Scheduler& scheduler;

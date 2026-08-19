@@ -107,6 +107,21 @@ u64 MemoryManager::ClampRangeSize(VAddr virtual_addr, u64 size) {
     }
 
     std::shared_lock lk{mutex};
+    // GT_SOFT_CLAMP=1: GT7's GPU-driven stream hands the parser descriptors the game has not
+    // finished writing yet (run 49: a V#/T# base of 0x24 - a field offset off a null object).
+    // Killing the process here turns ONE torn descriptor into a lost session; returning 0 turns
+    // it into one wrong binding for one frame, and the streaming work self-corrects on the next.
+    // The log line keeps the event measurable. Default OFF: every other game keeps the assert.
+    static const bool soft_clamp = [] {
+        const char* v = std::getenv("GT_SOFT_CLAMP");
+        return v && v[0] == '1';
+    }();
+    if (soft_clamp && !IsValidMapping(virtual_addr)) {
+        LOG_CRITICAL(Kernel_Vmm, "[softclamp] unmapped address {:#x} handed to ClampRangeSize - "
+                     "returning size 0 instead of dying (torn GPU-driven descriptor)",
+                     virtual_addr);
+        return 0;
+    }
     ASSERT_MSG(IsValidMapping(virtual_addr), "Attempted to access invalid address {:#x}",
                virtual_addr);
 
@@ -146,8 +161,14 @@ void MemoryManager::SetPrtArea(u32 id, VAddr address, u64 size) {
 
 void MemoryManager::CopySparseMemory(VAddr virtual_addr, u8* dest, u64 size) {
     std::shared_lock lk{mutex};
-    ASSERT_MSG(IsValidMapping(virtual_addr), "Attempted to access invalid address {:#x}",
-               virtual_addr);
+    if (!IsValidMapping(virtual_addr)) {
+        // GT_SOFT_CLAMP family: an upload sourced from a torn GPU-driven descriptor (run 70:
+        // address 0x0, mid-race). A zero-filled texture beats a dead process.
+        LOG_CRITICAL(Core, "[softclamp] CopySparseMemory from invalid {:#x} ({} bytes) - zeroed",
+                     virtual_addr, size);
+        std::memset(dest, 0, size);
+        return;
+    }
 
     auto vma = FindVMA(virtual_addr);
     while (size) {
@@ -334,10 +355,26 @@ s32 MemoryManager::Free(PAddr phys_addr, u64 size, bool is_checked) {
         for (auto& [offset_in_vma, phys_mapping] : mapping.phys_areas) {
             if (phys_addr + size > phys_mapping.base &&
                 phys_addr < phys_mapping.base + phys_mapping.size) {
-                const u64 phys_offset =
-                    std::max<u64>(phys_mapping.base, phys_addr) - phys_mapping.base;
+                // Clamp to the part of the released range that actually overlaps THIS mapping.
+                // Clamping against the total release length instead (the old behaviour) unmaps
+                // too much whenever the release starts before the mapping does.
+                const u64 phys_start = std::max<u64>(phys_mapping.base, phys_addr);
+                const u64 phys_end =
+                    std::min<u64>(phys_mapping.base + phys_mapping.size, phys_addr + size);
+                const u64 phys_offset = phys_start - phys_mapping.base;
                 const VAddr addr_in_vma = mapping.base + offset_in_vma + phys_offset;
-                const u64 unmap_size = std::min<u64>(phys_mapping.size - phys_offset, size);
+                const u64 unmap_size = phys_end - phys_start;
+
+                // Diagnostic: report when the old formula would have over-unmapped, so the
+                // bug can be seen firing even though it is now fixed.
+                const u64 old_unmap_size = std::min<u64>(phys_mapping.size - phys_offset, size);
+                if (old_unmap_size > unmap_size) {
+                    LOG_WARNING(Kernel_Vmm,
+                                "over-unmap avoided at {:#x}: would have unmapped {:#x} instead "
+                                "of {:#x}; range [{:#x}, {:#x}) stays mapped",
+                                addr_in_vma, old_unmap_size, unmap_size, addr_in_vma + unmap_size,
+                                addr_in_vma + old_unmap_size);
+                }
 
                 // Unmapping might erase from vma_map. We can't do it here.
                 remove_list.emplace_back(addr_in_vma, unmap_size);

@@ -50,6 +50,8 @@ bool Inst::MayHaveSideEffects() const noexcept {
     case Opcode::SetAttribute:
     case Opcode::SetTcsGenericAttribute:
     case Opcode::SetPatch:
+    case Opcode::WriteConst:
+    case Opcode::ConstAtomicIAdd32:
     case Opcode::StoreBufferU8:
     case Opcode::StoreBufferU16:
     case Opcode::StoreBufferU32:
