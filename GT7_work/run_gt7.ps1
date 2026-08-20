@@ -363,7 +363,9 @@ if ($Net) {
     # it, OpUMin-clamped, NonUniform-decorated. Value = window size; 0 = off (stub fallback,
     # exactly the pre-20-Aug behavior). Log proof: "lowered to a windowed descriptor array".
     # Same cache warning as GT_DYNRC_WINDOW below: flipping this needs a cache wipe.
-    Set-GtDefault 'GT_BINDLESS_IMGARRAY' '16'
+    # '0' FOR RUNS 117/118 (the run-116 mip-bake verdict must carry ONE variable);
+    # flip to '16' + wipe the cache folder for run 119.
+    Set-GtDefault 'GT_BINDLESS_IMGARRAY' '0'
     # GT_DYNRC_WINDOW (18 Aug, afternoon - the designed fix from HANDOFF_RENDERING.md):
     # the three GPU-driven producer shaders (cs_0xda05e7f8 / 0x18256c0 / 0x2a0cfcd2) carry
     # ReadConst with RUNTIME offsets; without DMA those used to read flatbuf[0] = garbage =
