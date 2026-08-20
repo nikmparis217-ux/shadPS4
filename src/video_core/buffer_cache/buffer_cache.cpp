@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <memory>
 #include <atomic>
 #include <cstdlib>
 #include "common/alignment.h"
@@ -17,6 +18,24 @@
 #include "video_core/texture_cache/texture_cache.h"
 
 namespace VideoCore {
+
+namespace {
+/// A dropped or clamped copy region is a bug somewhere upstream, so it must be visible - but
+/// it can happen per range per draw, and run 65 proved that a per-draw CRITICAL is its own I/O
+/// tax. Budgeted: loud 16 times, then silent.
+void LogCopyClamp(const Buffer& buffer, u64 addr, u64 asked, u64 kept) {
+    static u32 logged = 0;
+    if (logged >= 16) {
+        return;
+    }
+    ++logged;
+    LOG_WARNING(Render_Vulkan,
+                "[copyclamp] range {:#x}+{:#x} does not fit buffer {:#x}+{:#x} - {}{}",
+                addr, asked, buffer.CpuAddr(), buffer.SizeBytes(),
+                kept == 0 ? "dropped" : "kept ", kept == 0 ? std::string{} : fmt::format("{:#x}", kept));
+}
+} // namespace
+
 
 static constexpr size_t DataShareBufferSize = 64_KB;
 static constexpr size_t StagingBufferSize = 512_MB;
@@ -119,6 +138,16 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
         device_addr, size, [&](u64 device_addr_out, u64 range_size) {
             const VAddr buffer_addr = buffer.CpuAddr();
             const auto add_download = [&](VAddr start, VAddr end) {
+                // Same overshoot as the upload path, on the SOURCE side this time (it would
+                // read past the end of this buffer instead of writing past it). Clamped here
+                // for the same reason, before any region reaches the driver.
+                const VAddr buffer_limit = buffer_addr + buffer.SizeBytes();
+                start = std::max<VAddr>(start, buffer_addr);
+                end = std::min<VAddr>(end, buffer_limit);
+                if (start >= end) {
+                    LogCopyClamp(buffer, start, 0, 0);
+                    return;
+                }
                 const u64 new_offset = start - buffer_addr;
                 const u64 new_size = end - start;
                 copies.push_back(vk::BufferCopy{
@@ -137,15 +166,38 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
     if (total_size_bytes == 0) {
         return;
     }
-    const auto [download, offset] = download_buffer.Map(total_size_bytes);
+    // ⚠⚠ THE DEVICE LOSS OF RUNS 111-115 WAS HERE. download_buffer is a FIXED 32 MB window and
+    // StreamBuffer::Map returns {nullptr, 0} when asked for more (buffer.cpp:261) - the tracker
+    // hands back whole dirty 4 MiB words, so one wide invalidation easily wants dozens. Nothing
+    // checked the result: the regions went to vkCmdCopyBuffer anyway with dstOffsets marching
+    // 32/36/40/44 MiB into a 32 MiB buffer (GpuAV: VUID-vkCmdCopyBuffer-dstOffset-00114 and
+    // size-00116, 20 + 2 findings), and write_data would then have dereferenced nullptr. On this
+    // driver the illegal copy became an unmapped WRITE inside the driver own 512-byte copy
+    // kernel, which is why the vendor dump read "Write 0x2000x000, engine reset, shader hash
+    // N/A" and named no shader of ours at all.
+    // A temporary buffer sized for the job is what the UPLOAD path already does for exactly
+    // this case (see UploadCopies), so the writeback is kept rather than dropped.
+    auto [download, offset] = download_buffer.Map(total_size_bytes);
+    std::unique_ptr<Buffer> temp_download;
+    if (download == nullptr) {
+        temp_download = std::make_unique<Buffer>(instance, scheduler, MemoryUsage::Download, 0,
+                                                vk::BufferUsageFlagBits::eTransferDst,
+                                                total_size_bytes);
+        download = temp_download->mapped_data.data();
+        offset = 0;
+        LogCopyClamp(buffer, device_addr, total_size_bytes, 0);
+    }
     for (auto& copy : copies) {
         // Modify copies to have the staging offset in mind
         copy.dstOffset += offset;
     }
-    download_buffer.Commit();
+    if (!temp_download) {
+        download_buffer.Commit();
+    }
     scheduler.EndRendering();
     const auto cmdbuf = scheduler.CommandBuffer();
-    cmdbuf.copyBuffer(buffer.buffer, download_buffer.Handle(), copies);
+    cmdbuf.copyBuffer(buffer.buffer,
+                      temp_download ? temp_download->Handle() : download_buffer.Handle(), copies);
     const auto write_data = [&]() {
         auto* memory = Core::Memory::Instance();
         for (const auto& copy : copies) {
@@ -156,6 +208,13 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
         }
         memory_tracker->UnmarkRegionAsGpuModified(device_addr, size);
     };
+    // A temporary download buffer lives on THIS stack, so its readback cannot be deferred:
+    // finish and write back here. This path is a rare oversized invalidation, not a hot one.
+    if (temp_download) {
+        scheduler.Finish();
+        write_data();
+        return;
+    }
     if constexpr (async) {
         // The obvious `DeferOperation(write_data)` is a use-after-free: write_data captures the
         // LOCALS (copies, offset, download, device_addr, size) BY REFERENCE, and a deferred op
@@ -765,8 +824,27 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
     memory_tracker->ForEachUploadRange(
         device_addr, size, is_written,
         [&](u64 device_addr_out, u64 range_size) {
-            copies.emplace_back(total_size_bytes, device_addr_out - buffer_start, range_size);
-            total_size_bytes += range_size;
+            // The tracker reports whole dirty WORDS, so a range can reach past the window we
+            // asked for AND past this buffer. GT7 produced regions at 32/36/40/44 MiB into a
+            // 32 MiB VkBuffer, marching in 4 MiB steps - GpuAV named it
+            // VUID-vkCmdCopyBuffer-dstOffset-00114 (plus size-00116). A copy past the end is
+            // undefined behaviour, and on this driver it lands as an unmapped WRITE inside the
+            // driver own copy kernel: the vendor dump then reads "Write 0x2000x000, engine
+            // reset, shader hash N/A, Compute, 512 B" - a device loss with no shader of ours
+            // anywhere in it, which is how it stayed unexplained for three runs.
+            const u64 buffer_limit = buffer_start + buffer.SizeBytes();
+            const u64 begin = std::max<u64>(device_addr_out, buffer_start);
+            const u64 end = std::min<u64>(device_addr_out + range_size, buffer_limit);
+            if (begin >= end) {
+                LogCopyClamp(buffer, device_addr_out, range_size, 0);
+                return;
+            }
+            const u64 clamped_size = end - begin;
+            if (begin != device_addr_out || clamped_size != range_size) {
+                LogCopyClamp(buffer, device_addr_out, range_size, clamped_size);
+            }
+            copies.emplace_back(total_size_bytes, begin - buffer_start, clamped_size);
+            total_size_bytes += clamped_size;
         },
         [&] { src_buffer = UploadCopies(buffer, copies, total_size_bytes); });
 
