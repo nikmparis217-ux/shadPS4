@@ -174,6 +174,16 @@ struct Info : InfoPersistent {
 
     template <typename T>
     inline T ReadUdSharp(u32 sharp_idx) const noexcept {
+        // Run 123 host crash (exe+0xad559d, symbolized to exactly here): a bindless-lowered
+        // resource carries SrtBindlessFlagBit (bit 30) in its index field - its sharp only
+        // exists at GPU time - and ReadGuestSharp's GetSharp(info) call on such a buffer
+        // dereferenced gigabytes past this HOST vector (0xc0000005 on the compile thread;
+        // rcx held 0x40000000 in the crash context). The bounds check subsumes the flag
+        // check, and a zero-initialized sharp is what every caller already treats as
+        // invalid (Buffer::Valid() false -> Null()).
+        if (u64(sharp_idx) + sizeof(T) / sizeof(u32) > flattened_ud_buf.size()) [[unlikely]] {
+            return T{};
+        }
         return *reinterpret_cast<const T*>(&flattened_ud_buf[sharp_idx]);
     }
 
