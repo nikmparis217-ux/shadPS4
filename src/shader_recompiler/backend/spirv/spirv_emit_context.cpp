@@ -965,7 +965,8 @@ void EmitContext::DefineImagesAndSamplers() {
         // index by this value, so array size and clamp stay equal by construction (run 116).
         const u32 num_bindings = image_desc.NumBindingsBaked(info);
         Id pointee_type = image_type;
-        if (mip_fallback_mode == MipStorageFallbackMode::DynamicIndex) {
+        if (mip_fallback_mode == MipStorageFallbackMode::DynamicIndex ||
+            image_desc.IsWindowed()) {
             pointee_type = TypeArray(pointee_type, ConstU32(num_bindings));
         }
 
@@ -986,6 +987,7 @@ void EmitContext::DefineImagesAndSamplers() {
             .is_storage = is_storage,
             .mip_fallback_mode = mip_fallback_mode,
             .num_bindings = num_bindings,
+            .is_windowed = image_desc.IsWindowed(),
         });
         interfaces.push_back(id);
     }

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <cstdlib>
 #include <limits>
 #include "common/logging/log.h"
@@ -73,6 +74,81 @@ bool BindlessLowerEnabled() {
         return v && v[0] == '1';
     }();
     return enabled;
+}
+
+// GT_BINDLESS_IMGARRAY=<N>: the windowed image descriptor array, for the two shaders whose
+// T# table index is RUNTIME-COMPUTED (cs_3e50e1 ImageSampleRaw by a GPU-computed record
+// number, cs_a95f906e ImageWrite by WorkgroupId.z - the index varies per workgroup, so no
+// CPU-time deref can ever resolve it). N = how many consecutive table slots the CPU binds as
+// one descriptor array; the shader indexes it, OpUMin-clamped. 0/absent = off, the stub
+// fallback ships exactly as before.
+u32 ImgArrayWindow() {
+    static const u32 window = [] {
+        const char* v = std::getenv("GT_BINDLESS_IMGARRAY");
+        const u32 n = v ? static_cast<u32>(std::strtoul(v, nullptr, 10)) : 0u;
+        // The rasterizer's per-draw image tables are static_vectors of NUM_IMAGES (64) TOTAL
+        // bindings across all of a stage's images - cap the window so a shader with several
+        // windows plus ordinary images cannot overflow them.
+        return std::min(n, 32u);
+    }();
+    return window;
+}
+
+// The linear form of a runtime-indexed T# fetch. Every site the two GT7 stubs show is
+// offset_dw = SRL(base_imm + index * stride_imm, 2): peel immediate adds into the base, one
+// immediate mul/shl is the stride, and whatever remains is the index - its own composition is
+// irrelevant, the shader clamps whatever value arrives.
+struct WindowForm {
+    u32 base_bytes{};
+    u32 stride_bytes{};
+    IR::Value index{};
+    bool ok{};
+};
+
+WindowForm MatchWindowForm(const IR::Value& dword_off) {
+    u32 unit = 4; // dword units until an SRL-by-2 says the inner expression is bytes
+    IR::Value expr = dword_off;
+    if (const IR::Inst* srl = expr.TryInstRecursive();
+        srl && srl->GetOpcode() == IR::Opcode::ShiftRightLogical32 &&
+        srl->Arg(1).IsImmediate() && srl->Arg(1).U32() == 2) {
+        unit = 1;
+        expr = srl->Arg(0);
+    }
+    u32 base = 0;
+    while (const IR::Inst* add = expr.TryInstRecursive()) {
+        if (add->GetOpcode() != IR::Opcode::IAdd32) {
+            break;
+        }
+        if (add->Arg(1).IsImmediate()) {
+            base += add->Arg(1).U32() * unit;
+            expr = add->Arg(0);
+        } else if (add->Arg(0).IsImmediate()) {
+            base += add->Arg(0).U32() * unit;
+            expr = add->Arg(1);
+        } else {
+            break;
+        }
+    }
+    const IR::Inst* mul = expr.TryInstRecursive();
+    if (!mul) {
+        return {};
+    }
+    WindowForm form{.base_bytes = base};
+    if (mul->GetOpcode() == IR::Opcode::IMul32 && mul->Arg(1).IsImmediate()) {
+        form.stride_bytes = mul->Arg(1).U32() * unit;
+        form.index = mul->Arg(0);
+    } else if (mul->GetOpcode() == IR::Opcode::IMul32 && mul->Arg(0).IsImmediate()) {
+        form.stride_bytes = mul->Arg(0).U32() * unit;
+        form.index = mul->Arg(1);
+    } else if (mul->GetOpcode() == IR::Opcode::ShiftLeftLogical32 && mul->Arg(1).IsImmediate()) {
+        form.stride_bytes = (1u << mul->Arg(1).U32()) * unit;
+        form.index = mul->Arg(0);
+    } else {
+        return {};
+    }
+    // A stride below one T# would make the slots overlap; nothing legitimate looks like that.
+    form.ok = form.stride_bytes >= sizeof(u128);
+    return form;
 }
 
 bool IsBufferAtomic(const IR::Inst& inst) {
@@ -320,7 +396,10 @@ public:
                    desc.mip_fallback_mode == existing.mip_fallback_mode &&
                    desc.constant_mip_index == existing.constant_mip_index &&
                    desc.deref_buffer == existing.deref_buffer &&
-                   desc.deref_offset_dw == existing.deref_offset_dw;
+                   desc.deref_offset_dw == existing.deref_offset_dw &&
+                   desc.window_base_bytes == existing.window_base_bytes &&
+                   desc.window_stride_bytes == existing.window_stride_bytes &&
+                   desc.window_size == existing.window_size;
         })};
         auto& image = image_resources[index];
         image.is_atomic |= desc.is_atomic;
@@ -776,15 +855,21 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
     const auto tsharp = TrackSharp(image_handle, block, inst_info.pc);
     s32 deref_buffer = -1;
     u32 deref_offset_dw = 0;
+    u32 window_base_bytes = 0;
+    u32 window_stride_bytes = 0;
+    u32 window_size = 0;
+    IR::Value window_index{};
     if (tsharp == INVALID_SHARP_LOCATION) {
         // GT_BINDLESS_LOWER, image flavour (19 Aug): the T# is fetched from a buffer at
         // GPU time. A Vulkan descriptor cannot be built on the GPU - but when the fetch
         // is at a CONSTANT offset in an already-TRACKED buffer (the pattern all four
         // remaining GT7 stubs show: "ReadConstBuffer #binding, #index"), the CPU can read
         // the very same T# out of guest memory every time GetSharp runs instead.
-        if (BindlessLowerEnabled() && BindlessImageDerefEnabled() &&
-            image_handle->GetOpcode() == IR::Opcode::ReadConstBuffer &&
-            image_handle->Arg(0).IsImmediate() && image_handle->Arg(1).IsImmediate()) {
+        const bool deref_capable = BindlessLowerEnabled() && BindlessImageDerefEnabled() &&
+                                   image_handle->GetOpcode() == IR::Opcode::ReadConstBuffer &&
+                                   image_handle->Arg(0).IsImmediate();
+        WindowForm window{};
+        if (deref_capable && image_handle->Arg(1).IsImmediate()) {
             deref_buffer = static_cast<s32>(image_handle->Arg(0).U32());
             deref_offset_dw = image_handle->Arg(1).U32();
             LOG_INFO(Render_Recompiler,
@@ -792,6 +877,26 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
                      "(buffer {} offset {} dw) pc={:#x}",
                      info.pgm_hash, inst.GetOpcode(), deref_buffer, deref_offset_dw,
                      inst_info.pc.Value());
+        } else if (deref_capable && ImgArrayWindow() > 0 &&
+                   (inst.GetOpcode() == IR::Opcode::ImageSampleRaw ||
+                    inst.GetOpcode() == IR::Opcode::ImageWrite) &&
+                   (window = MatchWindowForm(image_handle->Arg(1))).ok) {
+            // GT_BINDLESS_IMGARRAY, the windowed image descriptor array (20 Aug): the table
+            // index is runtime-computed, so no single CPU deref exists - bind the whole
+            // window as a descriptor array and let the shader index it, OpUMin-clamped.
+            // Restricted to ImageSampleRaw/ImageWrite: the two shaders this exists for, and
+            // the only opcodes whose SPIR-V emitters accept the runtime-indexed handle.
+            deref_buffer = static_cast<s32>(image_handle->Arg(0).U32());
+            deref_offset_dw = window.base_bytes >> 2; // slot 0, for GetSharp/specialization
+            window_base_bytes = window.base_bytes;
+            window_stride_bytes = window.stride_bytes;
+            window_size = ImgArrayWindow();
+            window_index = window.index;
+            LOG_INFO(Render_Recompiler,
+                     "shader {:#x}: bindless IMAGE {} lowered to a windowed descriptor array "
+                     "(buffer {} base {} stride {} window {}) pc={:#x}",
+                     info.pgm_hash, inst.GetOpcode(), deref_buffer, window_base_bytes,
+                     window_stride_bytes, window_size, inst_info.pc.Value());
         } else {
             LOG_ERROR(Render_Recompiler,
                       "shader {:#x}: bindless IMAGE {} not lowerable (handle op {}) pc={:#x}",
@@ -813,12 +918,26 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
         .sharp_idx = tsharp,
         .deref_buffer = deref_buffer,
         .deref_offset_dw = deref_offset_dw,
+        .window_base_bytes = window_base_bytes,
+        .window_stride_bytes = window_stride_bytes,
+        .window_size = window_size,
         .is_depth = bool(inst_info.is_depth),
         .is_atomic = is_atomic,
         .is_array = bool(inst_info.is_array),
         .is_written = is_written,
         .is_r128 = bool(inst_info.is_r128),
     };
+
+    if (image_res.IsWindowed() && needs_mip_storage_fallback) {
+        // Both features want to own the descriptor array dimension; combining them would need
+        // a 2D array. No shader has shown the combination - abandon it loudly if one does.
+        LOG_ERROR(Render_Recompiler,
+                  "shader {:#x}: windowed image {} ALSO needs the mip storage fallback - "
+                  "not supported, stubbing (pc={:#x})",
+                  info.pgm_hash, inst.GetOpcode(), inst_info.pc.Value());
+        info.has_bindless_sharp = true;
+        return;
+    }
 
     auto image = image_res.GetSharp(info);
     ASSERT(image.GetType() != AmdGpu::ImageType::Invalid);
@@ -947,9 +1066,22 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
                 .disable_aniso = disable_aniso,
             });
         }
-        inst.SetArg(0, ir.Imm32(image_binding | sampler_binding << 16));
+        // A windowed image carries its runtime table index beside the packed bindings; the
+        // SPIR-V emitters unpack the pair (opcodes.inc declares the handle operand Opaque).
+        if (image_res.IsWindowed()) {
+            inst.SetArg(0, ir.CompositeConstruct(
+                               IR::U32{ir.Imm32(image_binding | sampler_binding << 16)},
+                               IR::U32{window_index}));
+        } else {
+            inst.SetArg(0, ir.Imm32(image_binding | sampler_binding << 16));
+        }
     } else {
-        inst.SetArg(0, ir.Imm32(image_binding));
+        if (image_res.IsWindowed()) {
+            inst.SetArg(0, ir.CompositeConstruct(IR::U32{ir.Imm32(image_binding)},
+                                                 IR::U32{window_index}));
+        } else {
+            inst.SetArg(0, ir.Imm32(image_binding));
+        }
     }
 }
 
@@ -1190,7 +1322,10 @@ IR::Value FixCubeCoords(IR::IREmitter& ir, const AmdGpu::Image& image, const IR:
 void PatchImageSampleArgs(IR::Block& block, IR::Inst& inst, Info& info,
                           const ImageResource& image_res, const AmdGpu::Image& image) {
     const auto handle = inst.Arg(0);
-    const auto& sampler_res = info.samplers[(handle.U32() >> 16) & 0xFFFF];
+    // A windowed image's handle is CompositeConstruct(packed bindings, runtime index).
+    const u32 packed_handle =
+        handle.IsImmediate() ? handle.U32() : handle.InstRecursive()->Arg(0).U32();
+    const auto& sampler_res = info.samplers[(packed_handle >> 16) & 0xFFFF];
     const auto sampler = sampler_res.GetSharp(info);
 
     IR::IREmitter ir{block, IR::Block::InstructionList::s_iterator_to(inst)};
@@ -1387,7 +1522,11 @@ void PatchImageArgs(IR::Block& block, IR::Inst& inst, Info& info) {
     }
 
     const auto image_handle = inst.Arg(0);
-    const auto binding_index = image_handle.U32() & 0xFFFF;
+    // A windowed image's handle is CompositeConstruct(packed bindings, runtime index).
+    const u32 packed_handle = image_handle.IsImmediate()
+                                  ? image_handle.U32()
+                                  : image_handle.InstRecursive()->Arg(0).U32();
+    const auto binding_index = packed_handle & 0xFFFF;
     const auto& image_res = info.images[binding_index];
     auto image = image_res.GetSharp(info);
 

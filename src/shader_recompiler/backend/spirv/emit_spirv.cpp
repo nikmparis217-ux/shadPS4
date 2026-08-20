@@ -276,6 +276,28 @@ void SetupCapabilities(const Info& info, const Profile& profile, const RuntimeIn
     if (info.has_image_gather) {
         ctx.AddCapability(spv::Capability::ImageGatherExtended);
     }
+    // GT_BINDLESS_IMGARRAY: runtime-indexed image descriptor arrays. The indices are not
+    // dynamically uniform (WorkgroupId.z / GPU-computed record numbers), so the accesses are
+    // NonUniform-decorated and need the descriptor-indexing capabilities.
+    {
+        bool windowed_sampled = false;
+        bool windowed_storage = false;
+        for (const auto& image : info.images) {
+            if (image.IsWindowed()) {
+                (image.is_written ? windowed_storage : windowed_sampled) = true;
+            }
+        }
+        if (windowed_sampled || windowed_storage) {
+            ctx.AddExtension("SPV_EXT_descriptor_indexing");
+            ctx.AddCapability(spv::Capability::ShaderNonUniform);
+            if (windowed_sampled) {
+                ctx.AddCapability(spv::Capability::SampledImageArrayNonUniformIndexing);
+            }
+            if (windowed_storage) {
+                ctx.AddCapability(spv::Capability::StorageImageArrayNonUniformIndexing);
+            }
+        }
+    }
     if (info.has_image_query) {
         ctx.AddCapability(spv::Capability::ImageQuery);
     }

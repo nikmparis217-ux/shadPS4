@@ -111,6 +111,20 @@ struct ImageResource {
     // [deref_buffer] at deref_offset_dw dwords, instead of the SRT snapshot.
     s32 deref_buffer{-1};
     u32 deref_offset_dw{};
+    // GT_BINDLESS_IMGARRAY, the windowed image descriptor array: the T# is fetched from a
+    // TABLE in tracked buffer [deref_buffer] at a RUNTIME index (offset = window_base_bytes +
+    // index * window_stride_bytes; the two remaining GT7 stubs index by WorkgroupId.z and by
+    // a GPU-computed record number - no CPU-time value exists). The CPU binds window_size
+    // consecutive slots as one descriptor array and the shader indexes it, OpUMin-clamped.
+    // window_size == 0 means not windowed. deref_offset_dw doubles as slot 0 for GetSharp, so
+    // specialization and compile-time type baking work unchanged.
+    u32 window_base_bytes{};
+    u32 window_stride_bytes{};
+    u32 window_size{0};
+
+    bool IsWindowed() const noexcept {
+        return window_size != 0;
+    }
     bool is_depth{};
     bool is_atomic{};
     bool is_array{};
@@ -166,7 +180,31 @@ struct ImageResource {
         return image;
     }
 
+    // One slot of a windowed table, with the same junk guards as the deref branch of GetSharp.
+    AmdGpu::Image GetSharpAt(const auto& info, u32 slot) const noexcept {
+        AmdGpu::Image image{};
+        const u32 off_dw = (window_base_bytes + slot * window_stride_bytes) >> 2;
+        if (!is_r128) {
+            image = ReadGuestSharp<AmdGpu::Image>(info, deref_buffer, off_dw);
+        } else {
+            const auto raw = ReadGuestSharp<u128>(info, deref_buffer, off_dw);
+            std::memcpy(&image, &raw, sizeof(raw));
+            image.pitch = image.width;
+        }
+        const u64 va = image.Address();
+        if (va < 0x10000 || va + 4096 >= (u64{1} << 40)) {
+            return AmdGpu::Image::Null(is_depth);
+        }
+        if (!image.Valid()) {
+            return AmdGpu::Image::Null(is_depth);
+        }
+        return image;
+    }
+
     u32 NumBindings(const auto& info) const {
+        if (IsWindowed()) {
+            return window_size; // a compile-time constant, immune to live-T# divergence
+        }
         const AmdGpu::Image tsharp = GetSharp(info);
         return (mip_fallback_mode == MipStorageFallbackMode::DynamicIndex)
                    ? (tsharp.last_level - tsharp.base_level + 1)

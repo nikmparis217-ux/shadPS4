@@ -70,18 +70,60 @@ struct ImageOperands {
     boost::container::static_vector<Id, 4> operands;
 };
 
-Id EmitImageSampleRaw(EmitContext& ctx, IR::Inst* inst, u32 handle, Id address1, Id address2,
-                      Id address3, Id address4) {
+// GT_BINDLESS_IMGARRAY: a windowed image's handle arrives as
+// CompositeConstruct(packed bindings, runtime index) - opcodes.inc declares the operand
+// Opaque, so the emitters take the IR::Value and unpack it here.
+struct ImgUnpackedHandle {
+    u32 packed;
+    Id window_index{};
+};
+
+static ImgUnpackedHandle ImgUnpack(EmitContext& ctx, const IR::Value& handle) {
+    if (handle.IsImmediate()) {
+        return {handle.U32()};
+    }
+    const IR::Inst* composite = handle.InstRecursive();
+    return {composite->Arg(0).U32(), ctx.Def(composite->Arg(1))};
+}
+
+// The OpUMin-clamped, NonUniform-decorated pointer into a windowed descriptor array.
+static Id ImgWindowedPtr(EmitContext& ctx, const EmitContext::TextureDefinition& texture,
+                         Id window_index) {
+    ASSERT_MSG(Sirit::ValidId(window_index), "windowed image without a runtime index");
+    const Id idx = ctx.OpUMin(ctx.U32[1], window_index, ctx.ConstU32(texture.num_bindings - 1));
+    const Id ptr_type = ctx.TypePointer(spv::StorageClass::UniformConstant, texture.image_type);
+    const Id ptr = ctx.OpAccessChain(ptr_type, texture.id, idx);
+    ctx.Decorate(ptr, spv::Decoration::NonUniform);
+    return ptr;
+}
+
+// Loads the image, going through the windowed descriptor array when the resource is one.
+static Id ImgLoad(EmitContext& ctx, const EmitContext::TextureDefinition& texture,
+                  Id window_index) {
+    if (!texture.is_windowed) {
+        return ctx.OpLoad(texture.image_type, texture.id);
+    }
+    const Id image = ctx.OpLoad(texture.image_type, ImgWindowedPtr(ctx, texture, window_index));
+    ctx.Decorate(image, spv::Decoration::NonUniform);
+    return image;
+}
+
+Id EmitImageSampleRaw(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle, Id address1,
+                      Id address2, Id address3, Id address4) {
     UNREACHABLE_MSG("Unreachable instruction");
 }
 
-Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id bias,
-                              const IR::Value& offset) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
-    const Id image = ctx.OpLoad(texture.image_type, texture.id);
+Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle,
+                              Id coords, Id bias, const IR::Value& offset) {
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
+    const Id image = ImgLoad(ctx, texture, window_index);
     const Id result_type = texture.data_types->Get(4);
-    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[handle >> 16]);
+    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[packed >> 16]);
     const Id sampled_image = ctx.OpSampledImage(texture.sampled_type, image, sampler);
+    if (texture.is_windowed) {
+        ctx.Decorate(sampled_image, spv::Decoration::NonUniform);
+    }
     ImageOperands operands;
     operands.Add(spv::ImageOperandsMask::Bias, bias);
     operands.AddOffset(ctx, offset);
@@ -90,13 +132,17 @@ Id EmitImageSampleImplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, Id c
     return texture.is_integer ? ctx.OpBitcast(ctx.F32[4], sample) : sample;
 }
 
-Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id lod,
-                              const IR::Value& offset) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
-    const Id image = ctx.OpLoad(texture.image_type, texture.id);
+Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle,
+                              Id coords, Id lod, const IR::Value& offset) {
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
+    const Id image = ImgLoad(ctx, texture, window_index);
     const Id result_type = texture.data_types->Get(4);
-    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[handle >> 16]);
+    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[packed >> 16]);
     const Id sampled_image = ctx.OpSampledImage(texture.sampled_type, image, sampler);
+    if (texture.is_windowed) {
+        ctx.Decorate(sampled_image, spv::Decoration::NonUniform);
+    }
     ImageOperands operands;
     operands.Add(spv::ImageOperandsMask::Lod, lod);
     operands.AddOffset(ctx, offset);
@@ -105,13 +151,17 @@ Id EmitImageSampleExplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, Id c
     return texture.is_integer ? ctx.OpBitcast(ctx.F32[4], sample) : sample;
 }
 
-Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id dref,
-                                  Id bias, const IR::Value& offset) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
-    const Id image = ctx.OpLoad(texture.image_type, texture.id);
+Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle,
+                                  Id coords, Id dref, Id bias, const IR::Value& offset) {
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
+    const Id image = ImgLoad(ctx, texture, window_index);
     const Id result_type = texture.data_types->Get(1);
-    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[handle >> 16]);
+    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[packed >> 16]);
     const Id sampled_image = ctx.OpSampledImage(texture.sampled_type, image, sampler);
+    if (texture.is_windowed) {
+        ctx.Decorate(sampled_image, spv::Decoration::NonUniform);
+    }
     ImageOperands operands;
     operands.Add(spv::ImageOperandsMask::Bias, bias);
     operands.AddOffset(ctx, offset);
@@ -122,13 +172,17 @@ Id EmitImageSampleDrefImplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, 
                                     ctx.f32_zero_value, ctx.f32_zero_value);
 }
 
-Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id dref,
-                                  Id lod, const IR::Value& offset) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
-    const Id image = ctx.OpLoad(texture.image_type, texture.id);
+Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle,
+                                  Id coords, Id dref, Id lod, const IR::Value& offset) {
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
+    const Id image = ImgLoad(ctx, texture, window_index);
     const Id result_type = texture.data_types->Get(1);
-    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[handle >> 16]);
+    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[packed >> 16]);
     const Id sampled_image = ctx.OpSampledImage(texture.sampled_type, image, sampler);
+    if (texture.is_windowed) {
+        ctx.Decorate(sampled_image, spv::Decoration::NonUniform);
+    }
     ImageOperands operands;
     operands.Add(spv::ImageOperandsMask::Lod, lod);
     operands.AddOffset(ctx, offset);
@@ -139,13 +193,17 @@ Id EmitImageSampleDrefExplicitLod(EmitContext& ctx, IR::Inst* inst, u32 handle, 
                                     ctx.f32_zero_value, ctx.f32_zero_value);
 }
 
-Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords,
+Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle, Id coords,
                    const IR::Value& offset) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
-    const Id image = ctx.OpLoad(texture.image_type, texture.id);
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
+    const Id image = ImgLoad(ctx, texture, window_index);
     const Id result_type = texture.data_types->Get(4);
-    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[handle >> 16]);
+    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[packed >> 16]);
     const Id sampled_image = ctx.OpSampledImage(texture.sampled_type, image, sampler);
+    if (texture.is_windowed) {
+        ctx.Decorate(sampled_image, spv::Decoration::NonUniform);
+    }
     const u32 comp = inst->Flags<IR::TextureInstInfo>().gather_comp.Value();
     ImageOperands operands;
     operands.AddOffset(ctx, offset, true);
@@ -154,13 +212,17 @@ Id EmitImageGather(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords,
     return texture.is_integer ? ctx.OpBitcast(ctx.F32[4], texels) : texels;
 }
 
-Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords,
+Id EmitImageGatherDref(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle, Id coords,
                        const IR::Value& offset, Id dref) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
-    const Id image = ctx.OpLoad(texture.image_type, texture.id);
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
+    const Id image = ImgLoad(ctx, texture, window_index);
     const Id result_type = texture.data_types->Get(4);
-    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[handle >> 16]);
+    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[packed >> 16]);
     const Id sampled_image = ctx.OpSampledImage(texture.sampled_type, image, sampler);
+    if (texture.is_windowed) {
+        ctx.Decorate(sampled_image, spv::Decoration::NonUniform);
+    }
     ImageOperands operands;
     operands.AddOffset(ctx, offset, true);
     const Id texels = ctx.OpImageDrefGather(result_type, sampled_image, coords, dref, operands.mask,
@@ -203,13 +265,18 @@ Id EmitImageQueryLod(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords) {
     return ctx.OpImageQueryLod(ctx.F32[2], sampled_image, coords);
 }
 
-Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id derivatives_dx,
-                     Id derivatives_dy, const IR::Value& offset, const IR::Value& lod_clamp) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
-    const Id image = ctx.OpLoad(texture.image_type, texture.id);
+Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle, Id coords,
+                     Id derivatives_dx, Id derivatives_dy, const IR::Value& offset,
+                     const IR::Value& lod_clamp) {
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
+    const Id image = ImgLoad(ctx, texture, window_index);
     const Id result_type = texture.data_types->Get(4);
-    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[handle >> 16]);
+    const Id sampler = ctx.OpLoad(ctx.sampler_type, ctx.samplers[packed >> 16]);
     const Id sampled_image = ctx.OpSampledImage(texture.sampled_type, image, sampler);
+    if (texture.is_windowed) {
+        ctx.Decorate(sampled_image, spv::Decoration::NonUniform);
+    }
     ImageOperands operands;
     operands.AddDerivatives(ctx, derivatives_dx, derivatives_dy);
     operands.AddOffset(ctx, offset);
@@ -218,14 +285,16 @@ Id EmitImageGradient(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id
     return texture.is_integer ? ctx.OpBitcast(ctx.F32[4], sample) : sample;
 }
 
-Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id lod, Id ms) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
+Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle, Id coords, Id lod,
+                 Id ms) {
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
     const Id color_type = texture.data_types->Get(4);
     ImageOperands operands;
     operands.Add(spv::ImageOperandsMask::Sample, ms);
     Id texel;
     if (!texture.is_storage) {
-        const Id image = ctx.OpLoad(texture.image_type, texture.id);
+        const Id image = ImgLoad(ctx, texture, window_index);
         if (texture.view_type != AmdGpu::ImageType::Color2DMsaa) {
             if (Sirit::ValidId(ms)) {
                 LOG_ERROR(Render_Recompiler, "image is not MS but ms operand is provided");
@@ -235,9 +304,14 @@ Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id lod
         texel = ctx.OpImageFetch(color_type, image, coords, operands.mask, operands.operands);
     } else {
         Id image_ptr = texture.id;
+        if (texture.is_windowed) {
+            // Windowed + mip-fallback is rejected at patch time, so the array dimension is
+            // exclusively the window's here.
+            image_ptr = ImgWindowedPtr(ctx, texture, window_index);
+        }
         if (ctx.profile.supports_image_load_store_lod) {
             operands.Add(spv::ImageOperandsMask::Lod, lod);
-        } else if (Sirit::ValidId(lod)) {
+        } else if (Sirit::ValidId(lod) && !texture.is_windowed) {
             // Was UNREACHABLE ("confusing what interactions cause this path") - but an
             // UNREACHABLE in a user run costs the whole run. Mirror the EmitImageWrite clamp
             // below and report reachability instead; the first shader to land here tells us
@@ -255,21 +329,30 @@ Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id lod
                                           std::array{lod_clamped});
         }
         const Id image = ctx.OpLoad(texture.image_type, image_ptr);
+        if (texture.is_windowed) {
+            ctx.Decorate(image, spv::Decoration::NonUniform);
+        }
         texel = ctx.OpImageRead(color_type, image, coords, operands.mask, operands.operands);
     }
     return texture.is_integer ? ctx.OpBitcast(ctx.F32[4], texel) : texel;
 }
 
-void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id lod, Id ms,
-                    Id color) {
-    const auto& texture = ctx.images[handle & 0xFFFF];
+void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle, Id coords, Id lod,
+                    Id ms, Id color) {
+    const auto [packed, window_index] = ImgUnpack(ctx, handle);
+    const auto& texture = ctx.images[packed & 0xFFFF];
     Id image_ptr = texture.id;
     const Id color_type = texture.data_types->Get(4);
     ImageOperands operands;
     operands.Add(spv::ImageOperandsMask::Sample, ms);
+    if (texture.is_windowed) {
+        // Windowed + mip-fallback is rejected at patch time; the array dimension is the
+        // window's. cs_a95f906e (ImageWrite indexed by WorkgroupId.z) lands here.
+        image_ptr = ImgWindowedPtr(ctx, texture, window_index);
+    }
     if (ctx.profile.supports_image_load_store_lod) {
         operands.Add(spv::ImageOperandsMask::Lod, lod);
-    } else if (Sirit::ValidId(lod)) {
+    } else if (Sirit::ValidId(lod) && !texture.is_windowed) {
         LOG_WARNING(Render, "Fallback for ImageWrite with LOD");
         ASSERT(texture.mip_fallback_mode == MipStorageFallbackMode::DynamicIndex);
         const Id single_image_ptr_type =
@@ -284,6 +367,9 @@ void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id 
         image_ptr = ctx.OpAccessChain(single_image_ptr_type, image_ptr, std::array{lod_clamped});
     }
     const Id image = ctx.OpLoad(texture.image_type, image_ptr);
+    if (texture.is_windowed) {
+        ctx.Decorate(image, spv::Decoration::NonUniform);
+    }
     const Id texel = texture.is_integer ? ctx.OpBitcast(color_type, color) : color;
     ctx.OpImageWrite(image, coords, texel, operands.mask, operands.operands);
 }

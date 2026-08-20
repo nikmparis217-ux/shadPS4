@@ -1164,6 +1164,59 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             LOG_WARNING(Render_Vulkan, "Unexpected metadata read by a shader (texture)");
         }
 
+        if (image_desc.IsWindowed()) {
+            // GT_BINDLESS_IMGARRAY: every slot is its own T#, read fresh from the guest table
+            // and guarded INDIVIDUALLY - the table may be half-written this frame, and one
+            // dead slot must not kill the window (a null-bound slot reads zeros via
+            // robustness2 nullDescriptor and self-heals next bind). A slot whose type class
+            // disagrees with slot 0's - the type the module was specialized against this
+            // draw - is null-bound too: binding it would mismatch the SPIR-V OpTypeImage.
+            const auto view_type0 = tsharp.GetViewType(image_desc.is_array);
+            const bool integer0 = AmdGpu::IsInteger(tsharp.GetNumberFmt());
+            u32 null_slots = 0;
+            for (u32 i = 0; i < num_bindings; i++) {
+                const auto slot_sharp = image_desc.GetSharpAt(stage, i);
+                const bool usable =
+                    slot_sharp.Address() != 0 &&
+                    slot_sharp.GetDataFmt() != AmdGpu::DataFormat::FormatInvalid &&
+                    memory->IsValidMapping(slot_sharp.Address()) &&
+                    slot_sharp.GetViewType(image_desc.is_array) == view_type0 &&
+                    AmdGpu::IsInteger(slot_sharp.GetNumberFmt()) == integer0;
+                if (!usable) {
+                    image_bindings.emplace_back(std::piecewise_construct, std::tuple{},
+                                                std::tuple{});
+                    ++null_slots;
+                    continue;
+                }
+                auto& [image_id, desc] = image_bindings.emplace_back(
+                    std::piecewise_construct, std::tuple{}, std::tuple{slot_sharp, image_desc});
+                image_id = texture_cache.FindImage(desc);
+                auto* image = &texture_cache.GetImage(image_id);
+                if (auto depth_image_id = texture_cache.GetAssociatedDepth(*image)) {
+                    image_id = depth_image_id;
+                    image = &texture_cache.GetImage(image_id);
+                }
+                if (image->binding.is_bound) {
+                    image->binding.force_general |= image_desc.is_written;
+                }
+                image->binding.is_bound = 1u;
+            }
+            if (null_slots != 0) {
+                static u32 logged = 0;
+                if (logged < 32) {
+                    ++logged;
+                    LOG_WARNING(Render_Vulkan,
+                                "[imgarray] shader {:#x}: {}/{} window slots null-bound "
+                                "(table at buffer {} base {} stride {})",
+                                stage.pgm_hash, null_slots, num_bindings,
+                                image_desc.deref_buffer, image_desc.window_base_bytes,
+                                image_desc.window_stride_bytes);
+                }
+            }
+            image_descriptor_array_sizes.push_back(num_bindings);
+            continue;
+        }
+
         if (tsharp.Address() == 0 || tsharp.GetDataFmt() == AmdGpu::DataFormat::FormatInvalid) {
             null_bind_all();
             continue;

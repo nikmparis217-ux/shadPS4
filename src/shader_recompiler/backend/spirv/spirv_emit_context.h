@@ -304,6 +304,10 @@ public:
         // runtime index against it (runs 95-98: an unclamped index read a descriptor past
         // the array = the deterministic ReadInvalid 0x300100000 with a warm pipeline cache).
         u32 num_bindings = 1;
+        // GT_BINDLESS_IMGARRAY: the descriptor array is a WINDOW of a guest T# table and the
+        // handle carries a runtime index (CompositeConstruct(packed, index)) the emitter
+        // access-chains with, NonUniform-decorated.
+        bool is_windowed = false;
     };
 
     enum class PointerType : u32 {

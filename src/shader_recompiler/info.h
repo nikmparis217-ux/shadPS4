@@ -201,7 +201,15 @@ struct Info : InfoPersistent {
 
     void AddBindings(Backend::Bindings& bnd) const {
         bnd.buffer += buffers.size();
-        bnd.unified += buffers.size() + images.size() + samplers.size();
+        // An image can occupy SEVERAL consecutive bindings (the mip-fallback array, the
+        // windowed descriptor array) - counting 1 per image advanced the unified counter
+        // short for every stage AFTER such an image in a reused-permutation pipeline, and
+        // the later stages' descriptors then landed on the wrong bindings.
+        u32 image_bindings = 0;
+        for (const auto& image : images) {
+            image_bindings += image.NumBindingsBaked(*this);
+        }
+        bnd.unified += buffers.size() + image_bindings + samplers.size();
         bnd.user_data += ud_mask.NumRegs();
     }
 
