@@ -20,6 +20,12 @@
 namespace VideoCore {
 
 namespace {
+/// Every oversized download costs a full scheduler.Finish() (a GPU stall) - and buffer-GC
+/// eviction routes through DownloadBufferMemory, so an eviction storm of >32 MB buffers would
+/// read as an FPS cliff. Counted separately from the [copyclamp] budget (which goes silent
+/// after 16 lines) and reported in the periodic [vram] telemetry line.
+std::atomic<u32> g_temp_download_count{0};
+
 /// A dropped or clamped copy region is a bug somewhere upstream, so it must be visible - but
 /// it can happen per range per draw, and run 65 proved that a per-draw CRITICAL is its own I/O
 /// tax. Budgeted: loud 16 times, then silent.
@@ -185,6 +191,7 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
                                                 total_size_bytes);
         download = temp_download->mapped_data.data();
         offset = 0;
+        g_temp_download_count.fetch_add(1, std::memory_order_relaxed);
         LogCopyClamp(buffer, device_addr, total_size_bytes, 0);
     }
     for (auto& copy : copies) {
@@ -1049,9 +1056,10 @@ void BufferCache::RunGarbageCollector() {
         u32 vma_allocs = 0;
         instance.GetVmaStatistics(vma_bytes, vma_allocs);
         LOG_INFO(Render_Vulkan,
-                 "[vram] device {} MB, VMA-owned {} MB in {} allocs, pending deaths {} "
-                 "(GC trigger {} MB)",
+                 "[vram] device {} MB, VMA-owned {} MB in {} allocs, pending deaths {}, "
+                 "temp_downloads {} (GC trigger {} MB)",
                  total_used_memory >> 20, vma_bytes >> 20, vma_allocs, pending_deaths.size(),
+                 g_temp_download_count.load(std::memory_order_relaxed),
                  trigger_gc_memory >> 20);
     }
     if (total_used_memory < trigger_gc_memory) {

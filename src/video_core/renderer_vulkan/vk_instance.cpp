@@ -487,6 +487,13 @@ bool Instance::CreateDevice() {
                 .shaderImageGatherExtended = features.shaderImageGatherExtended,
                 .shaderStorageImageExtendedFormats = features.shaderStorageImageExtendedFormats,
                 .shaderStorageImageMultisample = features.shaderStorageImageMultisample,
+                // The mip-fallback descriptor array (MipStorageFallbackMode::DynamicIndex) is
+                // indexed by a runtime LOD - without these two core features that was formally
+                // invalid usage all along (run 116 family).
+                .shaderSampledImageArrayDynamicIndexing =
+                    features.shaderSampledImageArrayDynamicIndexing,
+                .shaderStorageImageArrayDynamicIndexing =
+                    features.shaderStorageImageArrayDynamicIndexing,
                 .shaderClipDistance = features.shaderClipDistance,
                 .shaderFloat64 = features.shaderFloat64,
                 .shaderInt64 = features.shaderInt64,
@@ -507,6 +514,13 @@ bool Instance::CreateDevice() {
             .shaderSharedInt64Atomics = vk12_features.shaderSharedInt64Atomics,
             .shaderFloat16 = vk12_features.shaderFloat16,
             .shaderInt8 = vk12_features.shaderInt8,
+            // For NonUniform-decorated indexing into image descriptor arrays (the windowed
+            // bindless arrays index by per-workgroup values, and a mip-array LOD is not
+            // guaranteed dynamically uniform either).
+            .shaderSampledImageArrayNonUniformIndexing =
+                vk12_features.shaderSampledImageArrayNonUniformIndexing,
+            .shaderStorageImageArrayNonUniformIndexing =
+                vk12_features.shaderStorageImageArrayNonUniformIndexing,
             .scalarBlockLayout = vk12_features.scalarBlockLayout,
             .uniformBufferStandardLayout = vk12_features.uniformBufferStandardLayout,
             .separateDepthStencilLayouts = vk12_features.separateDepthStencilLayouts,

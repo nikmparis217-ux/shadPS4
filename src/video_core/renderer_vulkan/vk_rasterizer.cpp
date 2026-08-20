@@ -1151,13 +1151,21 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
 
     for (const auto& image_desc : stage.images) {
         const auto tsharp = image_desc.GetSharp(stage);
+        // The set layout was built from the BAKED count (run 116); every path below must emit
+        // exactly this many descriptors or the write lands past the layout's array.
+        const u32 num_bindings = image_desc.NumBindingsBaked(stage);
+        const auto null_bind_all = [&] {
+            for (u32 i = 0; i < num_bindings; i++) {
+                image_bindings.emplace_back(std::piecewise_construct, std::tuple{}, std::tuple{});
+            }
+            image_descriptor_array_sizes.push_back(num_bindings);
+        };
         if (texture_cache.IsMeta(tsharp.Address())) {
             LOG_WARNING(Render_Vulkan, "Unexpected metadata read by a shader (texture)");
         }
 
         if (tsharp.Address() == 0 || tsharp.GetDataFmt() == AmdGpu::DataFormat::FormatInvalid) {
-            image_bindings.emplace_back(std::piecewise_construct, std::tuple{}, std::tuple{});
-            image_descriptor_array_sizes.push_back(1);
+            null_bind_all();
             continue;
         }
         if (!memory->IsValidMapping(tsharp.Address())) {
@@ -1167,13 +1175,27 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             LOG_CRITICAL(Render_Vulkan,
                          "[softclamp] shader {:#x}: T# address {:#x} unmapped - null-bound",
                          stage.pgm_hash, tsharp.Address());
-            image_bindings.emplace_back(std::piecewise_construct, std::tuple{}, std::tuple{});
-            image_descriptor_array_sizes.push_back(1);
+            null_bind_all();
             continue;
         }
 
         const Shader::MipStorageFallbackMode mip_fallback_mode = image_desc.mip_fallback_mode;
-        const u32 num_bindings = image_desc.NumBindings(stage);
+        const u32 live_bindings = image_desc.NumBindings(stage);
+        if (live_bindings != num_bindings) {
+            // The live T# disagrees with the count the module/layout were compiled against.
+            // With everything pinned to the baked count this is a stale frame, never an OOB
+            // descriptor - but it is the run-116 mechanism firing, so it must be visible.
+            static u32 logged = 0;
+            if (logged < 16) {
+                ++logged;
+                LOG_CRITICAL(Render_Vulkan,
+                             "[mipbake] shader {:#x}: live mip bindings {} != baked {} "
+                             "(T# {:#x}, mips {}..{})",
+                             stage.pgm_hash, live_bindings, num_bindings, tsharp.Address(),
+                             static_cast<u32>(tsharp.base_level),
+                             static_cast<u32>(tsharp.last_level));
+            }
+        }
 
         for (auto i = 0; i < num_bindings; i++) {
             auto& [image_id, desc] = image_bindings.emplace_back(
@@ -1184,7 +1206,12 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 desc.view_info.range.base.level += image_desc.constant_mip_index;
                 desc.view_info.range.extent.levels = 1;
             } else if (mip_fallback_mode == Shader::MipStorageFallbackMode::DynamicIndex) {
-                desc.view_info.range.base.level += i;
+                // Slots past the live mip chain duplicate the last real level (same philosophy
+                // as the shader-side OpUMin) instead of creating a view of a level that does
+                // not exist this frame. live_bindings is derived from a live T# and can be
+                // garbage (last_level < base_level wraps u32) - clamp it to [1, baked] first.
+                const u32 last_live = std::clamp<u32>(live_bindings, 1u, num_bindings) - 1;
+                desc.view_info.range.base.level += std::min(static_cast<u32>(i), last_live);
                 desc.view_info.range.extent.levels = 1;
             }
 

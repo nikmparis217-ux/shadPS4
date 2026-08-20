@@ -855,6 +855,11 @@ void PatchImageSharp(IR::Block& block, IR::Inst& inst, Info& info, Descriptors& 
         }
     }
 
+    // Bake the descriptor count NOW, off the same T# the module is compiled against, and
+    // persist it (run 116): layout builders and BindTextures must never re-derive this from
+    // the live T# - a warm-cache preload runs before the game has written it.
+    image_res.num_bindings_baked = image_res.NumBindings(info);
+
     // Patch image instruction if image is FMask.
     if (AmdGpu::IsFmask(image.GetDataFmt())) {
         ASSERT_MSG(!is_written, "FMask storage instructions are not supported");

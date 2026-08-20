@@ -961,7 +961,9 @@ void EmitContext::DefineImagesAndSamplers() {
         const Id sampled_type = data_types[1];
         const Id image_type{ImageType(*this, image_desc, sampled_type)};
 
-        const u32 num_bindings = image_desc.NumBindings(info);
+        // The BAKED count, never the live one: the OpUMin clamp in EmitImageWrite bounds the
+        // index by this value, so array size and clamp stay equal by construction (run 116).
+        const u32 num_bindings = image_desc.NumBindingsBaked(info);
         Id pointee_type = image_type;
         if (mip_fallback_mode == MipStorageFallbackMode::DynamicIndex) {
             pointee_type = TypeArray(pointee_type, ConstU32(num_bindings));

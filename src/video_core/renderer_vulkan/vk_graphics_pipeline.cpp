@@ -468,7 +468,9 @@ void GraphicsPipeline::BuildDescSetLayout(bool preloading) {
             });
         }
         for (const auto& image : stage->images) {
-            const u32 num_bindings = image.NumBindings(*stage);
+            // Baked count, same reason as the compute layout: no live guest read during
+            // deserialization (run 116).
+            const u32 num_bindings = image.NumBindingsBaked(*stage);
             bindings.push_back({
                 .binding = binding,
                 .descriptorType = image.is_written ? vk::DescriptorType::eStorageImage

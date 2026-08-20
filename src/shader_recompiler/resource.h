@@ -118,6 +118,13 @@ struct ImageResource {
     bool is_r128{};
     MipStorageFallbackMode mip_fallback_mode{};
     u32 constant_mip_index{};
+    // The descriptor COUNT the compiled SPIR-V module was built against, persisted with the
+    // module (run 116): NumBindings() re-reads the LIVE T#, and a warm-cache preload rebuilds
+    // the set layout BEFORE the game has written that T# - descriptorCount=1 under a module
+    // carrying TypeArray(image, 9), and BindTextures then writes 9 descriptors into a 1-slot
+    // binding = the ReadInvalid 0x300100000 family. Layout, module array, clamp and bind count
+    // must all come from THIS value; the live count is only a specialization signal.
+    u32 num_bindings_baked{0};
 
     constexpr AmdGpu::Image GetSharp(const auto& info) const noexcept {
         AmdGpu::Image image{};
@@ -164,6 +171,12 @@ struct ImageResource {
         return (mip_fallback_mode == MipStorageFallbackMode::DynamicIndex)
                    ? (tsharp.last_level - tsharp.base_level + 1)
                    : 1;
+    }
+
+    // The count everything baked-per-module must use (set layout, SPIR-V array size, bind-time
+    // descriptor writes). 0 = a record from before the field existed; fall back to live.
+    u32 NumBindingsBaked(const auto& info) const {
+        return num_bindings_baked != 0 ? num_bindings_baked : NumBindings(info);
     }
 };
 using ImageResourceList = boost::container::static_vector<ImageResource, NUM_IMAGES>;

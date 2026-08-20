@@ -238,18 +238,21 @@ Id EmitImageRead(EmitContext& ctx, IR::Inst* inst, u32 handle, Id coords, Id lod
         if (ctx.profile.supports_image_load_store_lod) {
             operands.Add(spv::ImageOperandsMask::Lod, lod);
         } else if (Sirit::ValidId(lod)) {
-#if 1
-            // It's  confusing what interactions will cause this code path so leave it as
-            // unreachable until a case is found.
-            // Normally IMAGE_LOAD_MIP should translate -> OpImageFetch
-            UNREACHABLE_MSG("Unsupported ImageRead with Lod");
-#else
-            LOG_WARNING(Render, "Fallback for ImageRead with LOD");
+            // Was UNREACHABLE ("confusing what interactions cause this path") - but an
+            // UNREACHABLE in a user run costs the whole run. Mirror the EmitImageWrite clamp
+            // below and report reachability instead; the first shader to land here tells us
+            // the case exists.
+            LOG_CRITICAL(Render_Recompiler,
+                         "shader {:#x}: ImageRead with LOD took the mip-array fallback "
+                         "(previously UNREACHABLE) - clamped to {} bindings",
+                         ctx.info.pgm_hash, texture.num_bindings);
             ASSERT(texture.mip_fallback_mode == MipStorageFallbackMode::DynamicIndex);
             const Id single_image_ptr_type =
                 ctx.TypePointer(spv::StorageClass::UniformConstant, texture.image_type);
-            image_ptr = ctx.OpAccessChain(single_image_ptr_type, image_ptr, std::array{lod});
-#endif
+            const Id lod_clamped =
+                ctx.OpUMin(ctx.U32[1], lod, ctx.ConstU32(texture.num_bindings - 1));
+            image_ptr = ctx.OpAccessChain(single_image_ptr_type, image_ptr,
+                                          std::array{lod_clamped});
         }
         const Id image = ctx.OpLoad(texture.image_type, image_ptr);
         texel = ctx.OpImageRead(color_type, image, coords, operands.mask, operands.operands);

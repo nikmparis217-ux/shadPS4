@@ -48,7 +48,11 @@ ComputePipeline::ComputePipeline(const Instance& instance, Scheduler& scheduler,
         });
     }
     for (const auto& image : info->images) {
-        const u32 num_bindings = image.NumBindings(*info);
+        // Baked count: NumBindings() reads the LIVE T#, and during warm-cache preloading the
+        // game has not written it yet - the zeroed sharp gave descriptorCount=1 under a module
+        // carrying a 9-deep array (the run-116 ReadInvalid). Note buffers above already guard
+        // preloading; images never did.
+        const u32 num_bindings = image.NumBindingsBaked(*info);
         bindings.push_back({
             .binding = binding,
             .descriptorType = image.is_written ? vk::DescriptorType::eStorageImage
