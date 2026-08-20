@@ -1199,11 +1199,16 @@ void Instance::RegisterCommandBuffer(u64 cmdbuf, const MasterSemaphore* semaphor
     num_tracked_cmdbufs.store(n + 1, std::memory_order_release);
 }
 
-GpuTimelineSet Instance::SnapshotTimelines() const {
+GpuTimelineSet Instance::SnapshotTimelines(const MasterSemaphore* recording_owner) const {
     GpuTimelineSet set{};
     set.count = num_timelines.load(std::memory_order_acquire);
     for (u32 i = 0; i < set.count; ++i) {
-        set.ticks[i] = timelines[i]->CurrentTick();
+        const u64 current = timelines[i]->CurrentTick();
+        // Owner: its open cmdbuf holds cache references, gate on the recording tick.
+        // Everyone else: gate on submitted work only - see the header comment for the proof
+        // and the run-120 starvation this replaces (current_tick starts at 1, so the -1 is
+        // never below 0, and IsFree(0) is trivially true for a timeline that never submitted).
+        set.ticks[i] = (timelines[i] == recording_owner) ? current : current - 1;
     }
     return set;
 }
@@ -1214,6 +1219,26 @@ u32 Instance::CountTimelinesPast(const GpuTimelineSet& set) const {
         past += timelines[i]->IsFree(set.ticks[i]) ? 1 : 0;
     }
     return past;
+}
+
+void Instance::RefreshTimelines() const {
+    const u32 n = num_timelines.load(std::memory_order_acquire);
+    for (u32 i = 0; i < n; ++i) {
+        timelines[i]->Refresh();
+    }
+}
+
+u32 Instance::FirstUnmetTimeline(const GpuTimelineSet& set, u64& gate_tick, u64& known_tick,
+                                 u64& current_tick) const {
+    for (u32 i = 0; i < set.count; ++i) {
+        if (!timelines[i]->IsFree(set.ticks[i])) {
+            gate_tick = set.ticks[i];
+            known_tick = timelines[i]->KnownGpuTick();
+            current_tick = timelines[i]->CurrentTick();
+            return i;
+        }
+    }
+    return set.count;
 }
 
 bool Instance::AnyTimelineLost() const {

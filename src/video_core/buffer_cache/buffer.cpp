@@ -6,6 +6,7 @@
 #include <fmt/format.h>
 #include "common/alignment.h"
 #include "common/assert.h"
+#include "common/logging/log.h"
 #include "video_core/buffer_cache/bda_registry.h"
 #include "video_core/buffer_cache/buffer.h"
 #include "video_core/renderer_vulkan/liverpool_to_vk.h"
@@ -162,6 +163,19 @@ void UniqueBuffer::Create(const vk::BufferCreateInfo& buffer_ci, MemoryUsage usa
     // thousands of buffers between frames), a multi-GB request means a torn GPU-driven V#'s
     // garbage size slipped past the base-address guards. Run 55 died here at 650 compiles
     // with no size in the log, and the two stories want opposite fixes.
+    if (result != VK_SUCCESS) {
+        // The census AT the death, not the one from the last GC pass seconds earlier. Run 118
+        // died on a 1 MB request with VMA at 22 GB in 10.7k allocs, and the periodic lines
+        // alone could not attribute it - pair this with the [vram]/[buffergc] sub-censuses.
+        VmaTotalStatistics stats{};
+        vmaCalculateStatistics(allocator, &stats);
+        LOG_CRITICAL(Render_Vulkan,
+                     "OOM census: VMA-owned {} MB in {} allocation(s) / {} block(s), request "
+                     "was {} bytes ({})",
+                     stats.total.statistics.allocationBytes >> 20,
+                     stats.total.statistics.allocationCount, stats.total.statistics.blockCount,
+                     buffer_ci.size, vk::to_string(vk::Result{result}));
+    }
     ASSERT_MSG(result == VK_SUCCESS, "Failed allocating buffer of {} bytes with error {}",
                buffer_ci.size, vk::to_string(vk::Result{result}));
     buffer = vk::Buffer{unsafe_buffer};

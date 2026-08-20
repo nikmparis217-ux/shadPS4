@@ -192,7 +192,18 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
         download = temp_download->mapped_data.data();
         offset = 0;
         g_temp_download_count.fetch_add(1, std::memory_order_relaxed);
-        LogCopyClamp(buffer, device_addr, total_size_bytes, 0);
+        // Its own message: this used to route through LogCopyClamp and printed
+        // "range X does not fit buffer X - dropped" for a readback that was neither
+        // ill-fitting nor dropped (run 118 read it as a clamp bug). Nothing is lost here -
+        // the download happens through a temporary buffer, at the price of a full stall.
+        static std::atomic<u32> tempdl_logs{0};
+        if (tempdl_logs.fetch_add(1, std::memory_order_relaxed) < 16) {
+            LOG_WARNING(Render_Vulkan,
+                        "[tempdl] download {:#x}+{:#x} ({} MB) exceeds the {} MB window - "
+                        "temporary buffer + synchronous readback",
+                        device_addr, total_size_bytes, total_size_bytes >> 20,
+                        DownloadBufferSize >> 20);
+        }
     }
     for (auto& copy : copies) {
         // Modify copies to have the staging offset in mind
@@ -782,6 +793,8 @@ void BufferCache::ChangeRegister(BufferId buffer_id) {
     }
     if constexpr (insert) {
         total_used_memory += Common::AlignUp(size, CACHING_PAGESIZE);
+        live_buffer_bytes += Common::AlignUp(size, CACHING_PAGESIZE);
+        ++live_buffer_count;
         buffer.SetLRUId(lru_cache.Insert(buffer_id, gc_tick));
         boost::container::small_vector<vk::DeviceAddress, 128> bda_addrs;
         bda_addrs.reserve(size_pages);
@@ -794,6 +807,8 @@ void BufferCache::ChangeRegister(BufferId buffer_id) {
         buffer_ranges.Add(buffer.CpuAddr(), buffer.SizeBytes(), buffer_id);
     } else {
         total_used_memory -= Common::AlignUp(size, CACHING_PAGESIZE);
+        live_buffer_bytes -= Common::AlignUp(size, CACHING_PAGESIZE);
+        --live_buffer_count;
         lru_cache.Free(buffer.LRUId());
         const u64 offset = bda_pagetable_buffer.Offset(page_begin * sizeof(vk::DeviceAddress));
         bda_pagetable_buffer.Fill(offset, size_pages * sizeof(vk::DeviceAddress), 0);
@@ -1056,10 +1071,13 @@ void BufferCache::RunGarbageCollector() {
         u32 vma_allocs = 0;
         instance.GetVmaStatistics(vma_bytes, vma_allocs);
         LOG_INFO(Render_Vulkan,
-                 "[vram] device {} MB, VMA-owned {} MB in {} allocs, pending deaths {}, "
-                 "temp_downloads {} (GC trigger {} MB)",
-                 total_used_memory >> 20, vma_bytes >> 20, vma_allocs, pending_deaths.size(),
-                 g_temp_download_count.load(std::memory_order_relaxed),
+                 "[vram] device {} MB, VMA-owned {} MB in {} allocs (buffers {} / {} MB, "
+                 "images {} / {} MB), pending deaths {} / {} MB, temp_downloads {} (GC "
+                 "trigger {} MB)",
+                 total_used_memory >> 20, vma_bytes >> 20, vma_allocs, live_buffer_count,
+                 live_buffer_bytes >> 20, texture_cache.LiveImageCount(),
+                 texture_cache.LiveImageBytes() >> 20, pending_deaths.size(),
+                 pending_death_bytes >> 20, g_temp_download_count.load(std::memory_order_relaxed),
                  trigger_gc_memory >> 20);
     }
     if (total_used_memory < trigger_gc_memory) {
@@ -1118,8 +1136,17 @@ void BufferCache::RunGarbageCollector() {
         u64 vma_bytes = 0;
         u32 vma_allocs = 0;
         instance.GetVmaStatistics(vma_bytes, vma_allocs);
-        LOG_WARNING(Render_Vulkan, "[buffergc] census: device {} MB, VMA-owned {} MB in {} allocs",
-                    total_used_memory >> 20, vma_bytes >> 20, vma_allocs);
+        // Run 118: this census read "device 22282 MB in 10715 allocs" and could not say WHOSE
+        // they were - the buffer GC freed ~0 while something allocated thousands of ~1.3 MB
+        // blocks. The two live sub-censuses split it: buffers (ours, this cache) vs images
+        // (texture cache) vs the remainder (driver-internal + pipelines).
+        LOG_WARNING(Render_Vulkan,
+                    "[buffergc] census: device {} MB, VMA-owned {} MB in {} allocs; buffers {} / "
+                    "{} MB, images {} / {} MB, pending deaths {} / {} MB",
+                    total_used_memory >> 20, vma_bytes >> 20, vma_allocs, live_buffer_count,
+                    live_buffer_bytes >> 20, texture_cache.LiveImageCount(),
+                    texture_cache.LiveImageBytes() >> 20, pending_deaths.size(),
+                    pending_death_bytes >> 20);
     }
 }
 
@@ -1141,11 +1168,14 @@ void BufferCache::DeleteBuffer(BufferId buffer_id) {
     death.timeline = reinterpret_cast<u64>(scheduler.GetMasterSemaphore());
     death.defer_tick = scheduler.CurrentTick();
     // THE GATE, at last on ALL THREE timelines (the Act 2 3c prerequisite): the erase is
-    // queued into pending_deaths with a snapshot of every timeline's CurrentTick, and
-    // ProcessPendingDeaths (per submit, same thread) only erases once EVERY timeline has
-    // passed its snapshot - a tick from the draw scheduler alone says nothing about the
-    // present/flip command buffers that may still reference the buffer.
-    pending_deaths.push_back({buffer_id, instance.SnapshotTimelines(), death});
+    // queued into pending_deaths with a snapshot of every timeline, and ProcessPendingDeaths
+    // (per submit, same thread) only erases once EVERY timeline has passed its snapshot.
+    // Our own (draw) scheduler is gated at its RECORDING tick - its open cmdbuf accumulates
+    // buffer references between submits; present/flip are gated at their SUBMITTED tick
+    // (see SnapshotTimelines' header for the run-120 flip starvation and the proof).
+    pending_deaths.push_back(
+        {buffer_id, instance.SnapshotTimelines(scheduler.GetMasterSemaphore()), death});
+    pending_death_bytes += buffer.SizeBytes();
     buffer.is_deleted = true;
 }
 
@@ -1153,6 +1183,14 @@ void BufferCache::ProcessPendingDeaths() {
     if (pending_deaths.empty()) {
         return;
     }
+    // ⚠⚠ THE RUN-119 OOM LIVED HERE: IsFree() compares against a CACHED gpu_tick that only
+    // that Scheduler's own activity refreshes. This runs on the draw thread, so the
+    // present/flip entries of every gate were read from values that could be seconds stale -
+    // 4495 corpses (16 of the 22 GB VMA held at the death) were waiting for progress the GPU
+    // had long made. One counter query per timeline per drain pass (Refresh is a forward-only
+    // CAS and vkGetSemaphoreCounterValue needs no external sync - safe cross-thread); never
+    // per corpse, or a 4000-deep graveyard costs 12000 queries per submit.
+    instance.RefreshTimelines();
     // Once any timeline is lost, ticks are not lifetime guarantees and AllTimelinesPast
     // deliberately refuses forever - erase unconditionally, the device is gone anyway and
     // RecordBufferDeath marks these deaths as untrustworthy on its own.
@@ -1165,9 +1203,27 @@ void BufferCache::ProcessPendingDeaths() {
         // KnownGpuTick at this moment, not at the moment the deletion was queued.
         d.death.known_gpu = scheduler.GetMasterSemaphore()->KnownGpuTick();
         instance.RecordBufferDeath(d.death);
+        pending_death_bytes -= d.death.size;
         slot_buffers.erase(d.buffer_id);
         return true;
     });
+    // If the refresh is not enough - a scheduler that genuinely never SUBMITS cannot be
+    // helped by reading its counter, because the gate stores its RECORDING tick - the next
+    // failure must name the culprit instead of presenting another anonymous 22 GB. Budgeted
+    // to roughly one line per ~10 s of passes.
+    if (pending_death_bytes > 1_GB && !pending_deaths.empty()) {
+        static u32 grave_logs = 0;
+        if ((grave_logs++ & 1023) == 0) {
+            u64 gate = 0, known = 0, current = 0;
+            const u32 idx = instance.FirstUnmetTimeline(pending_deaths.front().gate, gate, known,
+                                                        current);
+            LOG_CRITICAL(Render_Vulkan,
+                         "[graveyard] {} corpses / {} MB waiting; oldest is held by timeline {} "
+                         "(0=draw 1=present 2=flip): gate {} known {} current {}",
+                         pending_deaths.size(), pending_death_bytes >> 20, idx, gate, known,
+                         current);
+        }
+    }
 }
 
 } // namespace VideoCore

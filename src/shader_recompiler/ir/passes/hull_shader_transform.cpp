@@ -492,8 +492,20 @@ void HullShaderTransform(IR::Program& program, const RuntimeInfo& runtime_info) 
                         ir.SetTcsGenericAttribute(data_component, attr_index, comp_index);
                     } else {
                         ASSERT(output_kind == AttributeRegion::PatchConst);
-                        ASSERT_MSG(addr.IsImmediate(), "patch addr non imm, inst {}",
-                                   fmt::ptr(addr.Inst()));
+                        if (!addr.IsImmediate()) {
+                            // GT7 run 121: hs 0xcbf710ef stores a patch constant through a
+                            // RUNTIME-computed address. It is the same shader the
+                            // GetAttributeRegionKind clamp (run 76) already flagged as
+                            // "tess-constant multiple count=18 (want <=2) - patch data will be
+                            // wrong", so this store was going to a wrong slot either way.
+                            // Dropping it costs one wrong patch constant on a documented-wrong
+                            // shader; the assert here used to cost the whole run.
+                            LOG_CRITICAL(Render_Recompiler,
+                                         "hs/ds {:#x}: patch-const store at a RUNTIME address - "
+                                         "dropped (inst {})",
+                                         info.pgm_hash, fmt::ptr(addr.Inst()));
+                            return;
+                        }
                         ir.SetPatch(IR::PatchGeneric((addr.U32() >> 2) + off_dw), data_component);
                     }
                 };

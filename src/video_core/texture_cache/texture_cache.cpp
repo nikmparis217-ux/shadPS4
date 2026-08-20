@@ -815,6 +815,8 @@ void TextureCache::RegisterImage(ImageId image_id) {
                "Trying to register an already registered image");
     image.flags |= ImageFlagBits::Registered;
     total_used_memory += Common::AlignUp(image.info.guest_size, 1024);
+    live_image_bytes += Common::AlignUp(image.info.guest_size, 1024);
+    ++live_image_count;
     image.lru_id = lru_cache.Insert(image_id, gc_tick);
     ForEachPage(image.info.guest_address, image.info.guest_size,
                 [this, image_id](u64 page) { page_table[page].push_back(image_id); });
@@ -827,6 +829,8 @@ void TextureCache::UnregisterImage(ImageId image_id) {
     image.flags &= ~ImageFlagBits::Registered;
     lru_cache.Free(image.lru_id);
     total_used_memory -= Common::AlignUp(image.info.guest_size, 1024);
+    live_image_bytes -= Common::AlignUp(image.info.guest_size, 1024);
+    --live_image_count;
     ForEachPage(image.info.guest_address, image.info.guest_size, [this, image_id](u64 page) {
         const auto page_it = page_table.find(page);
         if (page_it == nullptr) {
@@ -981,6 +985,17 @@ void TextureCache::GarbageCollectImages() {
         ticks_to_destroy = std::min(ticks_to_destroy, gc_tick);
         num_deletions = aggresive ? (pressure_mode ? 1024 : 40) : pressured ? 20 : 10;
     };
+    // Instrumented for run 118's OOM (device 22 GB, VMA 22 GB in 10.7k allocs, buffer GC
+    // freeing ~0): this GC was completely silent, so the log could not say whether images
+    // were the growth or the bystander. Two things the counters must expose: (1) a
+    // GpuModified TILED image is skipped FOREVER (no non-linear download path) - a large
+    // skipped_tiled figure under pressure IS a leak signature; (2) a skip still consumes
+    // one unit of num_deletions, so a run of skips at the old end of the LRU can eat the
+    // whole budget and free nothing.
+    u32 freed_count = 0;
+    u64 freed_bytes = 0;
+    u32 skipped_tiled_dl = 0;
+    u32 skipped_dl_unpressured = 0;
     const auto clean_up = [&](ImageId image_id) {
         if (num_deletions == 0) {
             return true;
@@ -991,15 +1006,20 @@ void TextureCache::GarbageCollectImages() {
         const bool tiled = image.info.IsTiled();
         if (tiled && download) {
             // This is a workaround for now. We can't handle non-linear image downloads.
+            ++skipped_tiled_dl;
             return false;
         }
         if (download && !pressured) {
+            ++skipped_dl_unpressured;
             return false;
         }
         if (download) {
             DownloadImageMemory(image_id);
         }
+        const u64 image_bytes = Common::AlignUp(image.info.guest_size, 1024);
         FreeImage(image_id);
+        ++freed_count;
+        freed_bytes += image_bytes;
         if (total_used_memory < critical_gc_memory) {
             if (aggresive) {
                 num_deletions >>= 2;
@@ -1022,6 +1042,17 @@ void TextureCache::GarbageCollectImages() {
         // If we are still over the critical limit, run an aggressive GC
         configure(true);
         lru_cache.ForEachItemBelow(gc_tick - ticks_to_destroy, clean_up);
+    }
+
+    // Budgeted like [buffergc]: loud whenever something was freed, and a heartbeat every
+    // 128th over-trigger pass so total silence cannot hide a GC that frees nothing.
+    static u32 texgc_quiet = 0;
+    if (freed_count > 0 || (++texgc_quiet & 127) == 0) {
+        LOG_WARNING(Render_Vulkan,
+                    "[texgc] freed {} image(s) / {} MB, skipped {} tiled+gpu (unfreeable), {} "
+                    "gpu-unpressured; live {} images / {} MB, device {} MB",
+                    freed_count, freed_bytes >> 20, skipped_tiled_dl, skipped_dl_unpressured,
+                    live_image_count, live_image_bytes >> 20, total_used_memory >> 20);
     }
 }
 

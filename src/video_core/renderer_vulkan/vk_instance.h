@@ -712,7 +712,21 @@ public:
     /// Captures the current logical tick of every registered timeline. A deletion queued now is only
     /// safe once EVERY one of these has been reached, because the resource may be referenced by a
     /// command buffer on any Scheduler.
-    [[nodiscard]] GpuTimelineSet SnapshotTimelines() const;
+    ///
+    /// `recording_owner` (the caller's own scheduler) is snapshotted at its RECORDING tick - its
+    /// open command buffer accumulates cache-resource references between submits. Every OTHER
+    /// timeline is snapshotted at its last SUBMITTED tick (CurrentTick - 1), because run 120
+    /// measured the recording-tick gate starving on the flip scheduler: gate 622 / known 621 /
+    /// current 622 held 1112 corpses (6.6 GB) - a scheduler that does not submit during a
+    /// streaming phase can never satisfy a gate on its open tick, and no counter refresh can help
+    /// (the tick was never signaled). Verified against vk_presenter.cpp before weakening: the
+    /// present/flip schedulers' recording sessions are begin-record-Flush within ONE function and
+    /// touch ONLY frame/swapchain images (plus ImGui's own pools) - never a cache buffer - so
+    /// their open command buffers cannot reference the dying resource. ⚠ IF ANYONE EVER RECORDS A
+    /// CACHE BUFFER ON THE PRESENT OR FLIP SCHEDULER, this assumption breaks silently; the
+    /// tripwire is the run-60-63 signature (device lost naming innocent draw shaders) plus a
+    /// validation VUID-vkDestroyBuffer naming a present/flip cmdbuf in the ownership dump.
+    [[nodiscard]] GpuTimelineSet SnapshotTimelines(const MasterSemaphore* recording_owner) const;
 
     /// True only when every timeline in `set` has genuinely been passed by its GPU. Returns false if
     /// any timeline has reported the device lost, because a tick sampled after that is meaningless.
@@ -721,6 +735,20 @@ public:
     /// How many of `set`'s timelines have been passed. For the journal: `< count` on an entry proves
     /// the gate let a resource go while another Scheduler was still using it.
     [[nodiscard]] u32 CountTimelinesPast(const GpuTimelineSet& set) const;
+
+    /// Queries every registered timeline's semaphore counter once (MasterSemaphore::Refresh is a
+    /// forward-only CAS and vkGetSemaphoreCounterValue needs no external synchronization, so this
+    /// is safe from any thread). Run 119's OOM: IsFree() reads a CACHED gpu_tick that only its own
+    /// Scheduler's activity advances - the death gate read stale present/flip values from the draw
+    /// thread and 4495 corpses (16 GB) piled up waiting for progress the GPU had long made.
+    /// Call once per drain pass, never per corpse: three queries, not three-per-death.
+    void RefreshTimelines() const;
+
+    /// Index of the first timeline in `set` that has NOT been passed (0=draw, 1=present, 2=flip in
+    /// vk_presenter construction order), with its gate/known/current ticks - so a graveyard that
+    /// will not drain can NAME the scheduler holding it. Returns set.count when all passed.
+    u32 FirstUnmetTimeline(const GpuTimelineSet& set, u64& gate_tick, u64& known_tick,
+                           u64& current_tick) const;
 
     [[nodiscard]] u32 GetNumTimelines() const {
         return num_timelines.load(std::memory_order_acquire);

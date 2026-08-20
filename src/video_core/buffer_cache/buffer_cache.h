@@ -227,6 +227,9 @@ private:
         Vulkan::GpuBufferDeath death;
     };
     std::vector<PendingBufferDeath> pending_deaths;
+    // What the graveyard is HOLDING in bytes, not just how many corpses - run 119's OOM was
+    // 16 GB of it and the count alone (4495) could not say so.
+    u64 pending_death_bytes = 0;
 
     const Vulkan::Instance& instance;
     Vulkan::Scheduler& scheduler;
@@ -243,6 +246,11 @@ private:
     Buffer bda_pagetable_buffer;
     Common::SlotVector<Buffer> slot_buffers;
     u64 total_used_memory = 0;
+    // Live census, maintained in ChangeRegister (see the twin counters in TextureCache):
+    // total_used_memory is overwritten with GetDeviceMemoryUsage() every GC pass, so the
+    // register-time sum is unreadable. Needed to attribute an OOM to buffers vs images.
+    u64 live_buffer_bytes = 0;
+    u32 live_buffer_count = 0;
     u64 trigger_gc_memory = 0;
     u64 critical_gc_memory = 0;
     u64 gc_tick = 0;

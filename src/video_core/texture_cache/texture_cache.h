@@ -210,6 +210,15 @@ public:
     /// Runs the garbage collector.
     void RunGarbageCollector();
 
+    /// Live census for the cross-cache VRAM attribution ([vram] / OOM lines): what the image
+    /// cache itself is holding right now, by its own bookkeeping.
+    u64 LiveImageBytes() const {
+        return live_image_bytes;
+    }
+    u32 LiveImageCount() const {
+        return live_image_count;
+    }
+
     template <typename Func>
     void ForEachImageInRegion(VAddr cpu_addr, size_t size, Func&& func) {
         using FuncReturn = typename std::invoke_result<Func, ImageId, Image&>::type;
@@ -323,6 +332,13 @@ private:
     tsl::robin_map<u64, Sampler> samplers;
     std::unordered_set<ImageId> download_images;
     u64 total_used_memory = 0;
+    // Live census, maintained in Register/UnregisterImage. Separate from total_used_memory,
+    // which the GC OVERWRITES with GetDeviceMemoryUsage() on drivers that report it - the
+    // register-time sum never survives long enough to be read. Run 118's OOM (device 22 GB,
+    // VMA 22 GB in 10.7k allocs, buffer GC freeing 0 MB) could not be attributed to images
+    // vs buffers vs driver objects without these two numbers.
+    u64 live_image_bytes = 0;
+    u32 live_image_count = 0;
     u64 trigger_gc_memory = 0;
     u64 pressure_gc_memory = 0;
     u64 critical_gc_memory = 0;
