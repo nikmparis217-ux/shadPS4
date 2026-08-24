@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <ranges>
 #include "common/assert.h"
+#include "common/logging/log.h"
 #include "video_core/renderer_vulkan/liverpool_to_vk.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
@@ -112,7 +113,7 @@ void UniqueImage::Destroy() {
 void UniqueImage::Create(const vk::ImageCreateInfo& image_ci) {
     this->image_ci = image_ci;
     ASSERT(!image);
-    const VmaAllocationCreateInfo alloc_info = {
+    VmaAllocationCreateInfo alloc_info = {
         .flags = VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
         .usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
         .requiredFlags = 0,
@@ -125,6 +126,28 @@ void UniqueImage::Create(const vk::ImageCreateInfo& image_ci) {
     VkImage unsafe_image{};
     VkResult result = vmaCreateImage(allocator, &image_ci_unsafe, &alloc_info, &unsafe_image,
                                      &allocation, nullptr);
+    if (result != VK_SUCCESS) {
+        // GT7 peaks over 10 GB of device memory in race scenes; one texture landing on a full
+        // budget must not take the whole session down (run 140 died exactly here). Step down:
+        // first allow exceeding the VMA budget, then let the allocation land in host memory -
+        // a slow texture is strictly better than an assert.
+        LOG_CRITICAL(Render_Vulkan,
+                     "Image allocation failed ({}) for {}x{}x{} mips {} layers {} {} - retrying "
+                     "over budget",
+                     vk::to_string(vk::Result{result}), image_ci.extent.width,
+                     image_ci.extent.height, image_ci.extent.depth, image_ci.mipLevels,
+                     image_ci.arrayLayers, vk::to_string(image_ci.format));
+        alloc_info.flags = 0;
+        result = vmaCreateImage(allocator, &image_ci_unsafe, &alloc_info, &unsafe_image,
+                                &allocation, nullptr);
+    }
+    if (result != VK_SUCCESS) {
+        LOG_CRITICAL(Render_Vulkan, "Still failing over budget ({}) - retrying in host memory",
+                     vk::to_string(vk::Result{result}));
+        alloc_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+        result = vmaCreateImage(allocator, &image_ci_unsafe, &alloc_info, &unsafe_image,
+                                &allocation, nullptr);
+    }
     ASSERT_MSG(result == VK_SUCCESS, "Failed allocating image with error {}",
                vk::to_string(vk::Result{result}));
     image = vk::Image{unsafe_image};

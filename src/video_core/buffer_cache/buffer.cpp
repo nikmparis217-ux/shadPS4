@@ -188,6 +188,24 @@ void UniqueBuffer::Create(const vk::BufferCreateInfo& buffer_ci, MemoryUsage usa
                      stats.total.statistics.allocationCount, stats.total.statistics.blockCount,
                      buffer_ci.size, vk::to_string(vk::Result{result}));
     }
+    if (result != VK_SUCCESS && buffer_ci.size <= (1ull << 30)) {
+        // Same step-down as UniqueImage::Create (run 140 died on an image; this is the buffer
+        // twin): first allow exceeding the VMA budget, then accept host memory - a slow buffer
+        // is strictly better than an assert. A multi-GB request stays FATAL on purpose: that is
+        // the torn-V# story above, host RAM cannot absorb it, and dying is the honest answer.
+        VmaAllocationCreateInfo retry_ci = alloc_ci;
+        retry_ci.flags &= ~VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT;
+        result = vmaCreateBuffer(allocator, &buffer_ci_unsafe, &retry_ci, &unsafe_buffer,
+                                 &allocation, out_alloc_info);
+        if (result != VK_SUCCESS) {
+            retry_ci.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+            retry_ci.preferredFlags = 0;
+            result = vmaCreateBuffer(allocator, &buffer_ci_unsafe, &retry_ci, &unsafe_buffer,
+                                     &allocation, out_alloc_info);
+        }
+        LOG_CRITICAL(Render_Vulkan, "buffer OOM step-down for {} bytes -> {}", buffer_ci.size,
+                     vk::to_string(vk::Result{result}));
+    }
     ASSERT_MSG(result == VK_SUCCESS, "Failed allocating buffer of {} bytes with error {}",
                buffer_ci.size, vk::to_string(vk::Result{result}));
     buffer = vk::Buffer{unsafe_buffer};
