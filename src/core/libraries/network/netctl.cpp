@@ -307,8 +307,16 @@ int PS4_SYSV_ABI sceNetCtlGetResult(int eventType, int* errorCode) {
     if (!errorCode) {
         return ORBIS_NET_CTL_ERROR_INVALID_ADDR;
     }
-    LOG_DEBUG(Lib_NetCtl, "(STUBBED) called eventType = {} ", eventType);
-    *errorCode = 0;
+    // The result must AGREE with sceNetCtlGetState. This used to answer errorCode = 0 ("your
+    // network operation completed with no error") while GetState answered DISCONNECTED - a
+    // contradiction GT7 resolves by asking again forever: run 138 sat wedged at the Music Rally
+    // menu for 5 minutes polling this exact pair (netctl.cpp:310 spam, menu labels never drawn).
+    // Offline, the honest reason for a DISCONNECTED event is NOT_CONNECTED - the game's state
+    // machine then takes its offline branch instead of retrying.
+    const bool connected = EmulatorSettings.IsConnectedToNetwork();
+    *errorCode = connected ? 0 : ORBIS_NET_CTL_ERROR_NOT_CONNECTED;
+    LOG_DEBUG(Lib_NetCtl, "called eventType = {} -> errorCode = {:#x}", eventType,
+              static_cast<u32>(*errorCode));
     return ORBIS_OK;
 }
 
