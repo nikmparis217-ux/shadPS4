@@ -1164,7 +1164,10 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
         const u64 h = u64(s.height) + 1;
         const u64 d = s.GetType() == AmdGpu::ImageType::Color3D ? u64(s.depth) + 1 : 1;
         const u64 layers = s.NumLayers();
-        return layers <= 2048 && (w * h * d * layers) <= (u64{1} << 31);
+        // 2^28 texels = 1 GB at 32 bpp. Run 146 proved 2^31 too generous: a 2.3 GB monster
+        // passed and killed the page tracker instead of the allocator. The largest legitimate
+        // GT7 resource seen is far below this (4K render targets, 8K lightmaps).
+        return layers <= 2048 && (w * h * d * layers) <= (u64{1} << 28);
     };
 
     for (const auto& image_desc : stage.images) {

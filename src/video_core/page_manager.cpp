@@ -313,6 +313,18 @@ struct PageManager::Impl {
             return;
         }
         if (!rasterizer->IsMapped(aligned_addr, aligned_end - aligned_addr)) {
+            // A NOT-fully-mapped region that is also HUGE is a torn descriptor, not content:
+            // run 146 registered an image spanning 0x10c5200000 - 0x114d280000 (~2.3 GB), the
+            // warning below fired, and the page sweep then died writing a watcher entry
+            // (0xc0000005 at address 0x20). Same softclamp answer as the guest-floor case
+            // above; small partially-mapped regions keep the old warn-and-continue behavior.
+            if (aligned_end - aligned_addr > (u64{1} << 30)) {
+                LOG_CRITICAL(Render,
+                             "[softclamp] refusing to (un)track region {:#x} - {:#x} ({} MB, "
+                             "not fully GPU mapped - torn descriptor registration)",
+                             aligned_addr, aligned_end, (aligned_end - aligned_addr) >> 20);
+                return;
+            }
             LOG_WARNING(Render,
                         "Tracking memory region {:#x} - {:#x} which is not fully GPU mapped.",
                         aligned_addr, aligned_end);
