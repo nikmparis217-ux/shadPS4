@@ -136,6 +136,9 @@ public:
         ASSERT(parent);
         return parent;
     }
+    bool HasParent() const {
+        return parent != nullptr;
+    }
     void SetParent(IR::Block* block) {
         parent = block;
     }

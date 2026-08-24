@@ -619,6 +619,22 @@ SharpLocation TrackSharp(const IR::Inst* inst, const IR::Block& current_parent, 
     size_t num_sources = sources.size();
     ASSERT(current_parent.cfg_block);
 
+    if (BindlessStubEnabled()) {
+        // vs 0x41e57240 (run 142) reached this loop with a sharp source carrying NO parent
+        // block - GetParent() asserted mid-compile and took the whole session down. A source
+        // the dominance walk cannot place is a source we cannot trust: stub the shader, the
+        // same answer FindSharpSources gives when it finds nothing at all.
+        for (const IR::Inst* source : sources) {
+            if (!source->HasParent() || !source->GetParent()->cfg_block) {
+                LOG_ERROR(Render_Recompiler,
+                          "Sharp source without a placed parent block pc={:#x} - shader will "
+                          "be stubbed",
+                          pc);
+                return INVALID_SHARP_LOCATION;
+            }
+        }
+    }
+
     // Perform dominance analysis on found sources and eliminate ones that don't pass
     // If a sharp source is dominated by another, the former can be eliminated.
     for (s32 i = 0; i < num_sources;) {
@@ -644,6 +660,13 @@ SharpLocation TrackSharp(const IR::Inst* inst, const IR::Block& current_parent, 
         }
     }
 
+    if (sources.size() != 1 && BindlessStubEnabled()) {
+        // Ambiguity is wrong-but-plausible data; the honest no-op stub beats it.
+        LOG_ERROR(Render_Recompiler,
+                  "Ambiguous sharp source ({} candidates) pc={:#x} - shader will be stubbed",
+                  sources.size(), pc);
+        return INVALID_SHARP_LOCATION;
+    }
     ASSERT_MSG(sources.size() == 1, "Unable to deduce sharp source");
     return SharpLocationFromSource(sources[0]);
 }

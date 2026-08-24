@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <queue>
+#include "common/logging/log.h"
 #include "shader_recompiler/ir/program.h"
 
 namespace Shader::Optimization {
@@ -69,6 +70,15 @@ static IR::Value GetRealValue(PhiMap& phi_map, IR::Inst* inst, u32 lane) {
         const auto [it, is_new_phi] = phi_map.try_emplace(inst);
         if (!is_new_phi) {
             return IR::Value{it->second};
+        }
+
+        if (!inst->HasParent()) {
+            // Twin of the TrackSharp guard (run 142's GetParent assert): a phi with no parent
+            // block cannot host a duplicate. Hand back the phi itself - the original value,
+            // lane-writes kept - instead of asserting the session away.
+            LOG_ERROR(Render_Recompiler, "ReadLane phi without a parent block - kept as-is");
+            it->second = inst;
+            return IR::Value{inst};
         }
 
         // Create new phi and insert it right before the old one.
