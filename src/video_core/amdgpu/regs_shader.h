@@ -209,32 +209,46 @@ struct ComputeProgram {
     }
 };
 
-static constexpr const BinaryInfo& SearchBinaryInfo(const u32* code) {
+// Returns nullptr when the code at `code` carries no BinaryInfo signature within the search
+// limit - i.e. the program address the guest handed the CP does not point at a shader. GT7's
+// GPU-driven stream produced exactly that at main-game load (runs 125/B/130, thread
+// GpuCommandProcessor): torn/garbage guest data, the same family as the softclamped V#/T#
+// cases. The old UNREACHABLE here turned one torn register into a dead session.
+static inline const BinaryInfo* SearchBinaryInfoOrNull(const u32* code) {
     constexpr u32 token_mov_vcchi = 0xBEEB03FF;
     if (code[0] == token_mov_vcchi) {
         const auto* info = std::bit_cast<const BinaryInfo*>(code + (code[1] + 1) * 2);
         if (info->Valid()) {
-            return *info;
+            return info;
         }
     }
-    constexpr u32 signature_size = sizeof(BinaryInfo::signature_ref) / sizeof(u8);
     constexpr u32 search_limit = 0x4000;
     const u32* end = code + search_limit;
     for (const u32* it = code; it < end; ++it) {
         if (const BinaryInfo* info = std::bit_cast<const BinaryInfo*>(it); info->Valid()) {
-            return *info;
+            return info;
         }
     }
-    UNREACHABLE_MSG("Shader binary info not found.");
+    return nullptr;
 }
 
+// On failure returns hash 0 with an EMPTY code span - every caller must treat that as "this
+// stage/dispatch has no shader this frame" and skip, the way the softclamp family already
+// skips torn descriptors. The stream self-corrects on the next frame.
 static constexpr Shader::ShaderParams GetParams(const auto& sh) {
     const auto* code = sh.template Address<u32*>();
-    const auto& bininfo = SearchBinaryInfo(code);
+    const auto* bininfo = SearchBinaryInfoOrNull(code);
+    if (bininfo == nullptr) {
+        return {
+            .user_data = sh.user_data,
+            .code = {},
+            .hash = 0,
+        };
+    }
     return {
         .user_data = sh.user_data,
-        .code = std::span{code, bininfo.length / sizeof(u32)},
-        .hash = bininfo.shader_hash,
+        .code = std::span{code, bininfo->length / sizeof(u32)},
+        .hash = bininfo->shader_hash,
     };
 }
 

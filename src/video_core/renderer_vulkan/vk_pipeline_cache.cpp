@@ -181,6 +181,12 @@ const Shader::RuntimeInfo& PipelineCache::BuildRuntimeInfo(Stage stage, LogicalS
         gs_info.out_vertex_data_size = regs.vgt_gs_vert_itemsize[0];
         gs_info.mode = regs.vgt_gs_mode.mode;
         const auto params_vc = AmdGpu::GetParams(regs.vs_program);
+        if (params_vc.code.empty()) {
+            // Unobserved so far (the SearchBinaryInfo family hit compute/graphics stages);
+            // if this ever fires the GS copy shader is garbage too and the log names it.
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] GS copy-shader program has no shader binary info");
+        }
         gs_info.vs_copy = params_vc.code;
         gs_info.vs_copy_hash = params_vc.hash;
         DumpShader(gs_info.vs_copy, gs_info.vs_copy_hash, Shader::Stage::Vertex, 0, /*force=*/false,
@@ -495,6 +501,22 @@ bool PipelineCache::RefreshGraphicsStages() {
         }
 
         const auto params = AmdGpu::GetParams(*pgm);
+        if (params.code.empty()) {
+            // The program address holds no shader binary (torn GPU-driven stream - the
+            // run-125/130 SearchBinaryInfo family). Skip the stage this frame, loudly.
+            static u32 no_bininfo_logged = 0;
+            if (no_bininfo_logged < 16) {
+                ++no_bininfo_logged;
+                LOG_CRITICAL(Render_Vulkan,
+                             "[softclamp] stage {} program at {} has no shader binary info - "
+                             "stage skipped this frame ({} so far)",
+                             static_cast<u32>(stage_in),
+                             static_cast<const void*>(pgm->Address<u32*>()), no_bininfo_logged);
+            }
+            key.stage_hashes[stage_out_idx] = 0;
+            infos[stage_out_idx] = nullptr;
+            return false;
+        }
         std::optional<Shader::Gcn::FetchShaderData> fetch_shader_;
         std::tie(infos[stage_out_idx], modules[stage_out_idx], fetch_shader_,
                  key.stage_hashes[stage_out_idx]) =
@@ -599,6 +621,20 @@ bool PipelineCache::RefreshComputeKey() {
     Shader::Backend::Bindings binding{};
     const auto& cs_pgm = liverpool->GetCsRegs();
     const auto cs_params = AmdGpu::GetParams(cs_pgm);
+    if (cs_params.code.empty()) {
+        // No shader binary at the CS program address (torn GPU-driven stream - the run-125/130
+        // SearchBinaryInfo family, always at main-game load). GetComputePipeline returns null
+        // on false and the dispatch is dropped; the stream self-corrects next frame.
+        static u32 no_bininfo_logged = 0;
+        if (no_bininfo_logged < 16) {
+            ++no_bininfo_logged;
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] compute program at {} has no shader binary info - "
+                         "dispatch skipped ({} so far)",
+                         static_cast<const void*>(cs_pgm.Address<u32*>()), no_bininfo_logged);
+        }
+        return false;
+    }
     std::tie(infos[0], modules[0], fetch_shader, compute_key.value) =
         GetProgram(Shader::Stage::Compute, LogicalStage::Compute, cs_params, binding);
     return true;
