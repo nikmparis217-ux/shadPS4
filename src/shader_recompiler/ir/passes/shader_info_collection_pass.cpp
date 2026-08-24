@@ -148,6 +148,12 @@ void Visit(Info& info, const IR::Inst& inst) {
             info.readconst_types |= Info::ReadConstType::Immediate;
         } else {
             info.readconst_types |= Info::ReadConstType::Dynamic;
+            // GT_DYNRC_GPU: a windowed read can be routed through read_const_dynamic without
+            // global DMA - remember that this shader carries one so the keep-alive below can
+            // preserve its BDA machinery exactly like the bindless case.
+            if (rc_flags & SrtWindowFlagBit) {
+                info.uses_window_reads = true;
+            }
         }
         info.uses_dma = true;
         break;
@@ -179,12 +185,15 @@ void CollectShaderInfoPass(IR::Program& program, const Profile& profile) {
     }
 
     if (!EmulatorSettings.IsDirectMemoryAccessEnabled()) {
-        if (info.uses_bindless_reads) {
+        if (info.uses_bindless_reads || (info.uses_window_reads && DynrcGpuReadsEnabled())) {
             // Selective DMA (GT_BINDLESS_LOWER): keep the BDA pagetable + fault buffer +
             // read_const_dynamic for THIS shader only. Every static ReadConst still reads
             // the flatbuf snapshot (EmitReadConst routes on the flag bits), so Dynamic is
             // the only type needed - and only the handful of bindless shaders pay the
             // rasterizer's per-submit DMA synchronization, not the whole game (run 74).
+            // GT_DYNRC_GPU widens the club to window-carrying shaders (the ~3 producers):
+            // their EmitReadConst then calls read_const_dynamic, which only exists if the
+            // Dynamic type and uses_dma survive here.
             info.readconst_types = Info::ReadConstType::Dynamic;
         } else {
             info.uses_dma = false;

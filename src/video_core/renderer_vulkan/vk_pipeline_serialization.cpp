@@ -16,7 +16,7 @@
 namespace Serialization {
 /* You should increment versions below once corresponding serialization scheme is changed. */
 static constexpr u32 ShaderBinaryVersion = 3u;
-static constexpr u32 ShaderMetaVersion = 4u; // 4: ImageResource grew num_bindings_baked
+static constexpr u32 ShaderMetaVersion = 5u; // 5: Info::dynrc_windows serialized (4: num_bindings_baked)
 static constexpr u32 PipelineKeyVersion = 3u;
 
 /// Every serialized record carries its format version XOR this. The hand-bumped versions above
@@ -432,6 +432,16 @@ void Info::Serialize(Serialization::Archive& ar) const {
 
     info.Write(this, sizeof(InfoPersistent));
     info.Write(flattened_ud_buf);
+    // dynrc_windows lives in Info, OUTSIDE the InfoPersistent memcpy above - unserialized it
+    // left every warm-cache run diagnostically BLIND: RefreshFlatBuf's ALL-ZERO measurement
+    // never logged and GT_SKIP_EMPTY_DYNRC was a silent no-op (the windows the walker still
+    // copies were simply unknown to the runtime). Meta version 5.
+    const u32 num_windows = static_cast<u32>(dynrc_windows.size());
+    info.Write(num_windows);
+    for (const auto& [base_dw, size_dw] : dynrc_windows) {
+        info.Write(base_dw);
+        info.Write(size_dw);
+    }
     srt_info.Serialize(ar);
 }
 
@@ -440,6 +450,22 @@ bool Info::Deserialize(Serialization::Archive& ar) {
 
     info.Read(this, sizeof(Shader::InfoPersistent));
     info.Read(flattened_ud_buf);
+    // Explicit count + capacity clamp: a static_vector overflow on a corrupt count would be
+    // UB, and the archive assert only catches truncation, not inflation.
+    u32 num_windows = 0;
+    info.Read(num_windows);
+    dynrc_windows.clear();
+    for (u32 i = 0; i < num_windows; ++i) {
+        u32 base_dw = 0, size_dw = 0;
+        info.Read(base_dw);
+        info.Read(size_dw);
+        if (dynrc_windows.size() < dynrc_windows.capacity()) {
+            dynrc_windows.emplace_back(base_dw, size_dw);
+        }
+    }
+    // Same value the flatten pass arms (flatten_extended_userdata_pass.cpp): the first few
+    // dispatches of a warm-cached shader get their window-content verdict logged again.
+    dynrc_log_budget = dynrc_windows.empty() ? 0 : 4;
 
     return srt_info.Deserialize(ar);
 }

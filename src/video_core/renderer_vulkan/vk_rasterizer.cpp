@@ -5,6 +5,7 @@
 #include <bit>
 #include <cstring>
 #include <iterator>
+#include <unordered_map>
 
 #include "common/debug.h"
 #include "core/debug_state.h"
@@ -1135,7 +1136,11 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
     }();
     const bool trace_this =
         img_trace && (stage.pgm_hash == 0xda05e7f8u || stage.pgm_hash == 0x018256c0u ||
-                      stage.pgm_hash == 0x2a0cfcd2u);
+                      stage.pgm_hash == 0x2a0cfcd2u ||
+                      // The two WINDOWED consumers (GT_BINDLESS_IMGARRAY) - until run 124 only
+                      // the producers were traceable, so the data problem's own consumers were
+                      // invisible to the one tool built for image questions.
+                      stage.pgm_hash == 0xa95f906eu || stage.pgm_hash == 0x3e50e1u);
     if (trace_this) {
         const auto& fb = stage.flattened_ud_buf;
         LOG_CRITICAL(Render_Vulkan, "[imgtrace] seq {} cs {:#x}: fb29 {} fb39 {}",
@@ -1171,23 +1176,46 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             // robustness2 nullDescriptor and self-heals next bind). A slot whose type class
             // disagrees with slot 0's - the type the module was specialized against this
             // draw - is null-bound too: binding it would mismatch the SPIR-V OpTypeImage.
+            // ⚠ If slot 0 ITSELF is junk, GetSharp collapses it to Image::Null (Color2D/Unorm)
+            // and that dummy class becomes the anchor: every genuinely-valid slot of another
+            // class is then null-bound as well - one bad slot 0 can manufacture "15/16
+            // null-bound". That rejection is REQUIRED for Vulkan validity (the module was
+            // specialized on slot 0), so it is not "fixed" here - it is MEASURED: the
+            // per-reason counters below say whether the nulls are absent data (addr0/unmapped)
+            // or class mismatch against a possibly-junk anchor (viewtype/integer + slot0=NULL).
             const auto view_type0 = tsharp.GetViewType(image_desc.is_array);
             const bool integer0 = AmdGpu::IsInteger(tsharp.GetNumberFmt());
+            // Slot 0's own structural validity, for the log: a null anchor taints the
+            // viewtype/integer counters.
+            const auto sharp0 = image_desc.GetSharpAt(stage, 0);
+            const bool anchor_null = sharp0.Address() == 0;
             u32 null_slots = 0;
+            u32 n_addr0 = 0, n_badfmt = 0, n_unmapped = 0, n_viewtype = 0, n_integer = 0;
+            u32 valid_mask = 0;
             for (u32 i = 0; i < num_bindings; i++) {
                 const auto slot_sharp = image_desc.GetSharpAt(stage, i);
-                const bool usable =
-                    slot_sharp.Address() != 0 &&
-                    slot_sharp.GetDataFmt() != AmdGpu::DataFormat::FormatInvalid &&
-                    memory->IsValidMapping(slot_sharp.Address()) &&
-                    slot_sharp.GetViewType(image_desc.is_array) == view_type0 &&
-                    AmdGpu::IsInteger(slot_sharp.GetNumberFmt()) == integer0;
-                if (!usable) {
+                // First failing clause only, so the reason counters sum to null_slots.
+                // IsMappedMemory, not IsValidMapping: the VMA map contains FREE areas and a
+                // torn T# in one passed the old test (the run-94 lesson, resource.h:96).
+                const char* why = nullptr;
+                if (slot_sharp.Address() == 0) {
+                    why = "addr0", ++n_addr0;
+                } else if (slot_sharp.GetDataFmt() == AmdGpu::DataFormat::FormatInvalid) {
+                    why = "badfmt", ++n_badfmt;
+                } else if (!memory->IsMappedMemory(slot_sharp.Address())) {
+                    why = "unmapped", ++n_unmapped;
+                } else if (slot_sharp.GetViewType(image_desc.is_array) != view_type0) {
+                    why = "viewtype", ++n_viewtype;
+                } else if (AmdGpu::IsInteger(slot_sharp.GetNumberFmt()) != integer0) {
+                    why = "integer", ++n_integer;
+                }
+                if (why != nullptr) {
                     image_bindings.emplace_back(std::piecewise_construct, std::tuple{},
                                                 std::tuple{});
                     ++null_slots;
                     continue;
                 }
+                valid_mask |= 1u << i;
                 auto& [image_id, desc] = image_bindings.emplace_back(
                     std::piecewise_construct, std::tuple{}, std::tuple{slot_sharp, image_desc});
                 image_id = texture_cache.FindImage(desc);
@@ -1202,15 +1230,27 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 image->binding.is_bound = 1u;
             }
             if (null_slots != 0) {
-                static u32 logged = 0;
-                if (logged < 32) {
-                    ++logged;
+                // Per-shader budget: the old 32-lines-per-RUN cap could not answer the one
+                // question that matters ("do the tables fill in later?"). First 8 occurrences
+                // per shader, then 1 in 256 - late samples ARE the self-heal measurement.
+                // BindTextures runs on the single GpuCommandProcessor thread; no lock needed.
+                static std::unordered_map<u64, u32> imgarray_logged;
+                u32& seen = imgarray_logged[stage.pgm_hash];
+                ++seen;
+                if (seen <= 8 || (seen & 255u) == 0) {
+                    const u64 table_va =
+                        stage.buffers[image_desc.deref_buffer].GetSharp(stage).base_address +
+                        image_desc.window_base_bytes;
                     LOG_WARNING(Render_Vulkan,
-                                "[imgarray] shader {:#x}: {}/{} window slots null-bound "
-                                "(table at buffer {} base {} stride {})",
-                                stage.pgm_hash, null_slots, num_bindings,
+                                "[imgarray] seq {} shader {:#x}: {}/{} null (addr0 {} badfmt {} "
+                                "unmapped {} viewtype {} integer {}) valid {:#06x} anchor "
+                                "vt{}/int{}{} table {:#x} (buffer {} base {} stride {}) n={}",
+                                instance.PeekGpuWorkSeq(), stage.pgm_hash, null_slots,
+                                num_bindings, n_addr0, n_badfmt, n_unmapped, n_viewtype,
+                                n_integer, valid_mask, static_cast<u32>(view_type0),
+                                integer0 ? 1 : 0, anchor_null ? " (NULL-anchor)" : "", table_va,
                                 image_desc.deref_buffer, image_desc.window_base_bytes,
-                                image_desc.window_stride_bytes);
+                                image_desc.window_stride_bytes, seen);
                 }
             }
             image_descriptor_array_sizes.push_back(num_bindings);
@@ -1230,6 +1270,18 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                          stage.pgm_hash, tsharp.Address());
             null_bind_all();
             continue;
+        }
+        // MEASUREMENT ONLY (the windowed path above already switched): IsValidMapping answers
+        // "inside the VMA map", which includes FREE areas (run 94) - IsMappedMemory is the
+        // honest test. Before changing this game-wide behavior, count how often they disagree.
+        if (!memory->IsMappedMemory(tsharp.Address())) {
+            static u32 diverged = 0;
+            if (++diverged <= 16) {
+                LOG_CRITICAL(Render_Vulkan,
+                             "[softclamp] shader {:#x}: T# address {:#x} passes IsValidMapping "
+                             "but FAILS IsMappedMemory (free VMA) - would fault ({} so far)",
+                             stage.pgm_hash, tsharp.Address(), diverged);
+            }
         }
 
         const Shader::MipStorageFallbackMode mip_fallback_mode = image_desc.mip_fallback_mode;
@@ -1352,9 +1404,19 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
 
     u32 image_info_idx = first_image_idx;
     u32 image_binding_idx = 0;
+    u32 image_res_idx = 0;
     for (u32 array_size : image_descriptor_array_sizes) {
-        const auto& [_, desc] = image_bindings[image_binding_idx];
-        const bool is_storage = desc.type == VideoCore::TextureCache::BindingType::Storage;
+        // The set LAYOUT's descriptorType came from the shader-side resource
+        // (is_written ? eStorageImage : eSampledImage - vk_compute_pipeline.cpp /
+        // vk_graphics_pipeline.cpp). Deriving the WRITE's type from array element 0's
+        // ImageDesc broke the moment element 0 was NULL-BOUND: that desc is
+        // default-constructed (type = Texture), so a storage window whose slot 0 happened to
+        // be null was pushed as eSampledImage against an eStorageImage binding - invalid
+        // Vulkan for the WHOLE window, every draw (cs_a95f906e, the red-map shader, is a
+        // storage window measured at 15/16 nulls). image_descriptor_array_sizes is 1:1 with
+        // stage.images (every branch above pushes exactly one entry), so index the resource
+        // and take the same answer the layout took.
+        const bool is_storage = stage.images[image_res_idx++].is_written;
         auto& set_write = set_writes[set_write_index++];
         set_write.dstSet = VK_NULL_HANDLE;
         set_write.dstBinding = binding.unified;

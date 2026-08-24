@@ -113,8 +113,15 @@ static bool SrtWalkerSignalHandler(void* context, void* fault_address) {
     // Fill nops
     memset(code_patch + patch_size, 0x90, len - patch_size);
 
-    LOG_WARNING(Render_Recompiler, "Patched SRT walker at {}, fault address {}", code,
-                fault_address);
+    // CRITICAL, not WARNING: this patch is PERMANENT and GLOBAL for the shader that owns
+    // this walker - a patched window-copy load stores ZEROS for every dword of the window on
+    // every later dispatch, which downstream reads exactly as "the guest table is empty"
+    // (the ALL-ZERO dynrc verdict) with no further hint that the walker was the cause.
+    // Cross-reference the address against the "srt walker for shader ..." emission lines to
+    // name the owner.
+    LOG_CRITICAL(Render_Recompiler, "Patched SRT walker at {}, fault address {} - this "
+                 "walker's faulting load reads ZERO from now on",
+                 code, fault_address);
 
     return true;
 }
@@ -287,6 +294,16 @@ static void GenerateSrtProgram(Info& info, PassInfo& pass_info) {
 
     info.srt_info.walker_func_size =
         c.getCurr() - reinterpret_cast<const u8*>(info.srt_info.walker_func);
+
+    // Attribution for "Patched SRT walker at <address>": print the code range of every
+    // walker that carries a dynrc WINDOW (the shaders whose zeros downstream cares about),
+    // so a patch address maps to its owner post-hoc. ⚠ Warm-cache walkers are re-registered
+    // at a DIFFERENT address by RegisterWalkerCode - this line only covers cold compiles.
+    if (!info.dynrc_windows.empty()) {
+        LOG_INFO(Render_Recompiler, "srt walker for shader {:#x}: code {}..{} ({} windows)",
+                 info.pgm_hash, reinterpret_cast<const void*>(info.srt_info.walker_func),
+                 static_cast<const void*>(c.getCurr()), info.dynrc_windows.size());
+    }
 
     if (EmulatorSettings.IsDumpShaders()) {
         DumpSrtProgram(info, reinterpret_cast<const u8*>(info.srt_info.walker_func),

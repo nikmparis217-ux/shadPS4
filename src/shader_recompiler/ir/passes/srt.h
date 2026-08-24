@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <cstdlib>
+
 #include <boost/container/set.hpp>
 #include <boost/container/small_vector.hpp>
 #include "common/types.h"
@@ -40,6 +42,21 @@ constexpr u32 SrtWindowBaseDw(u32 flags) {
 }
 constexpr u32 SrtWindowSizeDw(u32 flags) {
     return flags & 0xFFFFu;
+}
+
+// GT_DYNRC_GPU=1 (GT7): route WINDOWED dynamic ReadConsts through the GPU-time
+// read_const_dynamic (the BDA walk) even with global DMA off. The window in the flatbuf is a
+// RECORD-time snapshot; the guest tables the three GT7 producers read are written by earlier
+// GPU dispatches, so the snapshot can be stale/wrong - the honest read sees GPU-time memory.
+// Cost: every shader carrying a window pays the rasterizer's per-draw all-mapped-ranges
+// re-sync (uses_dma) - run-74's disease at reduced scale, ~3 producers instead of everything.
+// ⚠ COMPILE-AFFECTING: flipping this env needs a pipeline-cache wipe (the run-117 law).
+inline bool DynrcGpuReadsEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_DYNRC_GPU");
+        return v && v[0] == '1';
+    }();
+    return enabled;
 }
 
 struct PersistentSrtInfo {

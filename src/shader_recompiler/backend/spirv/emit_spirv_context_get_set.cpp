@@ -124,7 +124,10 @@ Id EmitReadConst(EmitContext& ctx, IR::Inst* inst, Id addr, Id offset) {
         // dword offset into the pointer; clamp it inside the window so a stray index can
         // never read another window's data. Under DMA the honest dynamic read exists -
         // prefer it (it sees GPU-time memory, the window is a dispatch-time snapshot).
-        if (EmulatorSettings.IsDirectMemoryAccessEnabled()) {
+        // GT_DYNRC_GPU=1 takes the honest read WITHOUT global DMA: only shaders carrying
+        // windows pay the per-draw re-sync (the collection pass keeps uses_dma alive for
+        // them, same keep-alive as the bindless bit above).
+        if (EmulatorSettings.IsDirectMemoryAccessEnabled() || DynrcGpuReadsEnabled()) {
             return ctx.OpFunctionCall(ctx.U32[1], ctx.read_const_dynamic, addr, offset);
         }
         const Id clamped =

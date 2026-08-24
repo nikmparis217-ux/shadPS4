@@ -164,6 +164,10 @@ struct Info : InfoPersistent {
     // read through a GPU-fetched V#) - the shader needs the DMA machinery even when the
     // global directMemoryAccess setting is off.
     bool uses_bindless_reads{};
+    // GT_DYNRC_GPU: at least one ReadConst carries SrtWindowFlagBit. Compile-time only
+    // (the collection-pass keep-alive reads it) - the routing itself is baked into the
+    // SPIR-V, and the runtime consequence (uses_dma) lives in InfoPersistent.
+    bool uses_window_reads{};
 
     std::array<Interpolation, IR::NumParams> fs_interpolation{};
 
