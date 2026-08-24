@@ -553,15 +553,23 @@ SharpSources FindSharpSources(const IR::Inst* handle, u32 pc) {
                 // GT7's GPU-driven pipeline indexes its descriptors dynamically. Report it
                 // and hand back "not found" - TrackSharp turns that into a stubbed shader
                 // instead of taking the whole emulator down.
+                // NOT "will be stubbed" (that wording cost a mis-diagnosis on 24 Aug: run
+                // 142's 380 such lines were read as 380 stub events while every one of them
+                // was then LOWERED). The stub only happens if no lowering branch matches -
+                // grep "not lowerable" / "stubbing" for the real stub census.
                 LOG_ERROR(Render_Recompiler,
-                          "Bindless sharp access detected pc={:#x} - shader will be stubbed", pc);
+                          "Bindless sharp access detected pc={:#x} - handing to the bindless "
+                          "lowering",
+                          pc);
                 return sources;
             }
             UNREACHABLE_MSG("Bindless sharp access detected pc={:#x}", pc);
         } else {
             if (BindlessStubEnabled()) {
                 LOG_ERROR(Render_Recompiler,
-                          "Unable to find sharp sources pc={:#x} - shader will be stubbed", pc);
+                          "Unable to find sharp sources pc={:#x} - handing to the bindless "
+                          "lowering",
+                          pc);
                 return sources;
             }
             UNREACHABLE_MSG("Unable to find sharp sources pc={:#x}", pc);

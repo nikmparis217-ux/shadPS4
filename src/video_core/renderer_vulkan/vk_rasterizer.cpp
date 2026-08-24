@@ -1192,6 +1192,19 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             u32 null_slots = 0;
             u32 n_addr0 = 0, n_badfmt = 0, n_unmapped = 0, n_viewtype = 0, n_integer = 0;
             u32 valid_mask = 0;
+            // GT_IMGARRAY_FB0=1 (record-time only - cache-safe to flip): a null slot in a
+            // READ window binds the first VALID slot's image instead of the zero-reading
+            // null descriptor. Mechanism probe for the sun-flood wash: post-FX dividing by
+            // a zero sample goes to infinity = a white screen; a real texture of the same
+            // type class (the validity test below enforces the class) is wrong-but-plausible
+            // data instead. WRITE windows keep the null on purpose: aliasing dead slots onto
+            // slot 0's image would corrupt its one real output.
+            static const bool raster_fb0_enabled = [] {
+                const char* v = std::getenv("GT_IMGARRAY_FB0");
+                return v && v[0] == '1';
+            }();
+            s32 first_valid_at = -1;
+            u32 n_fb0 = 0;
             for (u32 i = 0; i < num_bindings; i++) {
                 const auto slot_sharp = image_desc.GetSharpAt(stage, i);
                 // First failing clause only, so the reason counters sum to null_slots.
@@ -1210,8 +1223,16 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                     why = "integer", ++n_integer;
                 }
                 if (why != nullptr) {
-                    image_bindings.emplace_back(std::piecewise_construct, std::tuple{},
-                                                std::tuple{});
+                    if (raster_fb0_enabled && !image_desc.is_written && first_valid_at >= 0) {
+                        // Copy through a local: emplacing a reference into the same container
+                        // is the classic self-reference trap.
+                        auto fb_copy = image_bindings[first_valid_at];
+                        image_bindings.emplace_back(std::move(fb_copy));
+                        ++n_fb0;
+                    } else {
+                        image_bindings.emplace_back(std::piecewise_construct, std::tuple{},
+                                                    std::tuple{});
+                    }
                     ++null_slots;
                     continue;
                 }
@@ -1228,6 +1249,9 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                     image->binding.force_general |= image_desc.is_written;
                 }
                 image->binding.is_bound = 1u;
+                if (first_valid_at < 0) {
+                    first_valid_at = static_cast<s32>(image_bindings.size() - 1);
+                }
             }
             if (null_slots != 0) {
                 // Per-shader budget: the old 32-lines-per-RUN cap could not answer the one
@@ -1237,18 +1261,55 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 static std::unordered_map<u64, u32> imgarray_logged;
                 u32& seen = imgarray_logged[stage.pgm_hash];
                 ++seen;
+                const u64 table_va =
+                    stage.buffers[image_desc.deref_buffer].GetSharp(stage).base_address +
+                    image_desc.window_base_bytes;
+                // LATE RE-READ PROBE: the record-time snapshot may simply be EARLY - the GPU
+                // fills these ring tables later in the same frame. Re-reading the PREVIOUS
+                // occurrence's table now (typically one dispatch later) says whether the
+                // null slots were absent data or merely not-written-YET. This is the one
+                // measurement that separates "table genuinely sparse" from "we read too soon".
+                struct RasterPrevTable {
+                    u64 table_va;
+                    u32 stride;
+                    u32 null_mask;
+                    bool r128;
+                };
+                static std::unordered_map<u64, RasterPrevTable> imgarray_prev;
+                u32 late_filled = 0, late_checked = 0;
+                if (const auto it = imgarray_prev.find(stage.pgm_hash);
+                    it != imgarray_prev.end() && !it->second.r128) {
+                    for (u32 s = 0; s < 32; ++s) {
+                        if (!(it->second.null_mask & (1u << s))) {
+                            continue;
+                        }
+                        const u64 addr = it->second.table_va + u64(s) * it->second.stride;
+                        ++late_checked;
+                        if (!memory->IsMappedMemory(addr, sizeof(AmdGpu::Image))) {
+                            continue;
+                        }
+                        AmdGpu::Image probe{};
+                        std::memcpy(&probe, reinterpret_cast<const void*>(addr), sizeof(probe));
+                        const u64 pva = probe.Address();
+                        if (pva >= 0x10000 && pva + 4096 < (u64{1} << 40) && probe.Valid()) {
+                            ++late_filled;
+                        }
+                    }
+                }
+                const u32 all_mask = num_bindings >= 32 ? ~0u : ((1u << num_bindings) - 1u);
+                imgarray_prev[stage.pgm_hash] = {table_va, image_desc.window_stride_bytes,
+                                                 all_mask & ~valid_mask, image_desc.is_r128};
                 if (seen <= 8 || (seen & 255u) == 0) {
-                    const u64 table_va =
-                        stage.buffers[image_desc.deref_buffer].GetSharp(stage).base_address +
-                        image_desc.window_base_bytes;
                     LOG_WARNING(Render_Vulkan,
                                 "[imgarray] seq {} shader {:#x}: {}/{} null (addr0 {} badfmt {} "
-                                "unmapped {} viewtype {} integer {}) valid {:#06x} anchor "
-                                "vt{}/int{}{} table {:#x} (buffer {} base {} stride {}) n={}",
+                                "unmapped {} viewtype {} integer {}) valid {:#06x} fb0 {} late "
+                                "{}/{} anchor vt{}/int{}{} table {:#x} (buffer {} base {} stride "
+                                "{}) n={}",
                                 instance.PeekGpuWorkSeq(), stage.pgm_hash, null_slots,
                                 num_bindings, n_addr0, n_badfmt, n_unmapped, n_viewtype,
-                                n_integer, valid_mask, static_cast<u32>(view_type0),
-                                integer0 ? 1 : 0, anchor_null ? " (NULL-anchor)" : "", table_va,
+                                n_integer, valid_mask, n_fb0, late_filled, late_checked,
+                                static_cast<u32>(view_type0), integer0 ? 1 : 0,
+                                anchor_null ? " (NULL-anchor)" : "", table_va,
                                 image_desc.deref_buffer, image_desc.window_base_bytes,
                                 image_desc.window_stride_bytes, seen);
                 }
