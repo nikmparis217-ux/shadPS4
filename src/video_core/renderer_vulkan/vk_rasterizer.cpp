@@ -1154,6 +1154,19 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
     // This is currently always 1 for anything other than mip fallback arrays.
     boost::container::small_vector<u32, 8> image_descriptor_array_sizes;
 
+    // A torn T# can carry an ABSURD extent and still pass every other gate: run 144 died
+    // asking VMA for 1024x1024 x 5249 layers of R8G8B8A8 (~22 GB) - address mapped, format
+    // valid, and the OOM step-down could not save a request host memory cannot hold either.
+    // Vulkan itself caps array layers at 2048 on desktop GPUs; past these bounds it is
+    // garbage, not content -> null-bind the slot instead of asking the allocator.
+    const auto sharp_extent_sane = [](const AmdGpu::Image& s) {
+        const u64 w = u64(s.width) + 1;
+        const u64 h = u64(s.height) + 1;
+        const u64 d = s.GetType() == AmdGpu::ImageType::Color3D ? u64(s.depth) + 1 : 1;
+        const u64 layers = s.NumLayers();
+        return layers <= 2048 && (w * h * d * layers) <= (u64{1} << 31);
+    };
+
     for (const auto& image_desc : stage.images) {
         const auto tsharp = image_desc.GetSharp(stage);
         // The set layout was built from the BAKED count (run 116); every path below must emit
@@ -1215,6 +1228,8 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                     why = "addr0", ++n_addr0;
                 } else if (slot_sharp.GetDataFmt() == AmdGpu::DataFormat::FormatInvalid) {
                     why = "badfmt", ++n_badfmt;
+                } else if (!sharp_extent_sane(slot_sharp)) {
+                    why = "extent", ++n_badfmt; // folded into badfmt for the census
                 } else if (!memory->IsMappedMemory(slot_sharp.Address())) {
                     why = "unmapped", ++n_unmapped;
                 } else if (slot_sharp.GetViewType(image_desc.is_array) != view_type0) {
@@ -1318,7 +1333,8 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             continue;
         }
 
-        if (tsharp.Address() == 0 || tsharp.GetDataFmt() == AmdGpu::DataFormat::FormatInvalid) {
+        if (tsharp.Address() == 0 || tsharp.GetDataFmt() == AmdGpu::DataFormat::FormatInvalid ||
+            !sharp_extent_sane(tsharp)) {
             null_bind_all();
             continue;
         }
