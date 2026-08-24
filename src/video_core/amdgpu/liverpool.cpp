@@ -1310,9 +1310,25 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
             // const auto* event = reinterpret_cast<const PM4CmdEventWrite*>(header);
             break;
         }
-        default:
-            UNREACHABLE_MSG("Unknown PM4 type 3 opcode {:#x} with count {}",
-                            static_cast<u32>(opcode), header->type3.NumWords());
+        default: {
+            // Run 128 (GT7): opcode 0xff, count 0 - the async-compute ring carried GARBAGE
+            // (the guest's own GPU-driven producers compute with zeroed dynrc windows and
+            // eventually write junk into the stream). An UNREACHABLE here killed a session
+            // that had just survived the entire first race. Torn guest data is softclamped
+            // everywhere else in this fork - same treatment: skip the packet, keep going.
+            // If the count is a lie the stream desyncs and the NEXT packet logs too, so a
+            // burst of these lines = one garbage region, not many independent faults.
+            static u32 unknown_pm4_logged = 0;
+            if (unknown_pm4_logged < 16) {
+                ++unknown_pm4_logged;
+                LOG_CRITICAL(Lib_GnmDriver,
+                             "[softclamp] Unknown ACB PM4 type 3 opcode {:#x} with count {} - "
+                             "skipping the packet ({} so far)",
+                             static_cast<u32>(opcode), header->type3.NumWords(),
+                             unknown_pm4_logged);
+            }
+            break;
+        }
         }
 
         acb = NextPacket(acb, next_dw_off);

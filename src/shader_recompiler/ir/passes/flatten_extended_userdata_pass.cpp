@@ -12,6 +12,7 @@
 #include "common/path_util.h"
 #include "common/signal_context.h"
 #include "core/emulator_settings.h"
+#include "core/memory.h"
 #include "core/signals.h"
 #include "shader_recompiler/info.h"
 #include "shader_recompiler/ir/breadth_first_search.h"
@@ -28,6 +29,45 @@ using namespace Xbyak::util;
 
 static Xbyak::CodeGenerator g_srt_codegen(32_MB);
 static const u8* g_srt_codegen_start = nullptr;
+
+// The dynrc window copy, clamped to what is actually mapped. Replaces the walker's blind
+// dword loop: that loop overran small tables into unmapped memory (runs 125-128: 32 walkers
+// faulted at the two region ends 0x204800000 / 0x206e00000 during ONE race load) and the
+// signal handler then patched the loop's load to xor - PERMANENTLY - so 32 race shaders read
+// all-zero windows for the rest of the session. Their garbage outputs are the leading suspect
+// for the corrupted GPU-driven stream (SearchBinaryInfo garbage shader address, ACB PM4
+// opcode 0xff) AND the wrong on-track visuals. This helper runs PER DISPATCH: it copies the
+// mapped prefix and zeroes only the tail, so a table that becomes mapped later is picked up
+// again instead of being zeroed forever.
+// ⚠ Serialized walkers embed this function's ABSOLUTE address - safe ONLY because the exe is
+// linked /DYNAMICBASE:NO /BASE:0x700000000000 (CMakeLists.txt:1359/1373), so the address is
+// identical in every process. If ASLR is ever enabled, serialized walkers must be invalidated.
+// ⚠ TOCTOU: the game can unmap between the clamp and the memcpy - the same exposure every
+// ReadGuestSharp memcpy already has. A fault here lands OUTSIDE the walker code range, so the
+// SrtWalkerSignalHandler will not patch anything; it would be a plain guest-crash dump.
+static void PS4_SYSV_ABI CopyDynrcWindowClamped(const u32* src, u32* dst, u64 size_dw) {
+    auto* memory = Core::Memory::Instance();
+    const VAddr src_addr = reinterpret_cast<VAddr>(src);
+    u64 have_bytes = 0;
+    if (memory->IsMappedMemory(src_addr, 1)) {
+        have_bytes = memory->ClampRangeSize(src_addr, size_dw * sizeof(u32));
+    }
+    const u64 have_dw = have_bytes / sizeof(u32);
+    if (have_dw != 0) {
+        std::memcpy(dst, src, have_dw * sizeof(u32));
+    }
+    if (have_dw < size_dw) {
+        std::memset(dst + have_dw, 0, (size_dw - have_dw) * sizeof(u32));
+        static u32 clamp_logged = 0;
+        if (clamp_logged < 8) {
+            ++clamp_logged;
+            LOG_WARNING(Render_Recompiler,
+                        "dynrc window at {:#x}: {} of {} dw mapped - tail zeroed for THIS "
+                        "dispatch only ({} so far)",
+                        src_addr, have_dw, size_dw, clamp_logged);
+        }
+    }
+}
 
 namespace Shader {
 
@@ -224,24 +264,32 @@ static void VisitPointer(u32 off_dw, IR::Inst* subtree, Info& info, PassInfo& pa
 
     // GT_DYNRC_WINDOW: dynamic readers of this pointer index into it at runtime, so no
     // field list exists to copy - reserve a window in the flattened buffer and bulk-copy
-    // it. The copy is a dword loop through r10d ON PURPOSE: `mov r10d, [rdi + ...]` is
-    // exactly the instruction SrtWalkerSignalHandler knows how to patch, so a window that
-    // overruns the game's table into unmapped memory degrades to zeros (one patch, one
-    // warning) instead of killing the walker.
+    // it. The copy is a CALL to CopyDynrcWindowClamped (see its header comment): the old
+    // inline dword loop overran small tables into unmapped memory and the signal handler's
+    // patch then zeroed the window FOREVER (32 shaders in one race load, runs 125-128).
+    // The helper clamps to the mapped size per dispatch instead.
     if (const auto dyn_it = pass_info.dyn_window_uses.find(subtree);
         dyn_it != pass_info.dyn_window_uses.end() && !dyn_it->second.empty()) {
         const u32 window_dw = DynReadConstWindowDw();
         const u32 window_base_dw = pass_info.dst_off_dw;
         ASSERT_MSG(window_base_dw < 0x8000 && window_dw <= 0xFFFF,
                    "flatbuf window does not fit the flag encoding");
-        Xbyak::Label copy_loop;
-        c.xor_(ecx, ecx);
-        c.L(copy_loop);
-        c.mov(r10d, ptr[rdi + rcx * 4]);
-        c.mov(ptr[rsi + rcx * 4 + (window_base_dw << 2)], r10d);
-        c.inc(ecx);
-        c.cmp(ecx, window_dw);
-        c.jb(copy_loop);
+        // SysV call: rdi = src (already the current base pointer), rsi = dst, rdx = dwords.
+        // rdi/rsi are call-clobbered and the walker still needs them, so save around the
+        // call; rsp is realigned through rbp because the walker's own push depth varies.
+        c.push(rdi);
+        c.push(rsi);
+        c.lea(rsi, ptr[rsi + (window_base_dw << 2)]);
+        c.mov(edx, window_dw);
+        c.mov(rax, reinterpret_cast<uintptr_t>(&CopyDynrcWindowClamped));
+        c.push(rbp);
+        c.mov(rbp, rsp);
+        c.and_(rsp, -16);
+        c.call(rax);
+        c.mov(rsp, rbp);
+        c.pop(rbp);
+        c.pop(rsi);
+        c.pop(rdi);
         pass_info.dst_off_dw += window_dw;
         const u32 flags = MakeSrtWindowFlags(window_base_dw, window_dw);
         for (IR::Inst* use : dyn_it->second) {
