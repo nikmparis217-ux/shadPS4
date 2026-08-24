@@ -7,6 +7,7 @@
 #include <vector>
 #include <boost/container/static_vector.hpp>
 #include "common/assert.h"
+#include "common/logging/log.h"
 #include "common/types.h"
 #include "shader_recompiler/backend/bindings.h"
 #include "shader_recompiler/frontend/copy_shader.h"
@@ -207,7 +208,24 @@ struct Info : InfoPersistent {
         u32 mask = ud_mask.mask;
         while (mask) {
             const u32 index = std::countr_zero(mask);
-            ASSERT(bnd.user_data < NUM_USER_DATA_REGS && index < NUM_USER_DATA_REGS);
+            if (bnd.user_data >= NUM_USER_DATA_REGS || index >= NUM_USER_DATA_REGS) {
+                // Run 131 (GT7): the first RACE in the unlocked main game asserted here -
+                // the pipeline's stages together want more than the 16 push-constant UD
+                // slots PushData carries. The stage's remaining UD reads then index past
+                // its compiled base = garbage bindings for THIS draw, which beats dying.
+                // Budgeted so the log says how often racing hits it: if this is constant,
+                // the real fix is growing PushData past the 128-byte Vulkan minimum (the
+                // 4070 gives 256) - a layout change for every shader, done deliberately.
+                static u32 ud_overflow_logged = 0;
+                if (ud_overflow_logged < 16) {
+                    ++ud_overflow_logged;
+                    LOG_CRITICAL(Render_Recompiler,
+                                 "[softclamp] shader {:#x}: user-data push overflow (slot {}, "
+                                 "reg {}) - remaining UD regs dropped this draw ({} so far)",
+                                 pgm_hash, bnd.user_data, index, ud_overflow_logged);
+                }
+                break;
+            }
             mask &= ~(1U << index);
             push.ud_regs[bnd.user_data++] = user_data[index];
         }
