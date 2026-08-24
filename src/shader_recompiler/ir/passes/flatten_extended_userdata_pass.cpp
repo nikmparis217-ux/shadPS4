@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <unordered_map>
 #include <boost/container/flat_map.hpp>
 #include <xbyak/xbyak.h>
@@ -48,9 +49,23 @@ static const u8* g_srt_codegen_start = nullptr;
 static void PS4_SYSV_ABI CopyDynrcWindowClamped(const u32* src, u32* dst, u64 size_dw) {
     auto* memory = Core::Memory::Instance();
     const VAddr src_addr = reinterpret_cast<VAddr>(src);
+    const u64 want_bytes = size_dw * sizeof(u32);
+    // ⚠ NOT ClampRangeSize: it returns the size UNCHANGED below MinSizeToClamp (1 GB,
+    // memory.cpp:103-107) - the first version of this helper trusted it, memcpy'd blind and
+    // died in the CRT reading 0x204e00000 (run 129). Ask IsMappedMemory PER PAGE instead:
+    // per page, not for the whole range, because Contains() wants the range inside ONE vma
+    // and a window legitimately spanning two adjacent mapped vmas must not be truncated at
+    // their seam. 8 KiB window = at most 3 lock-free map lookups.
+    constexpr u64 kPage = 0x1000;
     u64 have_bytes = 0;
-    if (memory->IsMappedMemory(src_addr, 1)) {
-        have_bytes = memory->ClampRangeSize(src_addr, size_dw * sizeof(u32));
+    while (have_bytes < want_bytes) {
+        const VAddr chunk_addr = src_addr + have_bytes;
+        const u64 chunk =
+            std::min(want_bytes - have_bytes, kPage - (chunk_addr & (kPage - 1)));
+        if (!memory->IsMappedMemory(chunk_addr, chunk)) {
+            break;
+        }
+        have_bytes += chunk;
     }
     const u64 have_dw = have_bytes / sizeof(u32);
     if (have_dw != 0) {
