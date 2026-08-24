@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+#include <cstdlib>
 #include <map>
 #include <mutex>
 #include <fmt/format.h>
@@ -17,6 +19,16 @@
 #include <vk_mem_alloc.h>
 
 namespace VideoCore {
+
+// GT_ZERO_VRAM: unset/1 = every device-local buffer starts ZEROED (see the note in the Buffer
+// constructor); '0' opts out. Name is file-prefixed - unity builds merge anonymous helpers.
+static bool BufferZeroVramEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_ZERO_VRAM");
+        return v == nullptr || v[0] != '0';
+    }();
+    return enabled;
+}
 
 // See bda_registry.h. Keyed by device address; a std::map so a faulting address resolves
 // with one upper_bound. Contention is create/destroy only - never per bind, never per draw.
@@ -216,6 +228,17 @@ Buffer::Buffer(const Vulkan::Instance& instance_, Vulkan::Scheduler& scheduler_,
         mapped_data = std::span<u8>{std::bit_cast<u8*>(alloc_info.pMappedData), size_bytes};
     }
     is_coherent = property_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    // GT_ZERO_VRAM (24 Aug, run 137, same note as the Image constructor): a device-local buffer
+    // starts as whatever the driver's recycled memory holds, and GT7's stubbed GPU-driven
+    // producers (the pc=0x0 bindless family) never overwrite theirs - the consumers then read
+    // noise. One FillBuffer(0) at creation makes a missing pass read ZERO. Host-visible buffers
+    // are skipped: the CPU writes them before use, and zeroing staging memory is pure waste.
+    if (BufferZeroVramEnabled() && !alloc_info.pMappedData && size_bytes >= 4 &&
+        (flags & vk::BufferUsageFlagBits::eTransferDst)) {
+        const u64 fill_bytes = std::min<u64>(size_bytes & ~u64{3}, 0xFFFFFFFCull);
+        Fill(0, static_cast<u32>(fill_bytes), 0);
+    }
 }
 
 void Buffer::Fill(u64 offset, u32 num_bytes, u32 value) {

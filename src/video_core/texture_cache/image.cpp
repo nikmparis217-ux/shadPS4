@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <array>
+#include <cstdlib>
 #include <ranges>
 #include "common/assert.h"
 #include "video_core/renderer_vulkan/liverpool_to_vk.h"
@@ -16,6 +18,16 @@ namespace VideoCore {
 using namespace Vulkan;
 
 Common::IncrementalIdProvider<u64> Image::global_image_uid{};
+
+// GT_ZERO_VRAM: unset/1 = every clearable color image starts ZEROED (see the note in the Image
+// constructor); '0' opts out. Name is file-prefixed - unity builds merge anonymous helpers.
+static bool ImageZeroVramEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_ZERO_VRAM");
+        return v == nullptr || v[0] != '0';
+    }();
+    return enabled;
+}
 
 static vk::ImageUsageFlags ImageUsageFlags(const Vulkan::Instance* instance,
                                            const ImageInfo& info) {
@@ -198,6 +210,19 @@ Image::Image(const Vulkan::Instance& instance_, Vulkan::Scheduler& scheduler_,
                           info.size.height, info.size.depth, AmdGpu::NameOf(info.tile_mode),
                           vk::to_string(info.pixel_format), info.guest_address, info.guest_size,
                           info.resources.layers, info.resources.levels, info.num_samples);
+
+    // GT_ZERO_VRAM (24 Aug, run 137): a stubbed producer pass (the pc=0x0 bindless family - the
+    // exposure/bloom compute among them) leaves its target UNWRITTEN, and whatever samples it
+    // next reads uninitialized device memory - the pink/cyan/white wash over every 3D scene.
+    // Guest RAM arrives zero-filled from the OS, so CPU uploads were always deterministic; only
+    // GPU-side allocations carried garbage. One clear at creation makes a missing pass read
+    // ZERO (bloom adds nothing) instead of noise. Depth and block-compressed images are skipped
+    // (vkCmdClearColorImage cannot touch them; both are always written before being read).
+    if (ImageZeroVramEnabled() && !info.props.is_depth && !info.props.is_block &&
+        (usage_flags & vk::ImageUsageFlagBits::eTransferDst)) {
+        Clear(vk::ClearValue{.color = vk::ClearColorValue{std::array{0.f, 0.f, 0.f, 0.f}}},
+              {.base = {}, .extent = info.resources});
+    }
 }
 
 Image::~Image() = default;

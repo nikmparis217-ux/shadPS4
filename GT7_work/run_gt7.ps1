@@ -31,7 +31,7 @@
 # instead of the one that decides anything. Same family as "never judge a build by its exit code".
 
 param([switch]$Plain, [switch]$WhatIfOnly, [switch]$CDL, [switch]$GpuAV, [switch]$Sync,
-      [switch]$DumpShaders, [switch]$Net, [switch]$Dma)
+      [switch]$DumpShaders, [switch]$Net, [switch]$Offline, [switch]$Dma)
 
 function Set-GtDefault([string]$name, [string]$value) {
 if (-not (Test-Path ("env:" + $name))) { Set-Item -Path ("env:" + $name) -Value $value }
@@ -277,7 +277,14 @@ $env:GT_DEFER_EOP = '1'
 # race, exactly the recycled-memory story eager fences create. SPLIT=1 + BOTH defers + no stubs
 # is the one config cell never tried (run 35's version had producer stubs, whose CPU assert
 # died first and never hung).
-if ($Net) {
+# -Offline (24 Aug, run 134): the -Net ENV block WITHOUT the network. Runs 133/134 froze at
+# the main-game load polling Np/NetCtl forever - the fake PSN says "online" so GT7 commits to
+# its game-server sync (Vegas/portal.gt7) which can never complete here, and it never takes
+# the offline branch (the cold runs passed only by timing). A plain no-switch run is NOT the
+# A/B: several vars below are COMPILE-AFFECTING (BINDLESS_STUB/LOWER/IMG/IMGARRAY,
+# DYNRC_WINDOW), so dropping them would invalidate the warm cache (run-117 law). -Offline
+# keeps codegen byte-identical and flips ONLY the JSON network flags to signed-out.
+if ($Net -or $Offline) {
     $env:GT_SPLIT_DISPATCH = '1'
     $env:GT_DEFER_EOP = '1'
     $env:GT_DEFER_RELEASEMEM = '1'
@@ -286,12 +293,19 @@ if ($Net) {
     # >700 ms with >256 submits piled up) instead of at device-lost time, when the rings have
     # wrapped and the hung work cannot be named. Read-only diagnostic - the run continues.
     $env:GT_STALL_DUMP = '1'
-    # GT_IMG_TRACE: one log line per image binding of the three producer shaders, joined to the
+    # GT_IMG_TRACE: one log line per image binding of the traced shaders, joined to the
     # stall dump by journal seq - names the exact image the parked dispatch was touching.
-    # OFF since run 87: it wrote 72,171 CRITICAL lines in run 86 alone - its own I/O tax
-    # (the log-spam trap on record) - and the parked-dispatch question it answered is closed.
-    # Re-arm by setting '1' if a producer-shader image question comes back.
-    # $env:GT_IMG_TRACE = '1'
+    # OFF since run 87 (72,171 CRITICAL lines in run 86 - the log-spam trap on record).
+    # RE-ARMED for the RUN-125 data-problem campaign: the hash filter now also covers the two
+    # WINDOWED consumers (0xa95f906e red map / 0x3e50e1 post-FX), which were untraceable while
+    # only the producers were listed. Comment out again when the data question closes.
+    Set-GtDefault 'GT_IMG_TRACE' '1'
+    # GT_DYNRC_GPU (RUN-125 campaign, experiment - default OFF): route the WINDOWED dynamic
+    # ReadConsts through the GPU-time read_const_dynamic (BDA walk) instead of the walker's
+    # record-time flatbuf snapshot, WITHOUT global DMA - only window-carrying shaders (the ~3
+    # producers) pay the per-draw re-sync. The A/B for "the producers compute from stale
+    # windows". ⚠ COMPILE-AFFECTING: flipping it needs a cache wipe (run-117 law).
+    Set-GtDefault 'GT_DYNRC_GPU' '0'
     # GT_SOFT_CLAMP: a torn GPU-driven descriptor (unmapped V#/T#) null-binds for one frame with
     # a [softclamp] log line instead of killing the process (run 49: ClampRangeSize assert, 0x24).
     $env:GT_SOFT_CLAMP = '1'
@@ -363,9 +377,13 @@ if ($Net) {
     # it, OpUMin-clamped, NonUniform-decorated. Value = window size; 0 = off (stub fallback,
     # exactly the pre-20-Aug behavior). Log proof: "lowered to a windowed descriptor array".
     # Same cache warning as GT_DYNRC_WINDOW below: flipping this needs a cache wipe.
-    # '0' FOR RUNS 117/118 (the run-116 mip-bake verdict must carry ONE variable);
-    # flip to '16' + wipe the cache folder for run 119.
-    Set-GtDefault 'GT_BINDLESS_IMGARRAY' '0'
+    # '16' SINCE RUN 123 (20 Aug evening): the VRAM graveyard fix (commit cbda7834) carried
+    # runs 121/122 past every earlier wall - run 122 reached 682k submissions and died as a
+    # GPU hang on cs_6421a7b6, the junk-V# producer whose fix IS the real-bindless work.
+    # The cache wipe came free: the post-commit rebuild changed the cache generation.
+    # USER CHECKS for this config: post-FX smears gone (3e50e1), track preview not red
+    # (a95f906e). '0' = the stub fallback if a new fault family appears.
+    Set-GtDefault 'GT_BINDLESS_IMGARRAY' '16'
     # GT_DYNRC_WINDOW (18 Aug, afternoon - the designed fix from HANDOFF_RENDERING.md):
     # the three GPU-driven producer shaders (cs_0xda05e7f8 / 0x18256c0 / 0x2a0cfcd2) carry
     # ReadConst with RUNTIME offsets; without DMA those used to read flatbuf[0] = garbage =
