@@ -11,6 +11,7 @@
 #include <boost/container/static_vector.hpp>
 #include <fmt/format.h>
 
+#include <cstdlib>
 #include <numbers>
 #include <string_view>
 
@@ -825,6 +826,7 @@ void EmitContext::DefineBuffers() {
 
         // Define aliases depending on the shader usage.
         auto& spv_buffer = buffers.emplace_back(binding.buffer++, desc.buffer_type);
+        spv_buffer.is_storage = is_storage;
         if (True(desc.used_types & IR::Type::U64)) {
             spv_buffer.Alias(PointerType::U64) =
                 DefineBuffer(is_storage, desc.is_written, 3, desc.buffer_type, U64);
@@ -847,6 +849,35 @@ void EmitContext::DefineBuffers() {
         }
         ++binding.unified;
     }
+}
+
+Id EmitContext::ClampBufferIndex(u32 handle, Id address, PointerType alias, u32 num_elems) {
+    // GT_STORE_CLAMP: run 139/147's device faults were buffer STORES whose element index
+    // came from a pointer-chased SRT snapshot dword with no bound check (cs_6421a7b6:
+    // index = ReadConst + thread id) - a stale record turned that into a write 527 MB past
+    // the buffer. Clamp every store/atomic index into the range the descriptor actually
+    // binds: a garbage index then scribbles the LAST element of its own buffer instead of
+    // parking the GPU. Uniform-class buffers are fixed-size arrays (no OpArrayLength) and
+    // are skipped - GT7's stores all target storage buffers anyway.
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_STORE_CLAMP");
+        return v && v[0] == '1';
+    }();
+    if (!enabled) {
+        return address;
+    }
+    const auto& buf = buffers[handle];
+    if (!buf.is_storage) {
+        return address;
+    }
+    const auto& spv = buf.Alias(alias);
+    if (!Sirit::ValidId(spv.id)) {
+        return address;
+    }
+    const Id len = OpArrayLength(U32[1], spv.id, 0u);
+    const Id len_floor = OpUMax(U32[1], len, ConstU32(num_elems));
+    const Id max_index = OpISub(U32[1], len_floor, ConstU32(num_elems));
+    return OpUMin(U32[1], address, max_index);
 }
 
 spv::ImageFormat GetFormat(const AmdGpu::Image& image) {

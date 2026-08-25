@@ -338,6 +338,7 @@ public:
         BufferType buffer_type;
         std::array<Id, u32(PointerSize::NumClass)> offsets;
         std::array<BufferSpv, u32(PointerType::NumAlias)> aliases;
+        bool is_storage{};
 
         template <class Self>
         auto& Alias(this Self& self, PointerType alias) {
@@ -349,6 +350,11 @@ public:
             return self.offsets[u32(size)];
         }
     };
+
+    // GT_STORE_CLAMP: clamp a buffer store/atomic element index into the range the
+    // descriptor actually binds (OpArrayLength of the runtime array). Returns the
+    // address unchanged when the env is off or the buffer is not a storage buffer.
+    Id ClampBufferIndex(u32 handle, Id address, PointerType alias, u32 num_elems);
 
     Bindings& binding;
     boost::container::small_vector<Id, 16> buf_type_ids;

@@ -5,7 +5,9 @@
 #include <bit>
 #include <cstring>
 #include <iterator>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "common/debug.h"
 #include "core/debug_state.h"
@@ -999,6 +1001,7 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
 
     // Second pass to re-bind buffers that were updated after binding
     bool expo_logged = false;
+    bool cbtrace_logged = false;
     for (u32 i = 0; i < buffer_bindings.size(); i++) {
         const auto& [buffer_id, vsharp, size] = buffer_bindings[i];
         const auto& desc = stage.buffers[i];
@@ -1029,6 +1032,87 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                                 ef[10], ef[0], ef[1], ef[2], ef[3], ef[4], ef[5], ef[6], ef[7],
                                 ef[8], ef[9], ef[10], ef[11], ef[12], ef[13], ef[14], ef[15], n);
                 }
+            }
+        }
+        // GT_CB_TRACE="hash:dw,dw;hash:dw" (hash hex, dwords decimal) - dump named dwords of a
+        // shader's FIRST bound V# at record time. The dump analysis named three cbuffer
+        // switches that force pure white (cs_935c6eac dw408, cs_11a81f15 dw80) or skip the
+        // 0..65000 HDR clamp when zero (cs_e8b53da0 dw91); this reads what the GPU will
+        // actually see there, plus the V#'s true size - a V# shorter than the read is its
+        // own answer.
+        struct CbTraceEntry {
+            u64 hash;
+            std::vector<u32> dwords;
+        };
+        static const auto cb_trace = [] {
+            std::vector<CbTraceEntry> list;
+            if (const char* env = std::getenv("GT_CB_TRACE")) {
+                const std::string s{env};
+                size_t pos = 0;
+                while (pos < s.size()) {
+                    size_t semi = s.find(';', pos);
+                    if (semi == std::string::npos) {
+                        semi = s.size();
+                    }
+                    const std::string part = s.substr(pos, semi - pos);
+                    if (const size_t colon = part.find(':'); colon != std::string::npos) {
+                        CbTraceEntry e;
+                        e.hash = std::strtoull(part.substr(0, colon).c_str(), nullptr, 16);
+                        size_t dp = colon + 1;
+                        while (dp <= part.size()) {
+                            size_t comma = part.find(',', dp);
+                            if (comma == std::string::npos) {
+                                comma = part.size();
+                            }
+                            if (comma > dp) {
+                                e.dwords.push_back(
+                                    u32(std::strtoul(part.substr(dp, comma - dp).c_str(),
+                                                     nullptr, 10)));
+                            }
+                            dp = comma + 1;
+                        }
+                        if (e.hash != 0 && !e.dwords.empty()) {
+                            list.push_back(std::move(e));
+                        }
+                    }
+                    pos = semi + 1;
+                }
+            }
+            return list;
+        }();
+        if (!cb_trace.empty() && !cbtrace_logged && vsharp.base_address != 0) {
+            for (const auto& t : cb_trace) {
+                if (t.hash != stage.pgm_hash) {
+                    continue;
+                }
+                cbtrace_logged = true;
+                static std::atomic<u32> cbt_n{0};
+                const u32 n = cbt_n.fetch_add(1, std::memory_order_relaxed);
+                if (n >= 256 && (n & 63) != 0) {
+                    break;
+                }
+                const u64 vsize = vsharp.GetSize();
+                std::string vals;
+                for (const u32 dw : t.dwords) {
+                    const u64 need = u64(dw) * 4 + 4;
+                    if (need <= vsize &&
+                        memory->ClampRangeSize(vsharp.base_address, need) >= need) {
+                        u32 raw;
+                        std::memcpy(&raw,
+                                    reinterpret_cast<const void*>(vsharp.base_address + dw * 4),
+                                    4);
+                        float f;
+                        std::memcpy(&f, &raw, 4);
+                        vals += fmt::format(" dw{}={:#x}({:g})", dw, raw, f);
+                    } else {
+                        vals += fmt::format(" dw{}=PAST-THE-V#", dw);
+                    }
+                }
+                LOG_WARNING(Render_Vulkan,
+                            "[cbtrace] seq {} {} {:#x} cb0 @{:#x} size {}{} (n={})",
+                            instance.PeekGpuWorkSeq(), stage.stage, stage.pgm_hash,
+                            vsharp.base_address, vsize, vals, n);
+                break;
             }
         }
         const bool is_storage = desc.IsStorage(vsharp);
