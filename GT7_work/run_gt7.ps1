@@ -314,7 +314,11 @@ if ($Net -or $Offline) {
     # RE-ARMED for the RUN-125 data-problem campaign: the hash filter now also covers the two
     # WINDOWED consumers (0xa95f906e red map / 0x3e50e1 post-FX), which were untraceable while
     # only the producers were listed. Comment out again when the data question closes.
-    Set-GtDefault 'GT_IMG_TRACE' '1'
+    # '0' since 25 Aug night: its diagnostic job is done (the user correlated the wash
+    # episodes with cs_da05e7f8's bursts LIVE, using exactly these lines) and at ~20
+    # Critical lines per probe-rebake dispatch it wrote ~90k log lines in one session -
+    # a real fps drag. Re-arm per run from the shell when an image question needs it.
+    Set-GtDefault 'GT_IMG_TRACE' '0'
     # GT_DYNRC_GPU (RUN-125 campaign, experiment - default OFF): route the WINDOWED dynamic
     # ReadConsts through the GPU-time read_const_dynamic (BDA walk) instead of the walker's
     # record-time flatbuf snapshot, WITHOUT global DMA - only window-carrying shaders (the ~3
