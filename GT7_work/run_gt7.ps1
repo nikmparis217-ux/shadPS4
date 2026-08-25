@@ -54,6 +54,21 @@ if ($running) {
     exit 1
 }
 
+# TRIPWIRE (25 Aug): config.json once grew to 2.14 GB - a non-ASCII install_dirs path
+# ("Nikos" in Greek) was re-encoded slightly worse by SOME writer on every run, roughly
+# doubling per cycle, until Get-Content -Raw died with OutOfMemoryException and the run
+# script silently stopped working ("it dont run"). The repair made the config pure ASCII
+# (8.3 path), which starves the loop - but the mangling WRITER was never identified, so
+# if any path with non-ASCII characters ever gets back in, this catches cycle #1 loudly
+# instead of cycle #30 killing the tooling.
+$cfgSize = (Get-Item $cfg).Length
+if ($cfgSize -gt 5MB) {
+    Write-Host "config.json is $([math]::Round($cfgSize/1MB)) MB - the mojibake growth loop is back." -ForegroundColor Red
+    Write-Host "Fix: replace the non-ASCII path in install_dirs with its 8.3 form (see" -ForegroundColor Red
+    Write-Host "HANDOFF_RENDERING_ACT2.md Act 11 addendum). Refusing to run on a corrupt config." -ForegroundColor Red
+    exit 1
+}
+
 # Silence the two classes that are 90% of the log, raise the ones that can explain a spin-wait,
 # and raise the network/NP classes because GT7 is always-online and INITIALIZING is where the
 # real console talks to Polyphony. Syntax from log.cpp:285 - "Class:level" separated by SPACES.
@@ -384,6 +399,26 @@ if ($Net -or $Offline) {
     # USER CHECKS for this config: post-FX smears gone (3e50e1), track preview not red
     # (a95f906e). '0' = the stub fallback if a new fault family appears.
     Set-GtDefault 'GT_BINDLESS_IMGARRAY' '16'
+    # GT_IMGARRAY_SYNC (25 Aug, Act 11 - the unwritten-LUT wash fix): the windowed T# tables
+    # are GPU-written by producers recorded earlier in the SAME command buffer, so the
+    # record-time read in BindTextures sees zeros and the LUT/map bakes write into null
+    # descriptors. '2' = synchronous proof mode (flush+wait+readback per bake dispatch -
+    # single-digit fps, ONE verification run only); '1' = async memo (playable); '3' = sync
+    # on READ windows too; '0' = off. Record-time only: flipping this needs NO cache wipe.
+    # Log proof: "[imgsync] ... valid a/n -> b/n". GT_IMGARRAY_SYNC_MAX caps the sync count.
+    Set-GtDefault 'GT_IMGARRAY_SYNC' '0'
+    Set-GtDefault 'GT_IMGARRAY_SYNC_MAX' '64'
+    # GT_LUT_IDENT (25 Aug, Act 11 step 2): seed 64^3 RGBA16F volumes with an IDENTITY grading
+    # LUT instead of uploading uninitialized guest RAM. Measured on three captures of one
+    # PAUSED frame: identical texture inputs, output min 0.005 -> 0.054 -> 0.42 - the game
+    # lerps every pixel toward the (garbage) LUT with a per-frame weight. Identity makes that
+    # blend a no-op: kills the white wash, the pulsing and the solid-red track map in one move.
+    # Proof run: GT7_lutident.bat. GT_WATCH_VA / GT_WATCH_SIZE (hex) arm the [vawatch]/[lut3d]
+    # loggers that hunt whatever SHOULD write the LUT; GT_INVAL_IMG_ON_SSBO=1 additionally
+    # propagates plain (non-formatted) SSBO writes into the texture cache's GpuDirty marking.
+    # All runtime-only: flipping any of these needs NO cache wipe.
+    Set-GtDefault 'GT_LUT_IDENT' '0'
+    Set-GtDefault 'GT_INVAL_IMG_ON_SSBO' '0'
     # GT_DYNRC_WINDOW (18 Aug, afternoon - the designed fix from HANDOFF_RENDERING.md):
     # the three GPU-driven producer shaders (cs_0xda05e7f8 / 0x18256c0 / 0x2a0cfcd2) carry
     # ReadConst with RUNTIME offsets; without DMA those used to read flatbuf[0] = garbage =

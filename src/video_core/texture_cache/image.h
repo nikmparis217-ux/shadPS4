@@ -179,6 +179,10 @@ public:
     u64 lru_id{};
     u64 tick_accessed_last{};
     u64 hash{};
+    // GT7 GT_LUT_IDENT (Act 11): this image's first upload was replaced with an identity
+    // grading LUT. One-shot per image: a later CPU write re-dirties the pages and the normal
+    // guest upload must win, so RefreshImage checks-and-sets this before seeding.
+    bool lut_ident_seeded = false;
 
     struct {
         u32 texture : 1;

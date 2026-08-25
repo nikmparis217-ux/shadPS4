@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <bit>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <iterator>
 #include <mutex>
@@ -30,6 +31,75 @@
 #endif
 
 namespace Vulkan {
+
+// GT7 LUT hunt (Act 11): the output transform samples a 64^3 grading LUT that is
+// uninitialized-VRAM garbage in every RenderDoc capture - SOMETHING should write it and never
+// does. These watches answer that across a WHOLE session instead of one captured frame:
+// [lut3d] logs every bind of a 64x64x64 volume T# (any address - catches a relocated LUT),
+// [vawatch] logs every buffer / image / fill / copy touching GT_WATCH_VA (hex, GT_WATCH_SIZE
+// hex bytes, default 0x200000 = one RGBA16F 64^3). Buffer-domain WRITE hits matter most: a
+// plain SSBO store to the LUT range never reaches the sampled image, because only FORMATTED
+// writes call InvalidateMemoryFromGPU (see GT_INVAL_IMG_ON_SSBO at that call site). Budgeted
+// logs, GPU-command-processor thread only; near-zero per-bind cost when the envs are unset.
+namespace {
+struct GtVaWatchRange {
+    u64 base = 0;
+    u64 size = 0;
+};
+
+const GtVaWatchRange& GtWatchRange() {
+    static const GtVaWatchRange range = [] {
+        GtVaWatchRange r{};
+        if (const char* v = std::getenv("GT_WATCH_VA"); v && v[0] != '\0') {
+            r.base = std::strtoull(v, nullptr, 16);
+            r.size = 0x200000;
+            if (const char* s = std::getenv("GT_WATCH_SIZE"); s && s[0] != '\0') {
+                r.size = std::strtoull(s, nullptr, 16);
+            }
+        }
+        return r;
+    }();
+    return range;
+}
+
+void GtWatchLog(const char* kind, u64 shader_hash, u64 base, u64 size, bool is_written) {
+    static u32 watch_budget = 0;
+    if (watch_budget++ < 512) {
+        LOG_WARNING(Render_Vulkan, "[vawatch] {} shader {:#x}: {:#x}+{:#x} {}", kind, shader_hash,
+                    base, size, is_written ? "WRITE" : "read");
+    }
+}
+
+void GtWatchBufferBind(const char* kind, u64 shader_hash, u64 base, u64 size, bool is_written) {
+    const auto& w = GtWatchRange();
+    if (w.size != 0 && base < w.base + w.size && w.base < base + size) {
+        GtWatchLog(kind, shader_hash, base, size, is_written);
+    }
+}
+
+void GtWatchImageBind(const char* kind, u64 shader_hash, const AmdGpu::Image& sharp,
+                      bool is_written) {
+    const u64 va = sharp.Address();
+    const u32 w = u32(sharp.width) + 1;
+    const u32 h = u32(sharp.height) + 1;
+    const u32 d = u32(sharp.depth) + 1;
+    if (w == 64 && h == 64 && d == 64 && sharp.GetType() == AmdGpu::ImageType::Color3D) {
+        static u32 lut_budget = 0;
+        if (lut_budget++ < 128) {
+            LOG_WARNING(Render_Vulkan,
+                        "[lut3d] {} shader {:#x}: 64x64x64 T# at {:#x} dfmt {} nfmt {} {}", kind,
+                        shader_hash, va, static_cast<u32>(sharp.GetDataFmt()),
+                        static_cast<u32>(sharp.GetNumberFmt()), is_written ? "WRITE" : "read");
+        }
+    }
+    // Point test on the base only: the watched LUT's own T# starts exactly at GT_WATCH_VA, and
+    // a T#'s byte size needs tiling math this probe has no business redoing.
+    const auto& range = GtWatchRange();
+    if (range.size != 0 && va >= range.base && va < range.base + range.size) {
+        GtWatchLog(kind, shader_hash, va, 0, is_written);
+    }
+}
+} // namespace
 
 static Shader::PushData MakeUserData(const AmdGpu::Regs& regs) {
     // TODO(roamic): Add support for multiple viewports and geometry shaders when ViewportIndex
@@ -141,6 +211,28 @@ void Rasterizer::PrepareRenderState(const GraphicsPipeline* pipeline) {
         }
         const auto& hint = liverpool->last_cb_extent[cb];
         std::construct_at(&desc, col_buf, hint);
+        // GT7 [lut3d]/[vawatch]: a 3D grading LUT can also be written as a render target, one
+        // slice per draw - the T#-side watches cannot see that path.
+        {
+            const auto& w = GtWatchRange();
+            const bool lut_shaped = desc.info.size.width == 64 && desc.info.size.height == 64 &&
+                                    (desc.info.size.depth >= 64 ||
+                                     desc.info.resources.layers >= 64);
+            const bool watched = w.size != 0 &&
+                                 desc.info.guest_address < w.base + w.size &&
+                                 w.base < desc.info.guest_address + desc.info.guest_size;
+            if (lut_shaped || watched) {
+                static u32 rt_budget = 0;
+                if (rt_budget++ < 128) {
+                    LOG_WARNING(Render_Vulkan,
+                                "[lut3d] rt: {}x{}x{} layers {} at {:#x}+{:#x} bound as color "
+                                "target",
+                                desc.info.size.width, desc.info.size.height, desc.info.size.depth,
+                                desc.info.resources.layers, desc.info.guest_address,
+                                desc.info.guest_size);
+                }
+            }
+        }
         image_id = bound_images.emplace_back(texture_cache.FindImage(desc));
         auto& image = texture_cache.GetImage(image_id);
         image.binding.is_target = 1u;
@@ -1386,6 +1478,8 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                 buffer_infos.emplace_back(VK_NULL_HANDLE, 0, VK_WHOLE_SIZE);
             }
         } else {
+            GtWatchBufferBind(desc.is_formatted ? "buf-fmt" : "buf", stage.pgm_hash,
+                              vsharp.base_address, size, desc.is_written);
             const auto [vk_buffer, offset] = buffer_cache.ObtainBuffer(
                 vsharp.base_address, size, desc.is_written, desc.is_formatted, buffer_id);
             const u32 offset_aligned = Common::AlignDown(offset, alignment);
@@ -1437,7 +1531,17 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                                           vk::PipelineStageFlagBits2::eAllCommands)) {
                 buffer_barriers.emplace_back(*barrier);
             }
-            if (desc.is_written && desc.is_formatted) {
+            // GT_INVAL_IMG_ON_SSBO=1 (Act 11 experiment): only FORMATTED writes told the
+            // texture cache "your guest range was GPU-written" - a plain SSBO baking a LUT
+            // that is later SAMPLED leaves the image permanently stale (RefreshImage would
+            // pick the GPU bytes up from the cached buffer, but nothing ever marks the image
+            // GpuDirty). InvalidateMemoryFromGPU only touches images whose base address
+            // matches exactly, so this is cheap and cannot storm unrelated images.
+            static const bool inval_on_ssbo = [] {
+                const char* v = std::getenv("GT_INVAL_IMG_ON_SSBO");
+                return v && v[0] == '1';
+            }();
+            if (desc.is_written && (desc.is_formatted || inval_on_ssbo)) {
                 texture_cache.InvalidateMemoryFromGPU(vsharp.base_address, size);
             }
             }
@@ -1595,6 +1699,7 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                     continue;
                 }
                 valid_mask |= 1u << i;
+                GtWatchImageBind("imgwin", stage.pgm_hash, slot_sharp, image_desc.is_written);
                 auto& [image_id, desc] = image_bindings.emplace_back(
                     std::piecewise_construct, std::tuple{}, std::tuple{slot_sharp, image_desc});
                 image_id = texture_cache.FindImage(desc);
@@ -1718,6 +1823,8 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                              stage.pgm_hash, tsharp.Address(), diverged);
             }
         }
+
+        GtWatchImageBind("img", stage.pgm_hash, tsharp, image_desc.is_written);
 
         const Shader::MipStorageFallbackMode mip_fallback_mode = image_desc.mip_fallback_mode;
         const u32 live_bindings = image_desc.NumBindings(stage);
@@ -2089,10 +2196,19 @@ void Rasterizer::DepthStencilCopy(bool is_depth, bool is_stencil) {
 }
 
 void Rasterizer::FillBuffer(VAddr address, u32 num_bytes, u32 value, bool is_gds) {
+    if (!is_gds) {
+        GtWatchBufferBind("fill", 0, address, num_bytes, true);
+    }
     buffer_cache.FillBuffer(address, num_bytes, value, is_gds);
 }
 
 void Rasterizer::CopyBuffer(VAddr dst, VAddr src, u32 num_bytes, bool dst_gds, bool src_gds) {
+    if (!dst_gds) {
+        GtWatchBufferBind("copy-dst", 0, dst, num_bytes, true);
+    }
+    if (!src_gds) {
+        GtWatchBufferBind("copy-src", 0, src, num_bytes, false);
+    }
     buffer_cache.CopyBuffer(dst, src, num_bytes, dst_gds, src_gds);
 }
 

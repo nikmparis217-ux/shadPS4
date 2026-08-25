@@ -1194,3 +1194,176 @@ proof came from RenderDoc, not from another stub experiment - install it once, k
    currently hide geometry; un-stub them the moment (1) makes their descriptors reliable.
 4. TdrDelay registry bump (needs the user at the UAC + reboot) - still pending.
 5. The sporadic GUEST WILD JUMP family (run 156's guest minidump kept) - unattributed.
+
+---
+
+# ACT 11 (25 Aug): GT_IMGARRAY_SYNC - the table readback is BUILT, runs 159+ are the verdict
+
+Act 10's Next Move #1 said "UPDATE_AFTER_BIND + re-walk the guest table just before
+vkQueueSubmit". THAT DESIGN WAS REFUTED BEFORE A LINE WAS WRITTEN, by the coherence model:
+guest memory is never imported into Vulkan (no VK_EXT_external_memory_host anywhere), every
+cached buffer is a VMA device-local COPY, and buffer->guest writeback is opt-in only
+(DownloadBufferMemory -> TryWriteBacking). So if the T# table is GPU-written - and the
+producer sits EARLIER IN THE SAME command buffer as the bake - then at submit time (a) the
+GPU has not executed the producer yet, and (b) even after execution the bytes never reach
+guest RAM on their own. A pre-submit guest-RAM re-walk reads the same zeros as record time,
+guaranteed. (UAB also cannot reach push-descriptor pipelines at all: ePushDescriptorKHR is
+mutually exclusive with eUpdateAfterBindPool, and vkCmdPushDescriptorSetKHR bakes at record
+time. Filed under "only if the Stage 0 discriminator ever says cpudirty=1 gpumod=0", which
+no current evidence predicts - WaitRegMem blocks the parse on both streams, so a properly
+fenced CPU write is already visible at record time, and the measured nulls are addr0 zeros,
+not stale T#s.)
+
+## WHAT WENT IN (commits 8d81f531 + 6e9fc401; run_gt7.ps1 + GT7_imgsync.bat uncommitted)
+
+1. **Stage 0 discriminator (8d81f531)**: the [imgarray] line now ends with
+   `binds N reg B gpumod B cpudirty B` for the table region. reg 1 = a registered cache
+   buffer covers it (the readback can reach the data); gpumod 1 = a GPU wrote it through a
+   TRACKED binding; gpumod 0 does NOT clear the GPU (BDA stores mark nothing - the
+   gpu_modified_ranges are only fed by CopyBuffer and ObtainBuffer(is_written)); reg 0 =
+   the producer stored to an UNREGISTERED page and the value was DROPPED by the fault path
+   (the fault buffer only creates buffers afterwards) - then the fix is pre-registration,
+   not any sync. Queries run only inside the budgeted print block.
+
+2. **GT_IMGARRAY_SYNC (6e9fc401)**: Rasterizer::SyncWindowedImageTables, called from
+   DispatchDirect and DispatchIndirect BEFORE BindResources (record time - views, uploads,
+   barriers all legal; GT_SPLIT_DISPATCH proved mid-parse flushes safe). When a windowed
+   write-window's slots read mostly null (>= 2): resolve the covering cache buffer through
+   the RAW page table, record barrier + vkCmdCopyBuffer(table -> download stream buffer),
+   then per mode:
+   - **mode 2 (proof)**: scheduler.Finish() - this SUBMITS the producer already recorded in
+     the same cmdbuf and waits - then TryWriteBacking the ~2.3 KB back into guest RAM; the
+     UNCHANGED BindTextures slot loop then reads real T#s and creates real views. Expect
+     single-digit fps (~3-5 bake dispatches/frame measured in run 153); ONE verification
+     run only. GT7_work/GT7_imgsync.bat is the one-click launcher.
+   - **mode 1 (playable)**: record the copy WITHOUT waiting; DeferOperation lands the
+     payload in a memo keyed by table VA; the NEXT occurrence of the same VA injects it
+     via TryWriteBacking before the pre-scan. One-frame-late, correct for frame-stable T#s
+     of persistent LUT targets (the game ring-buffers a small VA set - 0x2xx33e58 recurs).
+   - **mode 3**: mode-2 mechanics on READ windows too (would retire GT_IMGARRAY_FB0).
+   - GT_IMGARRAY_SYNC_MAX (default 64) caps the syncs per run; a per-shader fail-streak
+     latch turns the sync off after 4 fruitless attempts with a CRITICAL naming it.
+
+## THE TRAPS THE IMPLEMENTATION DODGED (each would have silently faked a verdict)
+
+- **ObtainBuffer would read the WRONG buffer twice over**: its read-only <=16K path
+  returns a STREAM-buffer copy of guest RAM (the very zeros being diagnosed), and its
+  SynchronizeBuffer uploads CPU-dirty words OVER the GPU-written slots (tracker granularity
+  is whole words; slot 0 IS CPU-written, same page). Hence the raw page_table resolve
+  (the ObtainBufferForImage pattern) with NO synchronize.
+- **A copy inside dynamic rendering is invalid** - scheduler.EndRendering() first, like
+  every other copy site.
+- **DownloadBufferMemory records no pre-copy barrier** and BDA writes bypass every
+  buffer-cache barrier - one global AllCommands/MemoryWrite -> Transfer/TransferRead
+  barrier before the copy.
+- **TryWriteBacking ASSERTS on IsValidMapping** - the helper pre-checks IsMappedMemory and
+  a 0x10000 floor on the table base (a V# carrying SrtBindlessFlagBit reads back zeroed,
+  so table_va would compute as 0+base).
+- **No tracker mutation on writeback**: marking the range CPU-modified would upload the
+  snapshot back OVER newer GPU data on the next synchronize.
+- Record-time only, no emitter/meta change -> **env flips need NO pipeline-cache wipe**.
+  But the two commits DO change the cache generation, so run 159 is a cold run (full
+  recompile, slow first boot - expected, not a regression).
+
+## RUN PLAN (159+), predictions filed BEFORE the runs
+
+| run | launcher | variable | prediction | verdict criterion |
+|---|---|---|---|---|
+| 159 | GT7_PSN.bat | new build, SYNC off | a95f906e tables: reg 1 (gpumod uncertain - BDA writes do not mark) | the [imgarray] tail names the writer; binds gives the dispatch rate |
+| 160 | GT7_imgsync.bat | GT_IMGARRAY_SYNC=2 | [imgsync] valid 1/16 -> 16/16 | transition present; USER: track preview no longer solid red, wash reduced; wait-us per sync logged |
+| 161 | GT7_imgsync.bat + F12 | RenderDoc capture | GetUsage(64^3 LUT) gains a CS write | LUT spans 0..1 all channels; fs_ae20a0bc output min ~0; capture 2-3 frames (oscillation) |
+| 162 | set GT_IMGARRAY_SYNC=1 | async memo | same visuals at playable fps | [imgsync] inj lines; fps delta from [vram]/journal |
+| 163+ | - | =3 read windows; then un-stub ladder one per run; then GT_IMGWRITE_SCRUB=0; then GT_DYNRC_GPU=1 (warning: uses_dma per-draw re-sync tax, the run-74 family) | probes/fog stop hiding geometry | zero device losts per run |
+
+Pre-declared outcomes for 160 - ALL THREE ARE INFORMATION: (a) slots fill -> root cause
+confirmed AND fixed; (b) dl 1 but valid unchanged -> plumbing bug in OUR path (check the
+[imgsync] line's reg/gpumod bits first); (c) readback zeros with reg 1 -> the producer
+never wrote (a STUBBED producer would do this - the stable-set stubs include da05e7f8, a
+proven producer; un-stub A/B before concluding "theory dead") or the value died on an
+unregistered page (then reg would be 0 - pre-registration is the fix).
+
+## ADDENDUM (25 Aug, 21:30): "it dont run" - config.json HAD GROWN TO 2.14 GB
+
+The user's first attempt at run 159 failed before the emulator even started. Cause chain,
+measured: `Get-Content $cfg -Raw` in run_gt7.ps1 died with **OutOfMemoryException** because
+config.json was **2,143,719,269 bytes**. Inside it: the `install_dirs` path
+`C:\Users\<Greek username>\Desktop\shadps4-win64-sdl-0.17.0\ps4games` (plus its `\DLC`
+sibling) had been re-encoded slightly worse by SOME writer on every run since ~Aug 17
+(6.6 KB -> 379 KB Aug 21 -> 976 MB Aug 24 -> 2.14 GB Aug 25) - classic UTF-8/codepage
+mojibake compounding, roughly x1.4-2 per cycle, FIVE generations of the same string stacked
+up as separate install_dirs entries. The structure stayed valid JSON throughout, which is
+why every run kept working until the file crossed PowerShell's string limit.
+
+**Repaired** (scratchpad fix_config.py + fix_config2.py): byte-level surgery replaced the
+mangled spans, then a JSON pass deduped install_dirs. config.json is now **3.4 KB, valid,
+pure ASCII** - the paths use the 8.3 form (`C:\Users\3E30~1\...`), so no mis-decoding
+writer can ever compound them again (the loop is starved, even though the WRITER WAS NEVER
+IDENTIFIED - run_gt7.ps1 reads BOM-aware and writes -Encoding UTF8, and PS ConvertTo-Json
+escapes non-ASCII, so the script alone cannot compound; prime suspects remain the
+emulator's own config round-trip and the QtLauncher). renderdoc_enabled=true and the
+1080p pins survived the repair.
+
+- **Tripwire added to run_gt7.ps1**: config.json > 5 MB -> refuse to run, loudly, naming
+  this addendum. Catches cycle #1 of any recurrence instead of cycle #30 killing the tools.
+- ⚠ Two corpses kept as evidence, deletable once run 160 verifies:
+  `config.json.corrupt_20260825` (2.1 GB) and `config.json.pre_run148_readbacks` (976 MB),
+  both in %APPDATA%\shadPS4.
+- ⚠ TRAP for every tool here: a 2 GB config also means the EMULATOR was parsing 2 GB of
+  JSON at every boot for days - any "slow boot" measurements from Aug 22-25 carry that tax.
+- ⚠ TRAP: when run_gt7.ps1's Get-Content OOMs, `$j` is null, every property write errors,
+  and the script STILL prints its summary and launches - the config the emulator then reads
+  is whatever was on disk. The tripwire now stops that path up front.
+
+## ACT 11 VERDICT (25 Aug, night): the null-slot theory is DEAD - measured, twice over
+
+Runs 159/160 + dims instrumentation + three RenderDoc captures of ONE PAUSED frame settled
+Act 11's original theory and replaced it with a measured mechanism:
+
+1. **cs_a95f906e dispatches 1x1x1.** WorkgroupId.z is always 0, so slots 1-15 of its windowed
+   T# table are NEVER ADDRESSED - the measured "15/16 null-bound" is BENIGN for this shader.
+   GT_IMGARRAY_SYNC mode 2 confirmed independently: 18 sync attempts, valid 1/16 -> 1/16
+   always, even with dl 1 (GPU drained, cached buffer downloaded) - nobody writes those slots
+   anywhere. The machinery stays (env-gated, off) for future windowed shaders with real dims.
+2. **Slot 0 is a 4x4 RGBA16F 2D texture at 0x101e32a700 - NOT the 64^3 LUT.** The bake that
+   works is not the bake that is missing.
+3. **The 64^3 grading LUT (guest 0x101e400000) is never written by anything in any captured
+   frame** (GetUsage: one PS_Resource read at the output transform, zero writes; content
+   byte-identical garbage across captures: min(1 0 0 0) max(1 9e-05 1 1)).
+4. **The paused-frame pulsing the user photographed is NOT shader compilation.** Three
+   captures of the same paused scene: every small input identical (LUT, 8192x1 curve, 4x4s,
+   1x1 R8=0, exposure RGBA16F target = all zeros), scene HDR input identical - and the
+   transform's output min oscillates 0.005 -> 0.054 -> 0.42. With identical texture inputs
+   the only remaining variable is BUFFER data: the game animates a per-frame LUT blend
+   weight (adaptation/crossfade - normal game behavior), and every nonzero weight blends in
+   garbage. One defect (unwritten LUT), three symptoms (wash, pulsing, red map).
+
+### Step 2 shipped (commit after this note): identity LUT + writer hunt
+
+- **GT_LUT_IDENT=1** (TextureCache::RefreshImage): any 64x64x64 R16G16B16A16Sfloat volume's
+  FIRST upload is replaced with an identity LUT (value = coordinate, alpha 1). lerp(x, LUT[c],
+  w) with identity == x for any w -> wash, pulsing and red map all collapse to no-ops. One-shot
+  per image (bool on Image), skipped while GpuDirty, so real content - CPU-written or GPU-
+  propagated - always wins over identity. Launcher: **GT7_lutident.bat** (also arms the
+  watches below at the Act 10 LUT address).
+- **[lut3d]** logs EVERY bind of a 64^3 volume T# (img/imgwin paths), and every 64x64
+  (depth or layers >= 64) COLOR TARGET - a 3D LUT can be baked as an RT, slice per draw.
+- **[vawatch]** (GT_WATCH_VA/GT_WATCH_SIZE, hex) logs every buffer bind, fill and copy
+  overlapping the watched range, plus any image T# whose base falls inside it. This answers
+  "does ANYTHING touch the LUT range across a whole session" - RenderDoc can only see one
+  frame, and the LUT bake (if it exists) runs at load time, not per frame.
+- **GT_INVAL_IMG_ON_SSBO=1**: today only FORMATTED buffer writes call
+  InvalidateMemoryFromGPU. If [vawatch] shows a plain SSBO WRITE covering the LUT, this env
+  is the fix candidate: it extends the GpuDirty marking to plain SSBO writes (exact
+  base-address match only, so it cannot storm unrelated images).
+
+### Read of the next log, pre-declared
+- `[lutident] seeded` present + wash gone -> mechanism PROVEN end to end; ship the env as
+  default and keep hunting the real writer at leisure.
+- `[lutident]` present + wash STILL pulses -> the transform's LUT is not (only) this image -
+  check [lut3d] for other 64^3 binds, and the blend weight theory needs the analyze7 byteOffset
+  re-run (script fixed to dump at each binding's byteOffset - offset 0 of a ring buffer was
+  dumped the first time and compared unrelated frames).
+- `[vawatch] ... WRITE` lines -> the writer exists and its domain (buf/buf-fmt/fill/copy-dst/
+  rt/img WRITE) names the missing propagation path directly.
+- No [vawatch] WRITE in a whole boot->race session -> the baker never runs at all: suspect the
+  un-stub ladder (da05e7f8 / 7c3468f9 / 935c6eac / 11a81f15) or an HLE'd path, one per run.

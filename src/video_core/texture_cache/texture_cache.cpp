@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <bit>
 #include <cstdlib>
 #include <xxhash.h>
 
@@ -701,6 +702,81 @@ ImageView& TextureCache::FindDepthTarget(ImageId image_id, const ImageDesc& desc
 
 void TextureCache::RefreshImage(Image& image) {
     if (False(image.flags & ImageFlagBits::Dirty) || image.info.num_samples > 1) {
+        return;
+    }
+
+    // GT7 (Act 11): GT_LUT_IDENT=1 seeds every 64x64x64 RGBA16F volume with an IDENTITY
+    // grading LUT instead of uploading guest RAM. Measured (RenderDoc run 158 + three captures
+    // of one PAUSED frame): the output transform fs_0xae20a0bc lerps every pixel toward
+    // LUT[coord] with a per-frame weight, and the LUT is uninitialized-VRAM garbage (R=1
+    // everywhere) because whatever should bake it never writes - that is the white-washed
+    // screen, the pulsing of a paused frame (identical texture inputs, output min 0.005 ->
+    // 0.054 -> 0.42 across three captures of the same scene = the weight animates), and the
+    // solid-red track map (same shader signature, same LUT). An identity LUT makes the blend a
+    // no-op whatever the weight does. One-shot per image, and never while GpuDirty (real
+    // GPU-written bytes in the buffer cache must win); a later CPU write re-dirties the pages
+    // and the normal path below uploads the real data - identity cannot overwrite content.
+    static const bool lut_ident = [] {
+        const char* v = std::getenv("GT_LUT_IDENT");
+        return v && v[0] == '1';
+    }();
+    if (lut_ident && !image.lut_ident_seeded && image.info.props.is_volume &&
+        image.info.size.width == 64 && image.info.size.height == 64 &&
+        image.info.size.depth == 64 &&
+        image.info.pixel_format == vk::Format::eR16G16B16A16Sfloat &&
+        image.info.resources.levels == 1 && False(image.flags & ImageFlagBits::GpuDirty)) {
+        image.lut_ident_seeded = true;
+        constexpr u32 dim = 64;
+        constexpr u64 lut_bytes = u64(dim) * dim * dim * 4 * sizeof(u16);
+        // Image::Upload's source barrier spans [offset, offset + guest_size) - map at least
+        // that much so a padded (tiled) guest_size cannot push the barrier past the buffer.
+        const u64 map_bytes = std::max<u64>(lut_bytes, image.info.guest_size);
+        scheduler.EndRendering();
+        auto& upload_buffer = buffer_cache.GetUtilityBuffer(MemoryUsage::Upload);
+        const auto [staging, offset] = upload_buffer.Map(map_bytes, 16);
+        // f32 -> f16 with a truncated mantissa - exact enough for the 64 axis values.
+        const auto to_half = [](f32 value) -> u16 {
+            const u32 f = std::bit_cast<u32>(value);
+            const s32 exp = s32((f >> 23) & 0xff) - 127 + 15;
+            if (exp <= 0) {
+                return 0;
+            }
+            return u16(((f >> 16) & 0x8000) | (u32(exp) << 10) | ((f & 0x7fffff) >> 13));
+        };
+        u16 axis[dim];
+        for (u32 i = 0; i < dim; ++i) {
+            axis[i] = to_half(f32(i) / f32(dim - 1));
+        }
+        constexpr u16 one_half = 0x3C00;
+        u16* px = reinterpret_cast<u16*>(staging);
+        for (u32 z = 0; z < dim; ++z) {
+            for (u32 y = 0; y < dim; ++y) {
+                for (u32 x = 0; x < dim; ++x) {
+                    *px++ = axis[x];
+                    *px++ = axis[y];
+                    *px++ = axis[z];
+                    *px++ = one_half;
+                }
+            }
+        }
+        upload_buffer.Commit();
+        const vk::BufferImageCopy identity_copy = {
+            .bufferOffset = offset,
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
+            .imageSubresource{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+            .imageOffset = {0, 0, 0},
+            .imageExtent = {dim, dim, dim},
+        };
+        image.Upload({&identity_copy, 1}, upload_buffer.Handle(), offset);
+        LOG_WARNING(Render_Vulkan,
+                    "[lutident] seeded identity 64^3 RGBA16F LUT at {:#x} (guest_size {:#x})",
+                    image.info.guest_address, image.info.guest_size);
         return;
     }
 
