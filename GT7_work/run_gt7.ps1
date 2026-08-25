@@ -423,6 +423,11 @@ if ($Net -or $Offline) {
     # All runtime-only: flipping any of these needs NO cache wipe.
     Set-GtDefault 'GT_LUT_IDENT' '0'
     Set-GtDefault 'GT_INVAL_IMG_ON_SSBO' '0'
+    # GT_LUT_DUMP=1: at a READ bind of a 64^3 RGBA16F volume, drain the GPU and print 8
+    # diagonal texels ("[lutdump]"). Exists because run 163 proved the seed RUNS ([lutident]
+    # on both LUTs) while the screen stayed washed and the map stayed red - so the question
+    # is what the transform actually samples. 12 dumps per session, each a full drain.
+    Set-GtDefault 'GT_LUT_DUMP' '0'
     # GT_IMGWRITE_SCRUB (25 Aug, late): ON by default from now on. The emitter-side NaN
     # containment for storage-image writes (emit_spirv_image.cpp) existed since the dump
     # analysis named cs_da05e7f8 a NaN factory (normalize(0) per probe mip -> the frame

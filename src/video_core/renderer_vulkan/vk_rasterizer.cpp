@@ -1559,6 +1559,74 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
     }
 }
 
+void Rasterizer::MaybeDumpLut(VideoCore::Image& image) {
+    static const bool dump_enabled = [] {
+        const char* v = std::getenv("GT_LUT_DUMP");
+        return v && v[0] == '1';
+    }();
+    if (!dump_enabled || !image.info.props.is_volume || image.info.size.width != 64 ||
+        image.info.size.height != 64 || image.info.size.depth != 64 ||
+        image.info.pixel_format != vk::Format::eR16G16B16A16Sfloat) {
+        return;
+    }
+    // First read of each image, then every 512th, 12 dumps per session in total - each one
+    // is a full pipeline drain. GPU command processor thread only.
+    static u32 global_dumps = 0;
+    static std::unordered_map<u64, u32> per_image_reads;
+    const u32 reads = ++per_image_reads[image.image_uid];
+    if (global_dumps >= 12 || (reads != 1 && (reads & 511u) != 0)) {
+        return;
+    }
+    ++global_dumps;
+    constexpr u32 kSamples = 8;
+    constexpr u64 kTexelBytes = 4 * sizeof(u16);
+    auto& download = buffer_cache.GetUtilityBuffer(VideoCore::MemoryUsage::Download);
+    const auto [mapped, offset] = download.Map(kSamples * kTexelBytes, 16);
+    download.Commit();
+    boost::container::small_vector<vk::BufferImageCopy, kSamples> copies;
+    for (u32 k = 0; k < kSamples; ++k) {
+        const s32 c = s32(k * 63 / (kSamples - 1)); // 0, 9, 18, 27, 36, 45, 54, 63
+        copies.push_back({
+            .bufferOffset = offset + k * kTexelBytes,
+            .bufferRowLength = 0,
+            .bufferImageHeight = 0,
+            .imageSubresource{
+                .aspectMask = vk::ImageAspectFlagBits::eColor,
+                .mipLevel = 0,
+                .baseArrayLayer = 0,
+                .layerCount = 1,
+            },
+            .imageOffset = {c, c, c},
+            .imageExtent = {1, 1, 1},
+        });
+    }
+    image.Download(copies, download.Handle(), offset, kSamples * kTexelBytes);
+    scheduler.Finish();
+    const auto half_to_f32 = [](u16 h) -> f32 {
+        const u32 sign = (u32(h) & 0x8000) << 16;
+        const u32 exp = (h >> 10) & 0x1f;
+        const u32 mant = h & 0x3ff;
+        if (exp == 0) {
+            return std::bit_cast<f32>(sign); // denorms print as 0 - fine for a dump
+        }
+        if (exp == 31) {
+            return std::bit_cast<f32>(sign | 0x7f800000 | (mant << 13));
+        }
+        return std::bit_cast<f32>(sign | ((exp - 15 + 127) << 23) | (mant << 13));
+    };
+    const u16* texels = reinterpret_cast<const u16*>(mapped);
+    std::string line;
+    for (u32 k = 0; k < kSamples; ++k) {
+        const s32 c = s32(k * 63 / (kSamples - 1));
+        line += fmt::format(" ({},{},{})=({:.3f} {:.3f} {:.3f} {:.3f})", c, c, c,
+                            half_to_f32(texels[k * 4 + 0]), half_to_f32(texels[k * 4 + 1]),
+                            half_to_f32(texels[k * 4 + 2]), half_to_f32(texels[k * 4 + 3]));
+    }
+    LOG_WARNING(Render_Vulkan, "[lutdump] va {:#x} read #{} diagonal:{} (identity would be "
+                               "(c/63 c/63 c/63 1.0) at every point)",
+                image.info.guest_address, reads, line);
+}
+
 void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindings& binding) {
     image_bindings.clear();
     const u32 first_image_idx = image_infos.size();
@@ -1885,6 +1953,9 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 image->binding.force_general |= image_desc.is_written;
             }
             image->binding.is_bound = 1u;
+            if (i == 0 && !image_desc.is_written) {
+                MaybeDumpLut(*image);
+            }
         }
 
         image_descriptor_array_sizes.push_back(num_bindings);

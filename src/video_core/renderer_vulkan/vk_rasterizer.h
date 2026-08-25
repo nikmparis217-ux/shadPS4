@@ -132,6 +132,15 @@ private:
     void BindTextures(const Shader::Info& stage, Shader::Backend::Bindings& binding);
     bool BindResources(const Pipeline* pipeline);
 
+    /// GT_LUT_DUMP (Act 11 step 3): at a READ bind of a 64^3 RGBA16F volume, drain the GPU
+    /// and print 8 diagonal texels - the identity seed ran ([lutident] logged for BOTH LUTs)
+    /// and the screen did not change, so the open question is WHAT the transform actually
+    /// samples: identity (then the shader's use of the LUT is not what we model - back to
+    /// RenderDoc) or garbage (then the baker cs_0xf04a69f0 overwrites the seed with output
+    /// computed from broken inputs - then stub/fix the baker). Budgeted, env-gated, costs a
+    /// scheduler.Finish per dump - a diagnostic, never a shipping path.
+    void MaybeDumpLut(VideoCore::Image& image);
+
     /// GT_IMGARRAY_SYNC (Act 11): the windowed T# tables are GPU-written by producers
     /// recorded EARLIER IN THIS SAME command buffer, so the record-time guest-RAM read in
     /// BindTextures can only ever see zeros (cached buffers are copies; GPU writes never

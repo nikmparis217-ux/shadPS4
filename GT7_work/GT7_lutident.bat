@@ -25,6 +25,7 @@ REM supported way to flip them for one run.
 title GT7 - LUT IDENTITY run (launcher bypassed)
 
 set GT_LUT_IDENT=1
+set GT_LUT_DUMP=1
 set GT_WATCH_VA=101e400000
 set GT_WATCH_SIZE=200000
 
