@@ -998,9 +998,39 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
     }
 
     // Second pass to re-bind buffers that were updated after binding
+    bool expo_logged = false;
     for (u32 i = 0; i < buffer_bindings.size(); i++) {
         const auto& [buffer_id, vsharp, size] = buffer_bindings[i];
         const auto& desc = stage.buffers[i];
+        // GT_EXPO_TRACE: dump the tonemapper family's cbuffer #0 at record time. The dump
+        // analysis proved the final output transform (fs_5f3d66c8 + siblings) takes its
+        // brightness scalar from dword 10 of a plain CPU constant buffer and DIVIDES by it
+        // (FPRecip32) - a zero there is an infinite gain, i.e. the white flood. This logs
+        // the 16 dwords the shader will actually read, straight from guest memory.
+        static const bool expo_trace = std::getenv("GT_EXPO_TRACE") != nullptr;
+        if (expo_trace && !expo_logged && vsharp.base_address != 0 && size >= 64) {
+            static constexpr std::array<u64, 7> kToneHashes{0x5f3d66c8ull, 0x66b6b47full,
+                                                            0xe18f19f1ull, 0xf3fc7237ull,
+                                                            0xa343d9e2ull, 0xb261ddf6ull,
+                                                            0xae20a0bcull};
+            if (std::ranges::find(kToneHashes, stage.pgm_hash) != kToneHashes.end() &&
+                memory->ClampRangeSize(vsharp.base_address, 64) == 64) {
+                expo_logged = true;
+                std::array<float, 16> ef;
+                std::memcpy(ef.data(), reinterpret_cast<const void*>(vsharp.base_address), 64);
+                static std::atomic<u32> expo_n{0};
+                const u32 n = expo_n.fetch_add(1, std::memory_order_relaxed);
+                if (n < 128 || (n & 63) == 0) {
+                    LOG_WARNING(Render_Vulkan,
+                                "[expo] seq {} fs {:#x} cb0 @{:#x} dw10={:g} | {:g} {:g} {:g} "
+                                "{:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} "
+                                "{:g} (n={})",
+                                instance.PeekGpuWorkSeq(), stage.pgm_hash, vsharp.base_address,
+                                ef[10], ef[0], ef[1], ef[2], ef[3], ef[4], ef[5], ef[6], ef[7],
+                                ef[8], ef[9], ef[10], ef[11], ef[12], ef[13], ef[14], ef[15], n);
+                }
+            }
+        }
         const bool is_storage = desc.IsStorage(vsharp);
         const u32 alignment =
             is_storage ? instance.StorageMinAlignment() : instance.UniformMinAlignment();
