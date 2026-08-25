@@ -112,14 +112,13 @@ public:
     void ReadMemory(VAddr device_addr, u64 size, bool is_write = false);
 
     /// GT_IMGARRAY_SYNC (Act 11): synchronously copy [addr, addr+size) out of the CACHED
-    /// buffer and write it back to guest RAM, IGNORING tracker state - the windowed T#
-    /// tables are GPU-written through paths that never mark gpu_modified_ranges (BDA
-    /// stores), so the gated ReadMemory path would skip exactly the bytes this exists for.
-    /// Costs a full pipeline drain (scheduler.Finish). The caller must have verified the
-    /// guest range is mapped (TryWriteBacking asserts on IsValidMapping). Returns false
-    /// when no registered buffer fully covers the range - that outcome is itself the
-    /// Stage 0 "reg 0" verdict: a store to an unregistered page was dropped.
-    bool DownloadTableRegion(VAddr addr, u64 size);
+    /// buffer into `out`, IGNORING tracker state - the windowed T# tables are GPU-written
+    /// through paths that never mark gpu_modified_ranges (BDA stores), so the gated
+    /// ReadMemory path would skip exactly the bytes this exists for. Costs a full pipeline
+    /// drain (scheduler.Finish). The caller merges the bytes into guest RAM per slot.
+    /// Returns false when no registered buffer fully covers the range - that outcome is
+    /// itself the Stage 0 "reg 0" verdict: a store to an unregistered page was dropped.
+    bool DownloadTableRegion(VAddr addr, u64 size, std::vector<u8>& out);
 
     /// The async sibling of DownloadTableRegion: records the copy WITHOUT waiting and
     /// hands the payload to on_ready once the recorded tick completes (DeferOperation).

@@ -456,7 +456,8 @@ void Rasterizer::DrawIndirect(bool is_indexed, VAddr arg_address, u32 offset, u3
     ResetBindings();
 }
 
-void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage) {
+void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage, u32 dim_x, u32 dim_y,
+                                         u32 dim_z) {
     // GT_IMGARRAY_SYNC (Act 11): 0/unset = off; 2 = synchronous proof mode (write windows);
     // 1 = async memo mode (write windows); 3 = synchronous, read windows too. See the header
     // comment for the mechanism. Read once per process, like every GT_* gate here.
@@ -504,9 +505,11 @@ void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage) {
         if (table_va + span >= (u64{1} << 40) || !memory->IsMappedMemory(table_va, span)) {
             continue;
         }
-        // The two a95f906e windows share one table 32 bytes apart - one readback covers both.
+        // The two a95f906e windows share one table 32 bytes apart - overlap, not containment
+        // (run 160: the base-32 window extends 32 bytes past the base-0 span and the
+        // containment test synced the same table twice).
         const bool already = std::ranges::any_of(covered, [&](const auto& c) {
-            return table_va >= c.first && table_va + span <= c.second;
+            return table_va < c.second && table_va + span > c.first;
         });
         if (already) {
             continue;
@@ -520,17 +523,47 @@ void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage) {
             return c;
         };
 
+        // PER-SLOT merge into guest RAM (run 159/160 measured the table as MIXED-OWNERSHIP:
+        // slot 0 arrives from the game CPU - cpudirty 1 - so a whole-blob writeback could
+        // clobber a fresh CPU slot with a stale cached copy). A slot is written only when
+        // the guest copy is invalid AND the payload's copy looks like a real T#.
+        const auto inject_slots = [&](const std::vector<u8>& bytes) {
+            u32 wrote = 0;
+            for (u32 i = 0; i < n; ++i) {
+                const u64 off = u64(i) * image_desc.window_stride_bytes;
+                if (off + sharp_bytes > bytes.size()) {
+                    break;
+                }
+                if (image_desc.GetSharpAt(stage, i).Address() != 0) {
+                    continue; // guest copy already valid - never clobber it
+                }
+                bool plausible = false;
+                if (!image_desc.is_r128) {
+                    AmdGpu::Image probe{};
+                    std::memcpy(&probe, bytes.data() + off, sizeof(probe));
+                    const u64 pva = probe.Address();
+                    plausible = pva >= 0x10000 && pva + 4096 < (u64{1} << 40) && probe.Valid();
+                } else {
+                    plausible = std::any_of(bytes.begin() + off,
+                                            bytes.begin() + off + sharp_bytes,
+                                            [](u8 b) { return b != 0; });
+                }
+                if (!plausible) {
+                    continue;
+                }
+                memory->TryWriteBacking(std::bit_cast<u8*>(table_va + off), bytes.data() + off,
+                                        sharp_bytes);
+                ++wrote;
+            }
+            return wrote;
+        };
+
         // Mode 1: inject the last COMPLETED payload for this VA before looking at the slots.
         u32 injected = 0;
         if (sync_mode == 1) {
             std::scoped_lock lk{memo_mutex};
             if (const auto it = memo.find(table_va); it != memo.end()) {
-                const auto& bytes = it->second;
-                if (bytes.size() <= span) {
-                    memory->TryWriteBacking(std::bit_cast<u8*>(table_va), bytes.data(),
-                                            bytes.size());
-                    injected = 1;
-                }
+                injected = inject_slots(it->second);
             }
         }
 
@@ -571,7 +604,11 @@ void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage) {
                     memo[table_va] = std::move(bytes);
                 });
         } else {
-            downloaded = buffer_cache.DownloadTableRegion(table_va, span);
+            std::vector<u8> dl_bytes;
+            downloaded = buffer_cache.DownloadTableRegion(table_va, span, dl_bytes);
+            if (downloaded) {
+                injected += inject_slots(dl_bytes);
+            }
         }
         ++syncs_done;
         covered.emplace_back(table_va, table_va + span);
@@ -579,12 +616,23 @@ void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage) {
                                 std::chrono::steady_clock::now() - t0)
                                 .count();
         const u32 valid_after = sync_mode == 1 ? valid_before : count_valid();
+        // Slot 0's identity answers the aliasing question: is the ONE image this bake really
+        // writes the 64^3 LUT / the map RT the consumers later read, or something else at
+        // the same address with a different format/view (which would make the texture cache
+        // create TWO images over one guest range)? And dims answer whether slots 1..15 are
+        // even addressable: the shader indexes the window by WorkgroupId.z, so dim_z==1
+        // means only slot 0 exists for this dispatch and 15/16 null is BENIGN.
+        const auto sharp0 = image_desc.GetSharpAt(stage, 0);
         LOG_WARNING(Render_Vulkan,
                     "[imgsync] seq {} cs {:#x}: table {:#x}+{:#x} valid {}/{} -> {}/{} mode {} "
-                    "dl {:d} inj {} reg {:d} gpumod {:d} cpudirty {:d} wait {} us sync #{}",
+                    "dl {:d} inj {} reg {:d} gpumod {:d} cpudirty {:d} wait {} us dims {}x{}x{} "
+                    "slot0 {:#x} fmt {} nfmt {} type {} {}x{}x{} sync #{}",
                     instance.PeekGpuWorkSeq(), stage.pgm_hash, table_va, span, valid_before, n,
                     valid_after, n, sync_mode, downloaded, injected, reg, gpumod, cpudirty,
-                    wait_us, syncs_done);
+                    wait_us, dim_x, dim_y, dim_z, sharp0.Address(),
+                    static_cast<u32>(sharp0.GetDataFmt()), static_cast<u32>(sharp0.GetNumberFmt()),
+                    static_cast<u32>(sharp0.GetType()), u32(sharp0.width) + 1,
+                    u32(sharp0.height) + 1, u32(sharp0.depth) + 1, syncs_done);
         // The latch counts only observations that could have improved things: a synchronous
         // download that changed nothing, or an injection that still left the window null.
         const bool failure = sync_mode == 1 ? injected != 0
@@ -618,7 +666,7 @@ void Rasterizer::DispatchDirect() {
         return;
     }
 
-    SyncWindowedImageTables(cs);
+    SyncWindowedImageTables(cs, cs_program.dim_x, cs_program.dim_y, cs_program.dim_z);
 
     if (!BindResources(pipeline)) {
         return;
@@ -744,7 +792,7 @@ void Rasterizer::DispatchIndirect(VAddr address, u32 offset, u32 size) {
         return;
     }
 
-    SyncWindowedImageTables(pipeline->GetStage(Shader::LogicalStage::Compute));
+    SyncWindowedImageTables(pipeline->GetStage(Shader::LogicalStage::Compute), 0, 0, 0);
 
     if (!BindResources(pipeline)) {
         return;

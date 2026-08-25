@@ -139,8 +139,9 @@ private:
     /// into guest RAM so the UNCHANGED slot loop reads real T#s - the proof mode. Mode 1:
     /// async capture + inject on the next occurrence of the same table VA - the playable
     /// mode. Mode 3: mode-2 mechanics on READ windows too. Record-time only, so env flips
-    /// are pipeline-cache-safe.
-    void SyncWindowedImageTables(const Shader::Info& stage);
+    /// are pipeline-cache-safe. Dims are the dispatch's group counts (0 for indirect) -
+    /// the window is indexed by WorkgroupId.z, so dim_z bounds how many slots are real.
+    void SyncWindowedImageTables(const Shader::Info& stage, u32 dim_x, u32 dim_y, u32 dim_z);
 
     void ResetBindings() {
         for (auto& image_id : bound_images) {

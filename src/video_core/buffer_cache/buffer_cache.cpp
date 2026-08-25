@@ -171,16 +171,18 @@ u8* BufferCache::RecordTableRegionCopy(VAddr addr, u64 size) {
     return download;
 }
 
-bool BufferCache::DownloadTableRegion(VAddr addr, u64 size) {
+bool BufferCache::DownloadTableRegion(VAddr addr, u64 size, std::vector<u8>& out) {
     u8* download = RecordTableRegionCopy(addr, size);
     if (download == nullptr) {
         return false;
     }
     scheduler.Finish(); // submits the producer work recorded earlier in this cmdbuf + waits
-    // Deliberately no tracker mutation: marking the range CPU-modified would upload this
-    // snapshot back OVER newer GPU data on the next synchronize, and gpu_modified is left
-    // alone because the GPU may write the ring slot again next dispatch.
-    memory->TryWriteBacking(std::bit_cast<u8*>(addr), download, size);
+    // The caller merges these bytes into guest RAM PER SLOT (run 159 measured the table as
+    // mixed-ownership: slot 0 arrives from the game CPU, the rest from the GPU side) - a
+    // whole-blob writeback here could clobber a fresh CPU slot with a stale cached copy.
+    // No tracker mutation either: marking the range CPU-modified would upload the snapshot
+    // back OVER newer GPU data on the next synchronize.
+    out.assign(download, download + size);
     return true;
 }
 
