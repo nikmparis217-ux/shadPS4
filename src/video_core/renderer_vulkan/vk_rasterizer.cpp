@@ -1986,6 +1986,24 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             auto& image = texture_cache.GetImage(image_id);
             auto& image_view = texture_cache.FindTexture(image_id, desc);
 
+            // [lutview] (Act 11): the LUT's memory layout measured CORRECT (ABGR, per the
+            // T#'s dsel 7654) and every code link of the read path reads correct - yet the
+            // frame renders as if the sampled view had an IDENTITY mapping. Stop tracing,
+            // measure the view that is actually handed to the shader.
+            if (image.info.props.is_volume && image.info.size.width == 64 &&
+                image.info.size.height == 64 && image.info.size.depth == 64) {
+                static u32 lutview_budget = 0;
+                if (lutview_budget++ < 32) {
+                    const auto& m = image_view.info.mapping;
+                    LOG_WARNING(Render_Vulkan,
+                                "[lutview] va {:#x} storage {:d} view mapping r{} g{} b{} a{} "
+                                "(vk: 0=identity 1=zero 2=one 3=R 4=G 5=B 6=A)",
+                                image.info.guest_address, is_storage ? 1 : 0,
+                                static_cast<u32>(m.r), static_cast<u32>(m.g),
+                                static_cast<u32>(m.b), static_cast<u32>(m.a));
+                }
+            }
+
             // The image is either bound as storage in a separate descriptor or bound as render
             // target in feedback loop. Depth images are excluded because they can't be bound as
             // storage and feedback loop doesn't make sense for them
