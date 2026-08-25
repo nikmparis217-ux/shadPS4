@@ -86,10 +86,18 @@ void GtWatchImageBind(const char* kind, u64 shader_hash, const AmdGpu::Image& sh
     if (w == 64 && h == 64 && d == 64 && sharp.GetType() == AmdGpu::ImageType::Color3D) {
         static u32 lut_budget = 0;
         if (lut_budget++ < 128) {
+            // dsel: the T#'s raw dst_sel_x/y/z/w (SQ_SEL: 0=zero 1=one 4=R 5=G 6=B 7=A).
+            // Vulkan forbids component mapping on STORAGE views (image_view.cpp keeps
+            // identity for is_storage), so a non-identity dsel on a WRITE bind means the
+            // store lands unswizzled - the measured one-step channel rotation of the baked
+            // LUT (alpha in R, RGB slid into GBA).
             LOG_WARNING(Render_Vulkan,
-                        "[lut3d] {} shader {:#x}: 64x64x64 T# at {:#x} dfmt {} nfmt {} {}", kind,
-                        shader_hash, va, static_cast<u32>(sharp.GetDataFmt()),
-                        static_cast<u32>(sharp.GetNumberFmt()), is_written ? "WRITE" : "read");
+                        "[lut3d] {} shader {:#x}: 64x64x64 T# at {:#x} dfmt {} nfmt {} dsel "
+                        "{}{}{}{} {}",
+                        kind, shader_hash, va, static_cast<u32>(sharp.GetDataFmt()),
+                        static_cast<u32>(sharp.GetNumberFmt()), u32(sharp.dst_sel_x),
+                        u32(sharp.dst_sel_y), u32(sharp.dst_sel_z), u32(sharp.dst_sel_w),
+                        is_written ? "WRITE" : "read");
         }
     }
     // Point test on the base only: the watched LUT's own T# starts exactly at GT_WATCH_VA, and

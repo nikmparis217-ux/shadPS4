@@ -24,8 +24,10 @@ REM supported way to flip them for one run.
 
 title GT7 - LUT IDENTITY run (launcher bypassed)
 
+REM GT_LUT_DUMP stays OFF now: its one job is done (it proved the baked LUT holds the
+REM CORRECT tone curve rotated one channel right - alpha in R, RGB slid into GBA), and
+REM each dump is a mid-bind pipeline drain nothing should pay for in a play run.
 set GT_LUT_IDENT=1
-set GT_LUT_DUMP=1
 set GT_WATCH_VA=101e400000
 set GT_WATCH_SIZE=200000
 
