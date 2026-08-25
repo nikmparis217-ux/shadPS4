@@ -71,6 +71,17 @@ def iter_bindings(arrs):
 def run(controller):
     textures = {t.resourceId: t for t in controller.GetTextures()}
     buffers = {b.resourceId: b for b in controller.GetBuffers()}
+    # Resource NAMES: shadPS4 names images with their guest address ("Image ... 0x... :0x..."),
+    # which is exactly what GT_WATCH_VA needs to hunt a writer emulator-side.
+    names = {}
+    try:
+        for rd_res in controller.GetResources():
+            names[rd_res.resourceId] = rd_res.name
+    except Exception:
+        pass
+
+    def nm(res):
+        return names.get(res, "?")
 
     # the transform draw = the single PS_Resource read of the 64^3 LUT
     lut_id = None
@@ -97,17 +108,18 @@ def run(controller):
     # output + every fragment texture input's minmax (scene, bloom, ...)
     for o in pipe.GetOutputTargets():
         if o.resource != rd.ResourceId.Null():
-            log("OUT %s | %s" % (o.resource, fmt_mm(controller, o.resource)))
+            log("OUT %s [%s] | %s" % (o.resource, nm(o.resource), fmt_mm(controller, o.resource)))
     try:
         for res, boff, bsz in iter_bindings(pipe.GetReadOnlyResources(rd.ShaderStage.Fragment)):
             if res == rd.ResourceId.Null():
                 continue
             if res in textures:
                 t = textures[res]
-                log("TEXIN %s %dx%dx%d %s | %s" % (res, t.width, t.height, t.depth,
-                                                   t.format.Name(), fmt_mm(controller, res)))
+                log("TEXIN %s %dx%dx%d %s [%s] | %s" % (res, t.width, t.height, t.depth,
+                                                        t.format.Name(), nm(res),
+                                                        fmt_mm(controller, res)))
             elif res in buffers:
-                dump_buffer(controller, res, boff, "ROBUF(sz %d)" % bsz)
+                dump_buffer(controller, res, boff, "ROBUF(sz %d)[%s]" % (bsz, nm(res)))
     except Exception as e:
         log("RO iteration failed: %s" % e)
     try:
