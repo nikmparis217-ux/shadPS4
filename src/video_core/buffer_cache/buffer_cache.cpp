@@ -128,6 +128,79 @@ void BufferCache::ReadMemory(VAddr device_addr, u64 size, bool is_write) {
     });
 }
 
+u8* BufferCache::RecordTableRegionCopy(VAddr addr, u64 size) {
+    // Raw page-table resolve, deliberately NOT ObtainBuffer: the read-only <=16K path there
+    // aliases the STREAM buffer (a fresh copy of guest RAM - the very zeros being diagnosed),
+    // and a SynchronizeBuffer would upload CPU-dirty words OVER the GPU-written slots. If no
+    // registered buffer covers the range, the GPU cannot have written it through a tracked
+    // binding NOR through BDA (an unregistered page's pagetable entry is 0, so the store took
+    // the fault path and the value is gone) - the caller logs that as its own verdict.
+    const BufferId buffer_id = page_table[addr >> CACHING_PAGEBITS].buffer_id;
+    if (IsBufferInvalid(buffer_id)) {
+        return nullptr;
+    }
+    Buffer& buffer = slot_buffers[buffer_id];
+    if (!buffer.IsInBounds(addr, size)) {
+        return nullptr;
+    }
+    auto [download, offset] = download_buffer.Map(size);
+    if (download == nullptr) {
+        return nullptr; // 32 MB window exhausted mid-frame; the next occurrence retries
+    }
+    download_buffer.Commit();
+    scheduler.EndRendering(); // a transfer inside dynamic rendering is invalid
+    const auto cmdbuf = scheduler.CommandBuffer();
+    // The producer wrote through shader paths the buffer cache never barriered (BDA writes
+    // bypass every buffer-cache barrier); one global barrier makes them visible to the copy.
+    const vk::MemoryBarrier2 pre_barrier = {
+        .srcStageMask = vk::PipelineStageFlagBits2::eAllCommands,
+        .srcAccessMask = vk::AccessFlagBits2::eMemoryWrite,
+        .dstStageMask = vk::PipelineStageFlagBits2::eTransfer,
+        .dstAccessMask = vk::AccessFlagBits2::eTransferRead,
+    };
+    cmdbuf.pipelineBarrier2(vk::DependencyInfo{
+        .memoryBarrierCount = 1,
+        .pMemoryBarriers = &pre_barrier,
+    });
+    cmdbuf.copyBuffer(buffer.Handle(), download_buffer.Handle(),
+                      vk::BufferCopy{
+                          .srcOffset = buffer.Offset(addr),
+                          .dstOffset = offset,
+                          .size = size,
+                      });
+    return download;
+}
+
+bool BufferCache::DownloadTableRegion(VAddr addr, u64 size) {
+    u8* download = RecordTableRegionCopy(addr, size);
+    if (download == nullptr) {
+        return false;
+    }
+    scheduler.Finish(); // submits the producer work recorded earlier in this cmdbuf + waits
+    // Deliberately no tracker mutation: marking the range CPU-modified would upload this
+    // snapshot back OVER newer GPU data on the next synchronize, and gpu_modified is left
+    // alone because the GPU may write the ring slot again next dispatch.
+    memory->TryWriteBacking(std::bit_cast<u8*>(addr), download, size);
+    return true;
+}
+
+bool BufferCache::CaptureTableRegion(VAddr addr, u64 size,
+                                     std::function<void(std::vector<u8>&&)>&& on_ready) {
+    u8* download = RecordTableRegionCopy(addr, size);
+    if (download == nullptr) {
+        return false;
+    }
+    // The payload is read when the recorded tick completes; the stream-buffer region stays
+    // reserved until then (Commit ties it to the current tick). Owning captures only - the
+    // run-57 lesson (a deferred op reading a dead stack killed the parser thread).
+    scheduler.DeferOperation([download, size, cb = std::move(on_ready)]() mutable {
+        std::vector<u8> bytes(size);
+        std::memcpy(bytes.data(), download, size);
+        cb(std::move(bytes));
+    });
+    return true;
+}
+
 template <bool async>
 void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 size) {
     // Same clamp as SynchronizeBuffer, on the read side: a window past the buffer's end

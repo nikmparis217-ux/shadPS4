@@ -3,8 +3,10 @@
 
 #include <algorithm>
 #include <bit>
+#include <chrono>
 #include <cstring>
 #include <iterator>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -454,6 +456,152 @@ void Rasterizer::DrawIndirect(bool is_indexed, VAddr arg_address, u32 offset, u3
     ResetBindings();
 }
 
+void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage) {
+    // GT_IMGARRAY_SYNC (Act 11): 0/unset = off; 2 = synchronous proof mode (write windows);
+    // 1 = async memo mode (write windows); 3 = synchronous, read windows too. See the header
+    // comment for the mechanism. Read once per process, like every GT_* gate here.
+    static const int sync_mode = [] {
+        const char* v = std::getenv("GT_IMGARRAY_SYNC");
+        return v ? std::atoi(v) : 0;
+    }();
+    if (sync_mode == 0) {
+        return;
+    }
+    static const u32 sync_max = [] {
+        const char* v = std::getenv("GT_IMGARRAY_SYNC_MAX");
+        return v ? static_cast<u32>(std::atoi(v)) : 64u;
+    }();
+    // The maps below are GpuCommandProcessor-thread-only (like the [imgarray] maps in
+    // BindTextures) - EXCEPT the memo, which a DeferOperation drain can fill from another
+    // thread (present-side flushes exist), hence its mutex.
+    static u32 syncs_done = 0;
+    static bool budget_logged = false;
+    static std::unordered_map<u64, u32> fail_streak;
+    static std::mutex memo_mutex;
+    static std::unordered_map<u64, std::vector<u8>> memo; // table VA -> completed payload
+
+    boost::container::small_vector<std::pair<u64, u64>, 4> covered; // [start, end) this call
+    for (const auto& image_desc : stage.images) {
+        if (!image_desc.IsWindowed()) {
+            continue;
+        }
+        if (!image_desc.is_written && sync_mode < 3) {
+            continue;
+        }
+        const u32 n = image_desc.NumBindingsBaked(stage);
+        if (n == 0) {
+            continue;
+        }
+        const auto table_buf = stage.buffers[image_desc.deref_buffer].GetSharp(stage);
+        // A V# carrying SrtBindlessFlagBit reads back zeroed (the ReadUdSharp bounds guard),
+        // and a junk base would make TryWriteBacking ASSERT - same floor as ReadGuestSharp.
+        if (table_buf.base_address < 0x10000) {
+            continue;
+        }
+        const u64 table_va = table_buf.base_address + image_desc.window_base_bytes;
+        const u64 sharp_bytes = image_desc.is_r128 ? 16 : 32;
+        const u64 span = u64(n - 1) * image_desc.window_stride_bytes + sharp_bytes;
+        if (table_va + span >= (u64{1} << 40) || !memory->IsMappedMemory(table_va, span)) {
+            continue;
+        }
+        // The two a95f906e windows share one table 32 bytes apart - one readback covers both.
+        const bool already = std::ranges::any_of(covered, [&](const auto& c) {
+            return table_va >= c.first && table_va + span <= c.second;
+        });
+        if (already) {
+            continue;
+        }
+
+        const auto count_valid = [&] {
+            u32 c = 0;
+            for (u32 i = 0; i < n; ++i) {
+                c += image_desc.GetSharpAt(stage, i).Address() != 0;
+            }
+            return c;
+        };
+
+        // Mode 1: inject the last COMPLETED payload for this VA before looking at the slots.
+        u32 injected = 0;
+        if (sync_mode == 1) {
+            std::scoped_lock lk{memo_mutex};
+            if (const auto it = memo.find(table_va); it != memo.end()) {
+                const auto& bytes = it->second;
+                if (bytes.size() <= span) {
+                    memory->TryWriteBacking(std::bit_cast<u8*>(table_va), bytes.data(),
+                                            bytes.size());
+                    injected = 1;
+                }
+            }
+        }
+
+        const u32 valid_before = count_valid();
+        if (n - valid_before < 2) {
+            // Healthy (or one straggler that self-heals next bind): nothing to pay.
+            covered.emplace_back(table_va, table_va + span);
+            continue;
+        }
+        if (const auto it = fail_streak.find(stage.pgm_hash);
+            it != fail_streak.end() && it->second >= 4) {
+            continue; // theory dead for this shader - latched off, logged when it latched
+        }
+        if (syncs_done >= sync_max) {
+            if (!budget_logged) {
+                budget_logged = true;
+                LOG_WARNING(Render_Vulkan,
+                            "[imgsync] budget exhausted ({} syncs) - raise GT_IMGARRAY_SYNC_MAX "
+                            "to keep going",
+                            sync_max);
+            }
+            return;
+        }
+
+        // The Stage 0 verdict bits, on the same line: who wrote this table.
+        const bool reg = buffer_cache.IsRegionRegistered(table_va, span);
+        const bool gpumod = buffer_cache.IsRegionGpuModified(table_va, span);
+        const bool cpudirty = buffer_cache.IsRegionCpuModified(table_va, span);
+        const auto t0 = std::chrono::steady_clock::now();
+        bool downloaded = false;
+        if (sync_mode == 1) {
+            downloaded = buffer_cache.CaptureTableRegion(
+                table_va, span, [table_va](std::vector<u8>&& bytes) {
+                    std::scoped_lock lk{memo_mutex};
+                    if (memo.size() >= 128) {
+                        memo.clear(); // runaway VA churn; refilled within a frame
+                    }
+                    memo[table_va] = std::move(bytes);
+                });
+        } else {
+            downloaded = buffer_cache.DownloadTableRegion(table_va, span);
+        }
+        ++syncs_done;
+        covered.emplace_back(table_va, table_va + span);
+        const u64 wait_us = std::chrono::duration_cast<std::chrono::microseconds>(
+                                std::chrono::steady_clock::now() - t0)
+                                .count();
+        const u32 valid_after = sync_mode == 1 ? valid_before : count_valid();
+        LOG_WARNING(Render_Vulkan,
+                    "[imgsync] seq {} cs {:#x}: table {:#x}+{:#x} valid {}/{} -> {}/{} mode {} "
+                    "dl {:d} inj {} reg {:d} gpumod {:d} cpudirty {:d} wait {} us sync #{}",
+                    instance.PeekGpuWorkSeq(), stage.pgm_hash, table_va, span, valid_before, n,
+                    valid_after, n, sync_mode, downloaded, injected, reg, gpumod, cpudirty,
+                    wait_us, syncs_done);
+        // The latch counts only observations that could have improved things: a synchronous
+        // download that changed nothing, or an injection that still left the window null.
+        const bool failure = sync_mode == 1 ? injected != 0
+                                            : (downloaded && valid_after <= valid_before);
+        if (failure) {
+            if (++fail_streak[stage.pgm_hash] == 4) {
+                LOG_CRITICAL(Render_Vulkan,
+                             "[imgsync] cs {:#x}: table STILL null after 4 syncs - theory dead "
+                             "for this shader, sync latched off",
+                             stage.pgm_hash);
+            }
+        } else if (valid_after > valid_before) {
+            fail_streak[stage.pgm_hash] = 0;
+        }
+    }
+}
+
 void Rasterizer::DispatchDirect() {
     RENDERER_TRACE;
 
@@ -469,6 +617,8 @@ void Rasterizer::DispatchDirect() {
     if (ExecuteShaderHLE(cs, liverpool->regs, cs_program, *this)) {
         return;
     }
+
+    SyncWindowedImageTables(cs);
 
     if (!BindResources(pipeline)) {
         return;
@@ -593,6 +743,8 @@ void Rasterizer::DispatchIndirect(VAddr address, u32 offset, u32 size) {
     if (!pipeline) {
         return;
     }
+
+    SyncWindowedImageTables(pipeline->GetStage(Shader::LogicalStage::Compute));
 
     if (!BindResources(pipeline)) {
         return;

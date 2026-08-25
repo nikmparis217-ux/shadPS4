@@ -132,6 +132,16 @@ private:
     void BindTextures(const Shader::Info& stage, Shader::Backend::Bindings& binding);
     bool BindResources(const Pipeline* pipeline);
 
+    /// GT_IMGARRAY_SYNC (Act 11): the windowed T# tables are GPU-written by producers
+    /// recorded EARLIER IN THIS SAME command buffer, so the record-time guest-RAM read in
+    /// BindTextures can only ever see zeros (cached buffers are copies; GPU writes never
+    /// reach guest RAM on their own). Mode 2: flush + wait + copy the ~2.3 KB table back
+    /// into guest RAM so the UNCHANGED slot loop reads real T#s - the proof mode. Mode 1:
+    /// async capture + inject on the next occurrence of the same table VA - the playable
+    /// mode. Mode 3: mode-2 mechanics on READ windows too. Record-time only, so env flips
+    /// are pipeline-cache-safe.
+    void SyncWindowedImageTables(const Shader::Info& stage);
+
     void ResetBindings() {
         for (auto& image_id : bound_images) {
             texture_cache.GetImage(image_id).binding = {};

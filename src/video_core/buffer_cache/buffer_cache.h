@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <functional>
 #include <boost/container/small_vector.hpp>
 #include "common/lru_cache.h"
 #include "common/slot_vector.h"
@@ -110,6 +111,21 @@ public:
     /// Flushes any GPU modified buffer in the logical page range back to CPU memory.
     void ReadMemory(VAddr device_addr, u64 size, bool is_write = false);
 
+    /// GT_IMGARRAY_SYNC (Act 11): synchronously copy [addr, addr+size) out of the CACHED
+    /// buffer and write it back to guest RAM, IGNORING tracker state - the windowed T#
+    /// tables are GPU-written through paths that never mark gpu_modified_ranges (BDA
+    /// stores), so the gated ReadMemory path would skip exactly the bytes this exists for.
+    /// Costs a full pipeline drain (scheduler.Finish). The caller must have verified the
+    /// guest range is mapped (TryWriteBacking asserts on IsValidMapping). Returns false
+    /// when no registered buffer fully covers the range - that outcome is itself the
+    /// Stage 0 "reg 0" verdict: a store to an unregistered page was dropped.
+    bool DownloadTableRegion(VAddr addr, u64 size);
+
+    /// The async sibling of DownloadTableRegion: records the copy WITHOUT waiting and
+    /// hands the payload to on_ready once the recorded tick completes (DeferOperation).
+    /// The callback must never re-enter DeferOperation (it runs under pending_ops_mutex).
+    bool CaptureTableRegion(VAddr addr, u64 size, std::function<void(std::vector<u8>&&)>&& on_ready);
+
     /// Binds host vertex buffers for the current draw.
     void BindVertexBuffers(const Vulkan::GraphicsPipeline& pipeline,
                            boost::container::small_vector<vk::BufferMemoryBarrier2, 16>& barriers);
@@ -178,6 +194,11 @@ private:
 
     template <bool async>
     void DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 size);
+
+    /// Shared head of Download/CaptureTableRegion: resolves the covering buffer through the
+    /// raw page table and records barrier + copy into the download stream buffer. Returns
+    /// the mapped readback pointer, or nullptr when the range is not covered.
+    u8* RecordTableRegionCopy(VAddr addr, u64 size);
 
     [[nodiscard]] OverlapResult ResolveOverlaps(VAddr device_addr, u32 wanted_size);
 
