@@ -1043,6 +1043,7 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
         struct CbTraceEntry {
             u64 hash;
             std::vector<u32> dwords;
+            std::vector<u32> fslots; // 'f'-prefixed entries: SRT flat-buffer dword slots
         };
         static const auto cb_trace = [] {
             std::vector<CbTraceEntry> list;
@@ -1065,13 +1066,18 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                                 comma = part.size();
                             }
                             if (comma > dp) {
-                                e.dwords.push_back(
-                                    u32(std::strtoul(part.substr(dp, comma - dp).c_str(),
-                                                     nullptr, 10)));
+                                const std::string tok = part.substr(dp, comma - dp);
+                                if (tok[0] == 'f') {
+                                    e.fslots.push_back(
+                                        u32(std::strtoul(tok.c_str() + 1, nullptr, 10)));
+                                } else {
+                                    e.dwords.push_back(
+                                        u32(std::strtoul(tok.c_str(), nullptr, 10)));
+                                }
                             }
                             dp = comma + 1;
                         }
-                        if (e.hash != 0 && !e.dwords.empty()) {
+                        if (e.hash != 0 && (!e.dwords.empty() || !e.fslots.empty())) {
                             list.push_back(std::move(e));
                         }
                     }
@@ -1080,9 +1086,14 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
             }
             return list;
         }();
-        if (!cb_trace.empty() && !cbtrace_logged && vsharp.base_address != 0) {
+        if (!cb_trace.empty() && !cbtrace_logged) {
             for (const auto& t : cb_trace) {
                 if (t.hash != stage.pgm_hash) {
+                    continue;
+                }
+                // V# dwords need a real first binding; flatbuf slots do not (a shader whose
+                // only buffer is the flatbuf still has SRT slots worth reading).
+                if (vsharp.base_address == 0 && !t.dwords.empty()) {
                     continue;
                 }
                 cbtrace_logged = true;
@@ -1106,6 +1117,16 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                         vals += fmt::format(" dw{}={:#x}({:g})", dw, raw, f);
                     } else {
                         vals += fmt::format(" dw{}=PAST-THE-V#", dw);
+                    }
+                }
+                for (const u32 fs : t.fslots) {
+                    if (fs < stage.flattened_ud_buf.size()) {
+                        const u32 raw = stage.flattened_ud_buf[fs];
+                        float f;
+                        std::memcpy(&f, &raw, 4);
+                        vals += fmt::format(" f{}={:#x}({:g})", fs, raw, f);
+                    } else {
+                        vals += fmt::format(" f{}=PAST-THE-FLATBUF", fs);
                     }
                 }
                 LOG_WARNING(Render_Vulkan,
