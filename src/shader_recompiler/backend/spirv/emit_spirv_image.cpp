@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdlib>
+
 #include <boost/container/static_vector.hpp>
 #include "shader_recompiler/backend/spirv/emit_spirv_instructions.h"
 #include "shader_recompiler/backend/spirv/spirv_emit_context.h"
@@ -370,7 +372,27 @@ void EmitImageWrite(EmitContext& ctx, IR::Inst* inst, const IR::Value& handle, I
     if (texture.is_windowed) {
         ctx.Decorate(image, spv::Decoration::NonUniform);
     }
-    const Id texel = texture.is_integer ? ctx.OpBitcast(color_type, color) : color;
+    // GT_IMGWRITE_SCRUB: contain Inf/NaN at the storage-image write boundary. A poisoned
+    // light probe or bloom mip floods the whole frame white (the ramp over 2-3 s is the
+    // probe filling face by face), and the dump analysis found a concrete NaN factory:
+    // cs_da05e7f8 normalizes sample directions read from a dynrc window that can be all
+    // zero at record time - normalize(0) = Inf/NaN, accumulated and written per mip. This
+    // turns NaN into 0 and clamps to the fp16 range, so one bad dispatch's write cannot
+    // permanently poison a persistent target.
+    static const bool imgwrite_scrub = [] {
+        const char* v = std::getenv("GT_IMGWRITE_SCRUB");
+        return v && v[0] == '1';
+    }();
+    Id write_color = color;
+    if (imgwrite_scrub && !texture.is_integer) {
+        const Id nan_mask = ctx.OpIsNan(ctx.U1[4], write_color);
+        const Id zero4 = ctx.ConstF32(0.f, 0.f, 0.f, 0.f);
+        write_color = ctx.OpSelect(ctx.F32[4], nan_mask, zero4, write_color);
+        const Id lo = ctx.ConstF32(-65504.f, -65504.f, -65504.f, -65504.f);
+        const Id hi = ctx.ConstF32(65504.f, 65504.f, 65504.f, 65504.f);
+        write_color = ctx.OpFClamp(ctx.F32[4], write_color, lo, hi);
+    }
+    const Id texel = texture.is_integer ? ctx.OpBitcast(color_type, write_color) : write_color;
     ctx.OpImageWrite(image, coords, texel, operands.mask, operands.operands);
 }
 
