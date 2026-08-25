@@ -1334,6 +1334,11 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             // specialized on slot 0), so it is not "fixed" here - it is MEASURED: the
             // per-reason counters below say whether the nulls are absent data (addr0/unmapped)
             // or class mismatch against a possibly-junk anchor (viewtype/integer + slot0=NULL).
+            // Act 11: total windowed binds per shader - the [imgarray] n= below counts only
+            // binds WITH nulls; this one says how often the shader binds at all. GPU thread
+            // only, like the maps below.
+            static std::unordered_map<u64, u32> imgarray_bind_total;
+            const u32 bind_total = ++imgarray_bind_total[stage.pgm_hash];
             const auto view_type0 = tsharp.GetViewType(image_desc.is_array);
             const bool integer0 = AmdGpu::IsInteger(tsharp.GetNumberFmt());
             // Slot 0's own structural validity, for the log: a null anchor taints the
@@ -1453,18 +1458,33 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 imgarray_prev[stage.pgm_hash] = {table_va, image_desc.window_stride_bytes,
                                                  all_mask & ~valid_mask, image_desc.is_r128};
                 if (seen <= 8 || (seen & 255u) == 0) {
+                    // Act 11 Stage 0 discriminator: WHO writes this table. gpumod = a GPU
+                    // wrote it through a TRACKED binding (BDA stores mark nothing, so
+                    // gpumod 0 does NOT clear the GPU); cpudirty = the game CPU wrote it
+                    // after the last upload; reg 0 = no cached buffer ever covered it -
+                    // then a BDA store to it was DROPPED by the fault path (the fault
+                    // buffer only creates buffers afterwards) and the value is gone.
+                    const u64 sharp_bytes = image_desc.is_r128 ? 16 : 32;
+                    const u64 table_span =
+                        u64(num_bindings - 1) * image_desc.window_stride_bytes + sharp_bytes;
+                    const bool tbl_reg = buffer_cache.IsRegionRegistered(table_va, table_span);
+                    const bool tbl_gpumod =
+                        buffer_cache.IsRegionGpuModified(table_va, table_span);
+                    const bool tbl_cpudirty =
+                        buffer_cache.IsRegionCpuModified(table_va, table_span);
                     LOG_WARNING(Render_Vulkan,
                                 "[imgarray] seq {} shader {:#x}: {}/{} null (addr0 {} badfmt {} "
                                 "unmapped {} viewtype {} integer {}) valid {:#06x} fb0 {} late "
                                 "{}/{} anchor vt{}/int{}{} table {:#x} (buffer {} base {} stride "
-                                "{}) n={}",
+                                "{}) n={} binds {} reg {:d} gpumod {:d} cpudirty {:d}",
                                 instance.PeekGpuWorkSeq(), stage.pgm_hash, null_slots,
                                 num_bindings, n_addr0, n_badfmt, n_unmapped, n_viewtype,
                                 n_integer, valid_mask, n_fb0, late_filled, late_checked,
                                 static_cast<u32>(view_type0), integer0 ? 1 : 0,
                                 anchor_null ? " (NULL-anchor)" : "", table_va,
                                 image_desc.deref_buffer, image_desc.window_base_bytes,
-                                image_desc.window_stride_bytes, seen);
+                                image_desc.window_stride_bytes, seen, bind_total, tbl_reg,
+                                tbl_gpumod, tbl_cpudirty);
                 }
             }
             image_descriptor_array_sizes.push_back(num_bindings);
