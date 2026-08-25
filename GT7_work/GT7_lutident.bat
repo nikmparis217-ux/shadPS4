@@ -13,6 +13,12 @@ REM The same run also arms the LUT-writer hunt: [lut3d] logs every 64x64x64 imag
 REM [vawatch] logs everything touching the LUT's guest range (0x101e400000, from Act 10's
 REM RenderDoc). Grep the log for "[lutident]", "[lut3d]", "[vawatch]" afterwards.
 REM
+REM Run 161 findings folded in: the LUT baker EXISTS (cs_0xf04a69f0, one WRITE bind at
+REM load), the second LUT (0x101e600000) is never written by anything, and the user
+REM correlated the wash episodes live with cs_da05e7f8's [imgtrace] bursts - the probe
+REM NaN flood GT_IMGWRITE_SCRUB was built for. That scrub is now ON via run_gt7.ps1
+REM default (it was never set before - off since the day it was written).
+REM
 REM Set-GtDefault in run_gt7.ps1 lets a parent-shell value win, so setting knobs here is the
 REM supported way to flip them for one run.
 

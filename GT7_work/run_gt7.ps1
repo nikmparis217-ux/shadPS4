@@ -419,6 +419,15 @@ if ($Net -or $Offline) {
     # All runtime-only: flipping any of these needs NO cache wipe.
     Set-GtDefault 'GT_LUT_IDENT' '0'
     Set-GtDefault 'GT_INVAL_IMG_ON_SSBO' '0'
+    # GT_IMGWRITE_SCRUB (25 Aug, late): ON by default from now on. The emitter-side NaN
+    # containment for storage-image writes (emit_spirv_image.cpp) existed since the dump
+    # analysis named cs_da05e7f8 a NaN factory (normalize(0) per probe mip -> the frame
+    # ramps to white over 2-3 s) - but NO script ever set it, so it has been OFF for every
+    # run to date. The user then correlated it live: the wash episodes coincide exactly
+    # with da05e7f8's [imgtrace] bursts. ⚠ Changes emitted SPIR-V: only takes effect on
+    # modules compiled AFTER the flip - the pipeline cache must be cold (a commit bumps the
+    # cache generation; GT7_lutident.bat also wipes it explicitly).
+    Set-GtDefault 'GT_IMGWRITE_SCRUB' '1'
     # GT_DYNRC_WINDOW (18 Aug, afternoon - the designed fix from HANDOFF_RENDERING.md):
     # the three GPU-driven producer shaders (cs_0xda05e7f8 / 0x18256c0 / 0x2a0cfcd2) carry
     # ReadConst with RUNTIME offsets; without DMA those used to read flatbuf[0] = garbage =
