@@ -4,9 +4,11 @@
 #pragma once
 
 #include "common/debug.h"
+#include "common/logging/log.h"
 #include "common/polyfill_thread.h"
 #include "core/libraries/videoout/video_out.h"
 
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
@@ -52,7 +54,16 @@ struct VideoOutPort {
 
     void WaitVoLabel(auto&& pred) {
         std::unique_lock lk{vo_mutex};
-        vo_cv.wait(lk, pred);
+        // [gpuwait] This wait blocks the WHOLE GPU command processor thread (it is a plain
+        // condition variable, not a fiber yield): parked here, no queue advances and the
+        // GPU sits at 0% - the exact signature of the runs-166/169 init livelock. Say so
+        // every 5 s instead of sleeping silently.
+        u32 waited_s = 0;
+        while (!vo_cv.wait_for(lk, std::chrono::seconds(5), pred)) {
+            waited_s += 5;
+            LOG_WARNING(Lib_VideoOut, "[gpuwait] GPU thread parked on a VO label for {} s",
+                        waited_s);
+        }
     }
 
     void SignalVoLabel() {

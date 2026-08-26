@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <chrono>
 #include <cstdlib>
 #include <boost/preprocessor/stringize.hpp>
 
@@ -52,6 +53,31 @@ static const char* acb_task_name[] = NAME_ARRAY(ACB_TASK, MAX_NAMES);
 #define RESUME_ASC(task, id) RESUME(task, acb_task_name[id])
 
 std::array<u8, 48_KB> Liverpool::ConstantEngine::constants_heap;
+
+// [gpuwait] Runs 166-168: GT7's init livelocks - the game polls a completion that never
+// comes, the process burns 4+ cores, the real GPU sits at 0%, and the log says NOTHING
+// because the parser parks in silent spin loops. This names the parked wait: once after
+// ~5 s, then every ~10 s per wait site. Locals live in the coroutine frame, so the
+// timing survives the yields.
+static void GpuWaitReport(const char* engine, u32 vqid, const PM4CmdWaitRegMem* wrm,
+                          std::span<const u32> regs_array,
+                          std::chrono::steady_clock::time_point start, u64& last_bucket) {
+    const u64 secs = static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                                          std::chrono::steady_clock::now() - start)
+                                          .count());
+    if (secs < 5 || secs / 10 == last_bucket) {
+        return;
+    }
+    last_bucket = secs / 10;
+    const bool is_mem = wrm->mem_space.Value() == PM4CmdWaitRegMem::MemSpace::Memory;
+    const u32 cur = is_mem ? *wrm->Address<const u32*>() : regs_array[wrm->Reg()];
+    LOG_WARNING(Render,
+                "[gpuwait] {} vq{} WaitRegMem stuck {} s: {} {:#x} func {} ref {:#x} "
+                "mask {:#x} cur {:#x}",
+                engine, vqid, secs, is_mem ? "mem" : "reg",
+                is_mem ? wrm->Address<u64>() : static_cast<u64>(wrm->Reg()),
+                static_cast<u32>(wrm->function.Value()), wrm->ref, wrm->mask, cur);
+}
 
 static std::span<const u32> NextPacket(std::span<const u32> span, size_t offset) {
     if (offset > span.size()) {
@@ -853,7 +879,16 @@ Liverpool::Task Liverpool::ProcessGraphics(std::span<const u32> dcb, std::span<c
                 if (mem_semaphore->IsSignaling()) {
                     mem_semaphore->Signal();
                 } else {
+                    const auto ms_start = std::chrono::steady_clock::now();
+                    u64 ms_spins = 0;
+                    bool ms_said = false;
                     while (!mem_semaphore->Signaled()) {
+                        if ((++ms_spins & 0xFFFu) == 0 && !ms_said &&
+                            std::chrono::steady_clock::now() - ms_start >
+                                std::chrono::seconds(5)) {
+                            ms_said = true;
+                            LOG_WARNING(Render, "[gpuwait] GFX MemSemaphore stuck >5 s");
+                        }
                         YIELD_GFX();
                     }
                     mem_semaphore->Decrement();
@@ -869,7 +904,15 @@ Liverpool::Task Liverpool::ProcessGraphics(std::span<const u32> dcb, std::span<c
                     break;
                 }
                 const PM4CmdRewind* rewind = reinterpret_cast<const PM4CmdRewind*>(header);
+                const auto rw_start = std::chrono::steady_clock::now();
+                u64 rw_spins = 0;
+                bool rw_said = false;
                 while (!rewind->Valid()) {
+                    if ((++rw_spins & 0xFFFu) == 0 && !rw_said &&
+                        std::chrono::steady_clock::now() - rw_start > std::chrono::seconds(5)) {
+                        rw_said = true;
+                        LOG_WARNING(Render, "[gpuwait] GFX Rewind stuck >5 s");
+                    }
                     YIELD_GFX();
                 }
                 break;
@@ -887,7 +930,13 @@ Liverpool::Task Liverpool::ProcessGraphics(std::span<const u32> dcb, std::span<c
                     vo_port->WaitVoLabel([&] { return wait_reg_mem->Test(regs.reg_array); });
                     break;
                 }
+                const auto gw_start = std::chrono::steady_clock::now();
+                u64 gw_spins = 0;
+                u64 gw_bucket = 0;
                 while (!wait_reg_mem->Test(regs.reg_array)) {
+                    if ((++gw_spins & 0xFFFu) == 0) {
+                        GpuWaitReport("GFX", 0, wait_reg_mem, regs.reg_array, gw_start, gw_bucket);
+                    }
                     YIELD_GFX();
                 }
                 break;
@@ -1124,7 +1173,15 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
                 break;
             }
             const PM4CmdRewind* rewind = reinterpret_cast<const PM4CmdRewind*>(header);
+            const auto rw_start = std::chrono::steady_clock::now();
+            u64 rw_spins = 0;
+            bool rw_said = false;
             while (!rewind->Valid()) {
+                if ((++rw_spins & 0xFFFu) == 0 && !rw_said &&
+                    std::chrono::steady_clock::now() - rw_start > std::chrono::seconds(5)) {
+                    rw_said = true;
+                    LOG_WARNING(Render, "[gpuwait] ASC vq{} Rewind stuck >5 s", vqid);
+                }
                 YIELD_ASC(vqid);
             }
             break;
@@ -1220,7 +1277,15 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
             if (mem_semaphore->IsSignaling()) {
                 mem_semaphore->Signal();
             } else {
+                const auto ms_start = std::chrono::steady_clock::now();
+                u64 ms_spins = 0;
+                bool ms_said = false;
                 while (!mem_semaphore->Signaled()) {
+                    if ((++ms_spins & 0xFFFu) == 0 && !ms_said &&
+                        std::chrono::steady_clock::now() - ms_start > std::chrono::seconds(5)) {
+                        ms_said = true;
+                        LOG_WARNING(Render, "[gpuwait] ASC vq{} MemSemaphore stuck >5 s", vqid);
+                    }
                     YIELD_ASC(vqid);
                 }
                 mem_semaphore->Decrement();
@@ -1230,7 +1295,13 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
         case PM4ItOpcode::WaitRegMem: {
             const auto* wait_reg_mem = reinterpret_cast<const PM4CmdWaitRegMem*>(header);
             ASSERT(wait_reg_mem->engine.Value() == PM4CmdWaitRegMem::Engine::Me);
+            const auto gw_start = std::chrono::steady_clock::now();
+            u64 gw_spins = 0;
+            u64 gw_bucket = 0;
             while (!wait_reg_mem->Test(regs.reg_array)) {
+                if ((++gw_spins & 0xFFFu) == 0) {
+                    GpuWaitReport("ASC", vqid, wait_reg_mem, regs.reg_array, gw_start, gw_bucket);
+                }
                 YIELD_ASC(vqid);
             }
             break;

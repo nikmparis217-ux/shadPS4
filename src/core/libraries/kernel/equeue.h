@@ -181,12 +181,18 @@ public:
     bool EventExists(u64 id, s16 filter);
 
 private:
+    // [eqwait] diagnostic for the runs-166/169 init livelock: counts consecutive
+    // WaitForEvents calls that returned nothing and periodically names the queue and
+    // everything armed on it - that list IS what the game is waiting for.
+    int NoteWaitResult(int count);
+
     OrbisKernelEqueue m_handle;
     std::string m_name;
     std::mutex m_mutex;
     std::vector<EqueueEvent> m_events;
     std::condition_variable m_cond;
     std::unordered_map<u64, SmallTimer> m_small_timers;
+    u64 m_empty_waits = 0;
 };
 
 EqueueInternal* GetEqueue(OrbisKernelEqueue eq);

@@ -176,13 +176,13 @@ int EqueueInternal::WaitForEvents(OrbisKernelEvent* ev, int num, const OrbisKern
     if (timo != nullptr && *timo == 0) {
         // Effectively acts as a poll; only events that have already
         // arrived at the time of this function call can be received
-        return GetTriggeredEvents(ev, num);
+        return NoteWaitResult(GetTriggeredEvents(ev, num));
     }
     const auto micros = timo ? *timo : 0u;
 
     if (HasSmallTimer()) {
         // If a small timer is set, just wait for it to expire.
-        return WaitForSmallTimer(ev, num, micros);
+        return NoteWaitResult(WaitForSmallTimer(ev, num, micros));
     }
 
     int count = 0;
@@ -202,6 +202,32 @@ int EqueueInternal::WaitForEvents(OrbisKernelEvent* ev, int num, const OrbisKern
         m_cond.wait_for(lock, std::chrono::microseconds(micros), predicate);
     }
 
+    return NoteWaitResult(count);
+}
+
+int EqueueInternal::NoteWaitResult(int count) {
+    // [eqwait] Runs 166-169: GT7's init livelocks with the game polling equeues forever
+    // (the "Timer cancelled" churn) while the GPU sits at 0%. After enough consecutive
+    // empty waits, name the queue and everything armed on it: that list IS what the game
+    // is waiting for and nobody delivers. The counter is deliberately racy (diagnostic).
+    if (count > 0) {
+        m_empty_waits = 0;
+        return count;
+    }
+    if (++m_empty_waits % 5000 != 0) {
+        return count;
+    }
+    std::string armed;
+    {
+        std::scoped_lock lock{m_mutex};
+        for (const auto& e : m_events) {
+            armed += fmt::format(" (ident {:#x} filter {} {})", e.event.ident,
+                                 static_cast<s32>(e.event.filter),
+                                 e.IsTriggered() ? "TRIGGERED" : "untriggered");
+        }
+    }
+    LOG_WARNING(Kernel_Event, "[eqwait] queue '{}': {} consecutive empty waits; armed:{}",
+                m_name, m_empty_waits, armed.empty() ? " nothing" : armed.c_str());
     return count;
 }
 
