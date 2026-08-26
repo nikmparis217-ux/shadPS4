@@ -800,6 +800,18 @@ void TextureCache::RefreshImage(Image& image) {
             }
             upload_buffer.Commit();
             image.Upload(identity_copies, upload_buffer.Handle(), offset);
+            // The seed is GPU-side content standing in for a bake: mark it GpuModified and
+            // record the CURRENT guest bytes as the baseline, so a later CPU page
+            // invalidation with unchanged guest bytes skips the re-upload instead of
+            // clobbering the identity with uninitialized RAM (the exact mechanism that was
+            // eating the real bake - see the hash-baseline note in the upload loop below).
+            image.flags |= ImageFlagBits::GpuModified;
+            const u8* guest_bytes = std::bit_cast<u8*>(image.info.guest_address);
+            for (u32 m = 0; m < num_mips; ++m) {
+                const auto& [mip_size, mip_pitch, mip_height, mip_offset] =
+                    image.info.mips_layout[m];
+                image.mip_hashes[m] = XXH3_64bits(guest_bytes + mip_offset, mip_size);
+            }
             LOG_WARNING(Render_Vulkan,
                         "[lutident] seeded identity 64^3 RGBA16F LUT at {:#x} ({} mip(s), "
                         "guest_size {:#x})",
@@ -845,10 +857,19 @@ void TextureCache::RefreshImage(Image& image) {
         const auto [mip_size, mip_pitch, mip_height, mip_offset] = image.info.mips_layout[m];
 
         // Protect GPU modified resources from accidental CPU reuploads.
-        if (is_gpu_modified && !is_gpu_dirty) {
+        // ⚠ The hash must be RECORDED on every guest upload, including the is_gpu_dirty one -
+        // a fresh image's very first refresh runs with GpuDirty set (creation flags = Dirty,
+        // which includes it), so the old code never recorded a baseline. The first CPU page
+        // invalidation after a GPU bake then compared against 0, read "guest changed", and
+        // re-uploaded UNINITIALIZED guest RAM over the baked content. Measured on GT7's 64^3
+        // grading LUT (Act 11): baked curve present right after the bake, the old garbage
+        // again minutes later, re-baked and re-clobbered in a loop - the pulsing white wash
+        // and the solid-red track map. With the baseline recorded, an UNCHANGED guest range
+        // skips the re-upload and the GPU bake survives; a real CPU write still lands.
+        if (is_gpu_modified) {
             const u8* addr = std::bit_cast<u8*>(image.info.guest_address);
             const u64 hash = XXH3_64bits(addr + mip_offset, mip_size);
-            if (image.mip_hashes[m] == hash) {
+            if (!is_gpu_dirty && image.mip_hashes[m] == hash) {
                 continue;
             }
             image.mip_hashes[m] = hash;
