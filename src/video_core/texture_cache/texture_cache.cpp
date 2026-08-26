@@ -867,12 +867,23 @@ void TextureCache::RefreshImage(Image& image) {
         // and the solid-red track map. With the baseline recorded, an UNCHANGED guest range
         // skips the re-upload and the GPU bake survives; a real CPU write still lands.
         if (is_gpu_modified) {
+            // GT_HASH_BASELINE=0 restores the upstream rule (record only when !is_gpu_dirty),
+            // so the fix can be A/B-ed at runtime with a warm pipeline cache. Runs 166/167
+            // stalled at GT7's init phase and this commit is the only binary delta against
+            // the last boot that reached the menu - the flag separates "the fix did it"
+            // from "the init phase was already flaky" without another rebuild.
+            static const bool record_on_gpu_dirty = [] {
+                const char* v = std::getenv("GT_HASH_BASELINE");
+                return !(v && v[0] == '0');
+            }();
             const u8* addr = std::bit_cast<u8*>(image.info.guest_address);
             const u64 hash = XXH3_64bits(addr + mip_offset, mip_size);
             if (!is_gpu_dirty && image.mip_hashes[m] == hash) {
                 continue;
             }
-            image.mip_hashes[m] = hash;
+            if (!is_gpu_dirty || record_on_gpu_dirty) {
+                image.mip_hashes[m] = hash;
+            }
         }
 
         const u32 extent_width = mip_pitch ? std::min(mip_pitch, width) : width;

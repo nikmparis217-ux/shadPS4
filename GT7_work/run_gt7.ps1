@@ -437,6 +437,13 @@ if ($Net -or $Offline) {
     # modules compiled AFTER the flip - the pipeline cache must be cold (a commit bumps the
     # cache generation; GT7_lutident.bat also wipes it explicitly).
     Set-GtDefault 'GT_IMGWRITE_SCRUB' '1'
+    # GT_HASH_BASELINE (26 Aug): runtime A/B gate for the reupload-clobber fix (commit
+    # 134b9428 - record the per-mip guest hash on EVERY upload of a GpuModified image).
+    # '1' = the fix (default); '0' = the upstream rule (record only when !is_gpu_dirty).
+    # Added because runs 166/167 stalled at GT7's init phase with the fix as the only
+    # binary delta vs the last boot that reached the menu. Runtime-only (RefreshImage
+    # control flow, no emitted SPIR-V), so flipping it needs NO cache wipe.
+    Set-GtDefault 'GT_HASH_BASELINE' '1'
     # GT_DYNRC_WINDOW (18 Aug, afternoon - the designed fix from HANDOFF_RENDERING.md):
     # the three GPU-driven producer shaders (cs_0xda05e7f8 / 0x18256c0 / 0x2a0cfcd2) carry
     # ReadConst with RUNTIME offsets; without DMA those used to read flatbuf[0] = garbage =
