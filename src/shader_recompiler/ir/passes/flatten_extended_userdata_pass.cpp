@@ -93,6 +93,15 @@ PFN_SrtWalker RegisterWalkerCode(const u8* ptr, size_t size) {
     return func_addr;
 }
 
+uintptr_t SrtWalkerHelperAddress() {
+    // The ONE host-code address the emitted walkers bake as an absolute imm64
+    // (the c.mov(rax, ...) before c.call(rax) below). The pipeline cache mixes this
+    // into its BuildGeneration: runs 170/171 died on a cached walker calling the
+    // helper's OLD offset after local rebuilds moved it - the scm strings alone
+    // cannot see a relink of uncommitted edits, this address can.
+    return reinterpret_cast<uintptr_t>(&CopyDynrcWindowClamped);
+}
+
 } // namespace Shader
 
 namespace {

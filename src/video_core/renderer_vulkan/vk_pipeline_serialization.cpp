@@ -8,6 +8,7 @@
 #include "core/emulator_settings.h"
 #include "shader_recompiler/frontend/fetch_shader.h"
 #include "shader_recompiler/info.h"
+#include "shader_recompiler/ir/passes/srt.h"
 #include "video_core/cache_storage.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_pipeline_cache.h"
@@ -38,6 +39,18 @@ inline u32 BuildGeneration() {
                 h ^= static_cast<u8>(*c);
                 h *= 16777619u;
             }
+        }
+        // The scm strings do not change across relinks of UNCOMMITTED local edits, and the
+        // serialized SRT walkers are raw machine code baking the absolute address of their
+        // copy helper. Runs 170/171 proved the gap: a walker cached by one local build was
+        // replayed by the next, whose helper had moved - the stale imm64 landed
+        // mid-instruction inside .text and died on a deterministic write AV. Hashing the
+        // helper's address closes exactly that: any relink that moves it opens a fresh
+        // generation, while layout-neutral rebuilds keep the warm cache.
+        const uintptr_t walker_helper = Shader::SrtWalkerHelperAddress();
+        for (size_t i = 0; i < sizeof(walker_helper); ++i) {
+            h ^= static_cast<u8>(walker_helper >> (i * 8));
+            h *= 16777619u;
         }
         return h;
     }();

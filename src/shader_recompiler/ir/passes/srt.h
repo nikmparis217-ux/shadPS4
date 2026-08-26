@@ -18,6 +18,13 @@ namespace Shader {
 using PFN_SrtWalker = void PS4_SYSV_ABI (*)(const u32* /*user_data*/, u32* /*flat_dst*/);
 PFN_SrtWalker RegisterWalkerCode(const u8* ptr, size_t size);
 
+// The absolute host address the emitted walkers bake into their machine code (the
+// CopyDynrcWindowClamped call). The pipeline cache's BuildGeneration hashes it so a cached
+// walker can never be replayed by a binary whose helper moved (runs 170/171: a relink of
+// uncommitted local edits shifted the helper, the scm-string generation stayed identical,
+// and the stale imm64 called mid-instruction into .text - a deterministic write AV).
+uintptr_t SrtWalkerHelperAddress();
+
 // GT_DYNRC_WINDOW (GT7): a ReadConst whose dword offset is computed at RUNTIME cannot be
 // pre-copied field-by-field by the SRT walker (it does not know which fields). Instead the
 // walker bulk-copies a WINDOW of the base pointer's guest memory into the flattened buffer
