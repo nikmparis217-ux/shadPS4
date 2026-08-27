@@ -176,13 +176,13 @@ int EqueueInternal::WaitForEvents(OrbisKernelEvent* ev, int num, const OrbisKern
     if (timo != nullptr && *timo == 0) {
         // Effectively acts as a poll; only events that have already
         // arrived at the time of this function call can be received
-        return NoteWaitResult(GetTriggeredEvents(ev, num));
+        return NoteWaitResult(ev, GetTriggeredEvents(ev, num));
     }
     const auto micros = timo ? *timo : 0u;
 
     if (HasSmallTimer()) {
         // If a small timer is set, just wait for it to expire.
-        return NoteWaitResult(WaitForSmallTimer(ev, num, micros));
+        return NoteWaitResult(ev, WaitForSmallTimer(ev, num, micros));
     }
 
     int count = 0;
@@ -202,15 +202,29 @@ int EqueueInternal::WaitForEvents(OrbisKernelEvent* ev, int num, const OrbisKern
         m_cond.wait_for(lock, std::chrono::microseconds(micros), predicate);
     }
 
-    return NoteWaitResult(count);
+    return NoteWaitResult(ev, count);
 }
 
-int EqueueInternal::NoteWaitResult(int count) {
-    // [eqwait] Runs 166-169: GT7's init livelocks with the game polling equeues forever
+int EqueueInternal::NoteWaitResult(const OrbisKernelEvent* ev, int count) {
+    // [eqwait] Runs 166-172: GT7's init livelocks with the game polling equeues forever
     // (the "Timer cancelled" churn) while the GPU sits at 0%. After enough consecutive
-    // empty waits, name the queue and everything armed on it: that list IS what the game
-    // is waiting for and nobody delivers. The counter is deliberately racy (diagnostic).
+    // STARVED waits, name the queue and everything armed on it: that list IS what the game
+    // is waiting for and nobody delivers. A wait is starved when it returned nothing - or
+    // ONLY Timer/HrTimer ticks, because a poll loop's timer fires every lap by design and
+    // counting those as success kept this detector silent through four stall runs.
+    // The counter is deliberately racy (diagnostic).
+    bool starved = count <= 0;
     if (count > 0) {
+        starved = true;
+        for (int i = 0; i < count; ++i) {
+            const auto f = ev[i].filter;
+            if (f != OrbisKernelEvent::Filter::Timer && f != OrbisKernelEvent::Filter::HrTimer) {
+                starved = false;
+                break;
+            }
+        }
+    }
+    if (!starved) {
         m_empty_waits = 0;
         return count;
     }
@@ -226,7 +240,7 @@ int EqueueInternal::NoteWaitResult(int count) {
                                  e.IsTriggered() ? "TRIGGERED" : "untriggered");
         }
     }
-    LOG_WARNING(Kernel_Event, "[eqwait] queue '{}': {} consecutive empty waits; armed:{}",
+    LOG_WARNING(Kernel_Event, "[eqwait] queue '{}': {} consecutive starved waits; armed:{}",
                 m_name, m_empty_waits, armed.empty() ? " nothing" : armed.c_str());
     return count;
 }

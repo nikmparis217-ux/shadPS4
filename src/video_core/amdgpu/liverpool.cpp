@@ -215,7 +215,17 @@ Liverpool::Task Liverpool::ProcessCeUpdate(std::span<const u32> ccb) {
         }
         case PM4ItOpcode::WaitOnDeCounterDiff: {
             const auto diff = it_body[0];
+            const auto ce_start = std::chrono::steady_clock::now();
+            u64 ce_spins = 0;
+            bool ce_said = false;
             while ((cblock.de_count - cblock.ce_count) >= diff) {
+                if ((++ce_spins & 0xFFFu) == 0 && !ce_said &&
+                    std::chrono::steady_clock::now() - ce_start > std::chrono::seconds(5)) {
+                    ce_said = true;
+                    LOG_WARNING(Render,
+                                "[gpuwait] CE WaitOnDeCounterDiff stuck >5 s: de {} ce {} diff {}",
+                                cblock.de_count, cblock.ce_count, diff);
+                }
                 YIELD_CE();
             }
             break;
@@ -958,7 +968,22 @@ Liverpool::Task Liverpool::ProcessGraphics(std::span<const u32> dcb, std::span<c
                 break;
             }
             case PM4ItOpcode::WaitOnCeCounter: {
+                // ⚠ This loop never yields to other queues: if the CE task cannot advance
+                // ce_count (its stream starved or parked), the WHOLE GPU thread hard-spins
+                // here - one core burning, GPU 0%, every other queue frozen, nothing logged.
+                // That is the exact signature of the runs-166..172 init stall, so say so.
+                const auto wc_start = std::chrono::steady_clock::now();
+                u64 wc_spins = 0;
+                bool wc_said = false;
                 while (cblock.ce_count <= cblock.de_count && !ce_task.handle.done()) {
+                    if ((++wc_spins & 0xFFFu) == 0 && !wc_said &&
+                        std::chrono::steady_clock::now() - wc_start > std::chrono::seconds(5)) {
+                        wc_said = true;
+                        LOG_WARNING(Render,
+                                    "[gpuwait] GFX WaitOnCeCounter stuck >5 s: ce {} de {} "
+                                    "ce_task done {}",
+                                    cblock.ce_count, cblock.de_count, ce_task.handle.done());
+                    }
                     RESUME_GFX(ce_task);
                 }
                 break;

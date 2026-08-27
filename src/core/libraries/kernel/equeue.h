@@ -181,10 +181,12 @@ public:
     bool EventExists(u64 id, s16 filter);
 
 private:
-    // [eqwait] diagnostic for the runs-166/169 init livelock: counts consecutive
-    // WaitForEvents calls that returned nothing and periodically names the queue and
+    // [eqwait] diagnostic for the runs-166..172 init livelock: counts consecutive
+    // WaitForEvents calls that returned nothing OR only Timer/HrTimer ticks (a poll loop's
+    // timer "succeeds" every tick - the timer IS the timeout - which kept the first version
+    // of this silent through four stall runs) and periodically names the queue and
     // everything armed on it - that list IS what the game is waiting for.
-    int NoteWaitResult(int count);
+    int NoteWaitResult(const OrbisKernelEvent* ev, int count);
 
     OrbisKernelEqueue m_handle;
     std::string m_name;
