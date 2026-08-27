@@ -1075,16 +1075,67 @@ Liverpool::Task Liverpool::ProcessCompute(std::span<const u32> acb, u32 vqid) {
         // If we have a buffered packet, use it.
         if (queue.tmp_dwords > 0) [[unlikely]] {
             header = reinterpret_cast<const PM4Header*>(queue.tmp_packet.data());
-            next_dw_off = header->type3.NumWords() + 1 - queue.tmp_dwords;
-            std::memcpy(queue.tmp_packet.data() + queue.tmp_dwords, acb.data(),
-                        next_dw_off * sizeof(u32));
-            queue.tmp_dwords = 0;
+            const u32 total_dw = header->type3.NumWords() + 1;
+            // GT7 run 180, minidump-proven: the buffered "header" declared 4 dwords while
+            // tmp_dwords held 16, so the remainder went to u32(-12) and memcpy was asked for
+            // 17 GB of guest ring. Two ways to get here: a TORN ring read (the run-72
+            // disease - the game is still writing the ring when we parse it, so the dword
+            // NumWords() saw and the dword the buffering memcpy copied can differ), and the
+            // old re-buffer path below that restarted a >2-submission packet from index 0,
+            // leaving tmp_packet starting mid-packet. Never trust the resumed arithmetic:
+            // the buffered prefix must be a type-3 header whose declared size is larger
+            // than what is buffered and fits tmp_packet, or it is garbage and is dropped
+            // (one corrupt packet absorbed - the type!=3 softclamp doctrine below).
+            if (header->type != 3 || total_dw <= queue.tmp_dwords ||
+                total_dw > queue.tmp_packet.size()) {
+                static std::atomic<u32> bad_stitch_logged{0};
+                if (bad_stitch_logged.fetch_add(1, std::memory_order_relaxed) < 16) {
+                    LOG_WARNING(Lib_GnmDriver,
+                                "[softclamp] ACB stitch: buffered header {:#x} declares {} dw "
+                                "against {} dw buffered - dropping the buffered prefix",
+                                header->raw, total_dw, queue.tmp_dwords);
+                }
+                queue.tmp_dwords = 0;
+                header = reinterpret_cast<const PM4Header*>(acb.data());
+                next_dw_off = header->type3.NumWords() + 1;
+            } else {
+                next_dw_off = total_dw - queue.tmp_dwords;
+                // A packet can straddle MORE than two submissions: append what arrived and
+                // keep waiting. The old code fell into the re-buffer branch below, which
+                // restarted from index 0 mid-packet.
+                if (next_dw_off > acb.size()) {
+                    std::memcpy(queue.tmp_packet.data() + queue.tmp_dwords, acb.data(),
+                                acb.size_bytes());
+                    queue.tmp_dwords += static_cast<u32>(acb.size());
+                    if constexpr (!is_indirect) {
+                        *queue.read_addr += acb.size();
+                        *queue.read_addr %= queue.ring_size_dw;
+                    }
+                    break;
+                }
+                std::memcpy(queue.tmp_packet.data() + queue.tmp_dwords, acb.data(),
+                            next_dw_off * sizeof(u32));
+                queue.tmp_dwords = 0;
+            }
         }
 
         // If the packet is split across ring boundary, buffer until next submission
         if (next_dw_off > acb.size()) [[unlikely]] {
-            std::memcpy(queue.tmp_packet.data(), acb.data(), acb.size_bytes());
-            queue.tmp_dwords = acb.size();
+            // tmp_packet is 1024 dwords and a type-3 packet can declare up to 0x4000: a
+            // (torn) oversize packet must not smash tmp_dwords and whatever follows the
+            // array. Keeping the head only is safe - the stitch above re-validates it.
+            const u32 keep = static_cast<u32>(std::min(acb.size(), queue.tmp_packet.size()));
+            if (keep < acb.size()) [[unlikely]] {
+                static std::atomic<u32> oversize_logged{0};
+                if (oversize_logged.fetch_add(1, std::memory_order_relaxed) < 16) {
+                    LOG_WARNING(Lib_GnmDriver,
+                                "[softclamp] ACB split packet: {} dw exceed the {}-dw stitch "
+                                "buffer - keeping the head only",
+                                acb.size(), queue.tmp_packet.size());
+                }
+            }
+            std::memcpy(queue.tmp_packet.data(), acb.data(), keep * sizeof(u32));
+            queue.tmp_dwords = keep;
             if constexpr (!is_indirect) {
                 *queue.read_addr += acb.size();
                 *queue.read_addr %= queue.ring_size_dw;
