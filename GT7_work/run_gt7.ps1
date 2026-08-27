@@ -254,13 +254,19 @@ if ($Net) {
 #   - one SPECIFIC pair of dispatches must land in different submissions.
 # Passing at a large N says the exact boundary does not matter (points to the first family);
 # hanging at a large N and passing at a small one brackets a critical distance.
-$env:GT_SPLIT_DISPATCH = '0'
+# A completely unsplit buffer reached 9,276 recorded operations in run 174 and TDR'd.
+# N=1 is the stable diagnostic but expensive; run 176 passed both prior walls at N=64.
+Set-GtDefault 'GT_SPLIT_DISPATCH' '64'
 $env:GT_DISPATCH_BARRIER = '0'
 # THE ROOT-CAUSE CANDIDATE, alone. EOP/EOS fences used to be signed at PARSE time - the game was
 # told "the GPU finished" about work not yet handed to the driver, recycled its memory, and the
 # real work read the recycled bytes. This defers the fence to the real GPU tick. NO splitting, NO
 # barriers: if the wall falls with only this, the mechanism is proven.
 $env:GT_DEFER_EOP = '1'
+# GT_STORE_CLAMP is a shader correctness guard, not a network-mode experiment. Runs
+# 139/147/149 traced device faults to cs_6421a7b6 using stale SRT data as an unchecked
+# storage-buffer index. Keep it enabled for baseline, offline, and local-PSN runs alike.
+Set-GtDefault 'GT_STORE_CLAMP' '1'
 # -Net env (18 Aug, evening): HONEST FENCES, NO SPLIT.
 #   GT_DEFER_EOP=1 now defers gfx EOP/EOS *AND* the compute queues' ReleaseMem fences (the
 #   half-finished step from the handoff). This is the root-cause experiment: run 29 was
@@ -458,7 +464,7 @@ if ($Net -or $Offline) {
     # Baseline for wall experiments stays byte-identical.
     $env:GT_DYNRC_WINDOW = '0'
 }
-Write-Host "launching (launcher bypassed), GT_SPLIT_DISPATCH=$env:GT_SPLIT_DISPATCH ..." -ForegroundColor Green
+Write-Host "launching (launcher bypassed), GT_SPLIT_DISPATCH=$env:GT_SPLIT_DISPATCH, GT_STORE_CLAMP=$env:GT_STORE_CLAMP ..." -ForegroundColor Green
 & $exe $game
 
 # The REAL checks all read the LOG, i.e. what the emulator itself says it did. What this script

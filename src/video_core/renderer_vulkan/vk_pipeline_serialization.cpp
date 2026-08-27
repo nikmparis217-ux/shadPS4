@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2025-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdlib>
 #include <mutex>
 
 #include "common/scm_rev.h"
@@ -52,6 +53,12 @@ inline u32 BuildGeneration() {
             h ^= static_cast<u8>(walker_helper >> (i * 8));
             h *= 16777619u;
         }
+        // This gate changes emitted SPIR-V. Include it in the cache ABI so enabling the
+        // store bound cannot replay an older, unclamped module from disk.
+        const char* store_clamp = std::getenv("GT_STORE_CLAMP");
+        const u8 store_clamp_enabled = store_clamp && store_clamp[0] == '1';
+        h ^= store_clamp_enabled;
+        h *= 16777619u;
         return h;
     }();
     return gen;

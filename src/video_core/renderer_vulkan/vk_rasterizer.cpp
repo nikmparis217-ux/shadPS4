@@ -1577,12 +1577,18 @@ void Rasterizer::MaybeDumpLut(VideoCore::Image& image) {
         image.info.pixel_format != vk::Format::eR16G16B16A16Sfloat) {
         return;
     }
-    // First read of each image, then every 512th, 12 dumps per session in total - each one
-    // is a full pipeline drain. GPU command processor thread only.
+    // First read of each image, then every Nth read, 12 dumps per session in total - each one
+    // is a full pipeline drain. N defaults to 512; GT_LUT_DUMP_INTERVAL can reduce it for a
+    // focused persistence test without changing normal diagnostic cost. GPU thread only.
+    static const u32 dump_interval = [] {
+        const char* v = std::getenv("GT_LUT_DUMP_INTERVAL");
+        const unsigned long parsed = v ? std::strtoul(v, nullptr, 10) : 0;
+        return parsed != 0 ? static_cast<u32>(std::min<unsigned long>(parsed, 1u << 20)) : 512u;
+    }();
     static u32 global_dumps = 0;
     static std::unordered_map<u64, u32> per_image_reads;
     const u32 reads = ++per_image_reads[image.image_uid];
-    if (global_dumps >= 12 || (reads != 1 && (reads & 511u) != 0)) {
+    if (global_dumps >= 12 || (reads != 1 && reads % dump_interval != 0)) {
         return;
     }
     ++global_dumps;
