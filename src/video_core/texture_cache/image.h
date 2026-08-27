@@ -183,6 +183,11 @@ public:
     // grading LUT. One-shot per image: a later CPU write re-dirties the pages and the normal
     // guest upload must win, so RefreshImage checks-and-sets this before seeding.
     bool lut_ident_seeded = false;
+    // GT7 reupload-clobber fix: true once RefreshImage (or the identity seed) has recorded
+    // this image's per-mip guest-hash baseline. Later GpuDirty refreshes then skip the XXH3
+    // pass entirely - hashing on EVERY GpuDirty refresh parked the GPU thread inside XXH3
+    // for GT7's whole init (live thread snapshots, runs 168-173) and boot never finished.
+    bool hash_baseline_done = false;
 
     struct {
         u32 texture : 1;

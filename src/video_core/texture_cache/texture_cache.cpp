@@ -812,6 +812,7 @@ void TextureCache::RefreshImage(Image& image) {
                     image.info.mips_layout[m];
                 image.mip_hashes[m] = XXH3_64bits(guest_bytes + mip_offset, mip_size);
             }
+            image.hash_baseline_done = true;
             LOG_WARNING(Render_Vulkan,
                         "[lutident] seeded identity 64^3 RGBA16F LUT at {:#x} ({} mip(s), "
                         "guest_size {:#x})",
@@ -848,6 +849,21 @@ void TextureCache::RefreshImage(Image& image) {
     const bool is_gpu_modified = True(image.flags & ImageFlagBits::GpuModified);
     const bool is_gpu_dirty = True(image.flags & ImageFlagBits::GpuDirty);
 
+    // ⚠⚠ THE COST OF THE BASELINE LIVES IN THE HASH, NOT THE RECORD. The first version of
+    // the reupload-clobber fix hashed on EVERY GpuDirty refresh - and GT7's init
+    // invalidates GPU targets in a storm, so the GPU thread spent its life inside XXH3
+    // (live thread snapshots, runs 168-173: rip = XXH3_accumulate_512_avx2 <- RefreshImage,
+    // stable across seconds), the game polled for completions that never came, and boot
+    // never finished. The GT_HASH_BASELINE A/B was blind to it: it gated only the RECORD.
+    // So the baseline is established ONCE per image - the first upload, exactly where the
+    // clobber fix needs it and the only moment the old code had none; after that, GpuDirty
+    // refreshes pay upstream's zero cost. A later real guest change is still caught by the
+    // !is_gpu_dirty compare (which uploads and re-records - upstream's own semantics).
+    const bool hash_baseline_had = image.hash_baseline_done;
+    if (is_gpu_modified) {
+        image.hash_baseline_done = true;
+    }
+
     boost::container::small_vector<vk::BufferImageCopy, 14> image_copies;
     for (u32 m = 0; m < num_mips; m++) {
         const u32 width = std::max(image.info.size.width >> m, 1u);
@@ -876,12 +892,44 @@ void TextureCache::RefreshImage(Image& image) {
                 const char* v = std::getenv("GT_HASH_BASELINE");
                 return !(v && v[0] == '0');
             }();
+            // Giant mips are exempted wholesale: one hash of a garbage-sized descriptor
+            // (the 8 GB UpdatePageWatchers family) could stall init on its own, and the
+            // wash fix only ever needed the 2 MB grading LUTs.
+            constexpr u64 baseline_cap_bytes = 64_MB;
+            const bool skip_hash =
+                (is_gpu_dirty && hash_baseline_had) || mip_size > baseline_cap_bytes;
             const u8* addr = std::bit_cast<u8*>(image.info.guest_address);
-            const u64 hash = XXH3_64bits(addr + mip_offset, mip_size);
-            if (!is_gpu_dirty && image.mip_hashes[m] == hash) {
+            const u64 hash = skip_hash ? 0 : XXH3_64bits(addr + mip_offset, mip_size);
+            if (!skip_hash && !is_gpu_dirty && image.mip_hashes[m] == hash) {
+                // Focused verification for the GT7 grading-LUT clobber fix. This is the
+                // exact branch that used to be unreachable after the first GPU bake because
+                // the initial GpuDirty upload never established a guest-memory baseline.
+                if (image.info.props.is_volume && image.info.size.width == 64 &&
+                    image.info.size.height == 64 && image.info.size.depth == 64 &&
+                    image.info.pixel_format == vk::Format::eR16G16B16A16Sfloat) {
+                    static u32 unchanged_lut_budget = 0;
+                    if (unchanged_lut_budget++ < 16) {
+                        LOG_WARNING(Render_Vulkan,
+                                    "[hashbase] skipped unchanged CPU reupload of 64^3 LUT "
+                                    "at {:#x}, mip {} (guest hash {:#x})",
+                                    image.info.guest_address, m, hash);
+                    }
+                }
                 continue;
             }
-            if (!is_gpu_dirty || record_on_gpu_dirty) {
+            if (!skip_hash && (!is_gpu_dirty || record_on_gpu_dirty)) {
+                if (record_on_gpu_dirty && is_gpu_dirty && image.info.props.is_volume &&
+                    image.info.size.width == 64 && image.info.size.height == 64 &&
+                    image.info.size.depth == 64 &&
+                    image.info.pixel_format == vk::Format::eR16G16B16A16Sfloat) {
+                    static u32 initial_lut_budget = 0;
+                    if (initial_lut_budget++ < 8) {
+                        LOG_WARNING(Render_Vulkan,
+                                    "[hashbase] recorded initial guest baseline for 64^3 LUT "
+                                    "at {:#x}, mip {} (guest hash {:#x})",
+                                    image.info.guest_address, m, hash);
+                    }
+                }
                 image.mip_hashes[m] = hash;
             }
         }
