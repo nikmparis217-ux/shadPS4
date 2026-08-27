@@ -1367,3 +1367,73 @@ Act 11's original theory and replaced it with a measured mechanism:
   rt/img WRITE) names the missing propagation path directly.
 - No [vawatch] WRITE in a whole boot->race session -> the baker never runs at all: suspect the
   un-stub ladder (da05e7f8 / 7c3468f9 / 935c6eac / 11a81f15) or an HLE'd path, one per run.
+
+# ACT 12 (26-27 Aug, runs 166-182): BOOT SOLVED, THEORY BURIED, THE REAL CLOBBER NAMED
+
+## The boot-stall arc (runs 166-179, briefly - the commits carry the detail)
+"Stuck in INITIALIZING" was OUR OWN diagnostic: hashing every GpuDirty refresh of every
+image at boot. Fixed in two steps - the baseline hash is recorded once per image
+(9f4f63f4), then scoped to the grading-LUT shape only (f9d50092). GT7 now boots reliably
+to the welcome screen and into Music Rally. Run numbering note: 166-179 collided with a
+parallel session's numbers; today's runs are 180/181/182.
+
+## Run 180: the 17 GB memcpy - minidump forensics became an instrument
+Music Rally crash, vcruntime memcpy asked for 0x3FFFFFFD0 bytes (= u32(-12) dwords * 4).
+**GT7_work/rdc/parse_crash_dump.py** (new): parses shadPS4's own WriteGuestCrashDump
+minidump, names the module at rip, walks the crashing thread's stack against the
+fixed-base exe. Three-way match proved the ACB ring-wrap stitch in ProcessCompute
+resumed a "partial" packet whose buffered header declared 4 dwords while 16 were
+buffered - a TORN ring read (the run-72 disease) the stitch arithmetic trusted blindly.
+Fix: **636ed9de** - the buffered prefix must be type-3, bigger than tmp_dwords, and fit
+tmp_packet, or it is dropped ([softclamp] ACB stitch); a packet straddling 3+
+submissions APPENDS instead of re-buffering from index 0; the split-branch copy clamps
+to the 1024-dw buffer. Survived run 181 and the whole 20-minute run 182 with zero
+stitch softclamps.
+- TRAP for the next reader: the crash dump in %APPDATA% is OVERWRITTEN by the next
+  crash - archive it immediately (GT7_work/logs/run180_guest_crash.dmp). And when a
+  later session finds a dump with a familiar signature, CHECK ITS MTIME against the
+  fix's build time before declaring the fix holed - today's 19:44 dump turned out to be
+  run 180's own file, predating the 19:59 fix by 15 minutes (md5-identical to the
+  archive). Also: symbolizing an old run's addresses against a RELINKED exe gives
+  plausible wrong lines - the thread-list stack descriptor can be empty (rva 0); the
+  real stack lives in the MemoryList stream (signals.cpp captures 128 KB around rsp).
+
+## Runs 181-182: the theory is dead twice over, and the pulse has a mechanism
+Run 181 (stitch-fix binary): boots clean, welcome scene renders (broken colors), 3
+RenderDoc captures + 1 from run 180. All four analyzed (out7/run181/):
+- **THE PULSE IS AUTO-EXPOSURE HUNTING UPSTREAM OF THE OUTPUT TRANSFORM.** Across ~1 s
+  captures of a STATIC screen the transform's scene input max swings 13.1 -> 2.6 ->
+  0.85 and its CB dw087 swings 0 -> 23.89 -> -0.08. The transform passes through what
+  it is fed; the oscillator is in the exposure chain before it. Suspects: the all-zeros
+  1920x1080 RGBA16F input at 0x100ee50000, the 1x1 R8 zero at 0x1000e33200, and
+  cs_da05e7f8 (the NaN-factory probe producer, bursts user-correlated with wash).
+- **The imgarray null-slot theory is DEAD, anatomically and empirically.**
+  cs_0xa95f906e's IR: record index = WorkgroupId.z * 144, dispatches are 1x1x1 -> only
+  record 0 is ever read; 15/16 null slots are BY CONSTRUCTION. Run 182 (mode 2 proof):
+  GPU flush + wait + readback of the table STILL found it null ("theory dead" latch
+  after 4 barren syncs, sync #33 with dl 1 reg 1). GT_IMGARRAY_SYNC stays default 0.
+- **The complete clobber model.** The LUT at 0x101e400000 is baked ONCE at load by
+  cs_0xf04a69f0 (one [lut3d] WRITE bind), then only read. Its guest pages sit in the
+  busy 0x101e3xxxxx heap; neighboring GPU buffer writes keep re-flagging them GpuDirty,
+  and RefreshImage's GpuDirty path reuploaded the stale guest copy (uninitialized VRAM)
+  over the baked content - no hash, no log, which is also what ate the GT_LUT_IDENT
+  seed. Fixed in **c66b0d04**: the LUT shape hashes on EVERY refresh; unchanged guest
+  bytes on GpuDirty = collateral invalidation = skip (logged "[hashbase] ... GPU-dirty").
+  Also **608292d3**: GT_STORE_CLAMP joins the pipeline-cache ABI (flipping it could
+  replay unclamped modules), GT_LUT_DUMP_INTERVAL, launcher defaults (SPLIT_DISPATCH 64,
+  STORE_CLAMP 1 everywhere).
+- Run 182 also proved the game PLAYS: full Music Rally race, car renders near-perfect,
+  track pulses everywhere (user report). Log: run182_imgsync_proof_theorydead_race_pulse.txt.
+
+## NEXT (run 183+), pre-declared
+1. **GT7_lutident.bat on the c66b0d04 binary** = identity seed + the closed clobber
+   door. Predict: [lutident] seeds, cs_f04a69f0 bakes, later GpuDirty refreshes log
+   "[hashbase] skipped unchanged GPU-dirty reupload" and the bake SURVIVES -> wash and
+   red panel fixed and STAYING fixed into the race. The pulse likely remains (separate
+   root). If wash persists: grep [lut3d]/[vawatch] - a second writer or a second LUT.
+2. **The pulse**: 3 captures PAUSED IN THE RACE (F12 x3, ~1 s apart), analyze7 each,
+   then trace the exposure chain upstream - which pass produces the scene-brightness
+   swing, what does it read (the zeros at 0x100ee50000? da05e7f8's NaN probes?).
+3. renderdoc_enabled is still true in config - turn it off for an honest FPS run once
+   the visuals are settled. Parked: the pre-existing device-lost family; the all-zeros
+   0x100ee50000 producer; the 1x1 R8 zero.
