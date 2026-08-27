@@ -892,12 +892,23 @@ void TextureCache::RefreshImage(Image& image) {
                 const char* v = std::getenv("GT_HASH_BASELINE");
                 return !(v && v[0] == '0');
             }();
-            // Giant mips are exempted wholesale: one hash of a garbage-sized descriptor
-            // (the 8 GB UpdatePageWatchers family) could stall init on its own, and the
-            // wash fix only ever needed the 2 MB grading LUTs.
+            // ⚠⚠ SECOND LESSON (run 174, same live-snapshot instrument): "once per image"
+            // is NOT a bound when images churn. GT7's init streams thousands of textures,
+            // every detiled one is GpuModified, and each fresh Image object paid its
+            // "first" hash - the GPU thread went right back to living inside XXH3 and the
+            // game sat at its INITIALIZING screen for 10+ minutes. The wash fix only ever
+            // needed the 64^3 grading LUTs, so the GpuDirty baseline is now recorded for
+            // EXACTLY that shape (the seed's own predicate) and nothing else; every other
+            // image keeps pure upstream semantics on GpuDirty refreshes - the behavior
+            // every pre-fix boot survived on.
+            const bool lut_shaped = image.info.props.is_volume &&
+                                    image.info.size.width == 64 &&
+                                    image.info.size.height == 64 &&
+                                    image.info.size.depth == 64 &&
+                                    image.info.pixel_format == vk::Format::eR16G16B16A16Sfloat;
             constexpr u64 baseline_cap_bytes = 64_MB;
-            const bool skip_hash =
-                (is_gpu_dirty && hash_baseline_had) || mip_size > baseline_cap_bytes;
+            const bool skip_hash = (is_gpu_dirty && (hash_baseline_had || !lut_shaped)) ||
+                                   mip_size > baseline_cap_bytes;
             const u8* addr = std::bit_cast<u8*>(image.info.guest_address);
             const u64 hash = skip_hash ? 0 : XXH3_64bits(addr + mip_offset, mip_size);
             if (!skip_hash && !is_gpu_dirty && image.mip_hashes[m] == hash) {
