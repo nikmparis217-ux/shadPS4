@@ -907,11 +907,23 @@ void TextureCache::RefreshImage(Image& image) {
                                     image.info.size.depth == 64 &&
                                     image.info.pixel_format == vk::Format::eR16G16B16A16Sfloat;
             constexpr u64 baseline_cap_bytes = 64_MB;
-            const bool skip_hash = (is_gpu_dirty && (hash_baseline_had || !lut_shaped)) ||
-                                   mip_size > baseline_cap_bytes;
+            // ⚠⚠ THE GPU-DIRTY REUPLOAD IS THE OTHER CLOBBER DOOR (run 181 + the imgsync
+            // run, both measured in RenderDoc): the grading LUT is baked ONCE at load time
+            // by an image write ([lut3d] WRITE bind), and its guest pages sit in the busy
+            // 0x101e3xxxxx heap right above the ACB rings - so buffer-cache GPU writes to
+            // NEIGHBORING data keep re-flagging the LUT pages GpuDirty, and the refresh then
+            // "propagated" a stale guest copy (uninitialized VRAM) over the baked content.
+            // No [hashbase] line ever fired for these clobbers - the skip/record pair below
+            // only covered !is_gpu_dirty. So the LUT shape ALWAYS hashes: on a GpuDirty
+            // refresh with UNCHANGED guest bytes the propagation is collateral and is
+            // skipped; genuinely new guest bytes still land. Everything non-LUT keeps the
+            // churn-fix semantics (never hash on GpuDirty) - that jail was the init stall.
+            const bool skip_hash =
+                (is_gpu_dirty && !lut_shaped) || mip_size > baseline_cap_bytes;
             const u8* addr = std::bit_cast<u8*>(image.info.guest_address);
             const u64 hash = skip_hash ? 0 : XXH3_64bits(addr + mip_offset, mip_size);
-            if (!skip_hash && !is_gpu_dirty && image.mip_hashes[m] == hash) {
+            if (!skip_hash && (!is_gpu_dirty || (lut_shaped && hash_baseline_had)) &&
+                image.mip_hashes[m] == hash) {
                 // Focused verification for the GT7 grading-LUT clobber fix. This is the
                 // exact branch that used to be unreachable after the first GPU bake because
                 // the initial GpuDirty upload never established a guest-memory baseline.
@@ -921,9 +933,10 @@ void TextureCache::RefreshImage(Image& image) {
                     static u32 unchanged_lut_budget = 0;
                     if (unchanged_lut_budget++ < 16) {
                         LOG_WARNING(Render_Vulkan,
-                                    "[hashbase] skipped unchanged CPU reupload of 64^3 LUT "
+                                    "[hashbase] skipped unchanged {} reupload of 64^3 LUT "
                                     "at {:#x}, mip {} (guest hash {:#x})",
-                                    image.info.guest_address, m, hash);
+                                    is_gpu_dirty ? "GPU-dirty" : "CPU", image.info.guest_address,
+                                    m, hash);
                     }
                 }
                 continue;
