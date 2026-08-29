@@ -1271,6 +1271,23 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
             }();
             constexpr u64 TailBindCap = 256_MB;
             u64 wanted_size = vsharp.GetSize();
+            // The second binding pass used to reject non-dword-aligned V# bases, but only
+            // AFTER FindBuffer had created and registered a buffer for them. GT7's torn
+            // descriptors therefore allocated 256 MB buffers at addresses such as
+            // 0xff43522aef, installed page watchers across unmapped memory, and were null-bound
+            // only after the damage was done. Reject the exact same descriptors before any
+            // buffer-cache side effect.
+            if (soft_size && (vsharp.base_address & 3) != 0) {
+                static std::atomic<u32> early_align_logs{0};
+                if (early_align_logs.fetch_add(1, std::memory_order_relaxed) < 64) {
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "[softclamp] shader {:#x}: V# base {:#x} size {:#x} is not "
+                                 "dword-aligned - null-bound before buffer-cache lookup",
+                                 stage.pgm_hash, vsharp.base_address, wanted_size);
+                }
+                buffer_bindings.emplace_back(VideoCore::BufferId{}, vsharp, 0);
+                continue;
+            }
             if (soft_size && wanted_size > TailBindCap) {
                 static std::atomic<u32> tail_logs{0};
                 if (tail_logs.fetch_add(1, std::memory_order_relaxed) < 32) {
@@ -1281,6 +1298,43 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                                  TailBindCap >> 20);
                 }
                 wanted_size = TailBindCap;
+
+                // A valid tail descriptor can describe more virtual address space than is
+                // currently GPU-mapped. Creating a buffer for the full cap makes the memory
+                // tracker walk 4 MB regions outside that mapping. Keep only the contiguous
+                // mapped prefix beginning at the descriptor base; no prefix means the V# is
+                // another torn descriptor and must not reach FindBuffer.
+                u64 mapped_prefix = 0;
+                ForEachMappedRangeInRange(vsharp.base_address, wanted_size,
+                                          [&](const auto& mapped_range) {
+                                              if (mapped_prefix == 0 &&
+                                                  mapped_range.lower() == vsharp.base_address) {
+                                                  mapped_prefix = mapped_range.upper() -
+                                                                  mapped_range.lower();
+                                              }
+                                          });
+                if (mapped_prefix == 0) {
+                    static std::atomic<u32> unmapped_tail_logs{0};
+                    if (unmapped_tail_logs.fetch_add(1, std::memory_order_relaxed) < 64) {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "[softclamp] shader {:#x}: V# tail base {:#x} has no "
+                                     "GPU-mapped prefix - null-bound before buffer-cache lookup",
+                                     stage.pgm_hash, vsharp.base_address);
+                    }
+                    buffer_bindings.emplace_back(VideoCore::BufferId{}, vsharp, 0);
+                    continue;
+                }
+                if (mapped_prefix < wanted_size) {
+                    static std::atomic<u32> mapped_tail_logs{0};
+                    if (mapped_tail_logs.fetch_add(1, std::memory_order_relaxed) < 64) {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "[softclamp] shader {:#x}: V# tail base {:#x} mapped "
+                                     "prefix {:#x} is shorter than cap {:#x} - clamped",
+                                     stage.pgm_hash, vsharp.base_address, mapped_prefix,
+                                     wanted_size);
+                    }
+                    wanted_size = mapped_prefix;
+                }
             }
             const u64 size = memory->ClampRangeSize(vsharp.base_address, wanted_size);
             if (size == 0) {
