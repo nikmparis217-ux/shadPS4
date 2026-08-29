@@ -1,6 +1,6 @@
 @echo off
-REM Targeted proof run for the GT7 foliage non-finite render-target output.
-REM Only fs_92126594 is scrubbed. NaN/Inf RGB outputs become zero; finite HDR is untouched.
+REM Targeted proof run for the GT7 foliage poisoned render-target output.
+REM Only fs_92126594 is scrubbed. NaN/Inf and its 65000 poison ceiling become zero.
 REM Keep unrelated LUT, descriptor-array, RenderDoc, and render-target experiments disabled.
 
 title GT7 - targeted foliage RT scrub

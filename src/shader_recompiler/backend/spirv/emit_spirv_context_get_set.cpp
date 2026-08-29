@@ -49,11 +49,12 @@ static std::pair<Id, bool> OutputAttrComponentType(EmitContext& ctx, IR::Attribu
     }
 }
 
-// GT_RT_SCRUB=1 enables non-finite render-target containment for every fragment shader.
+// GT_RT_SCRUB=1 enables poisoned render-target containment for every fragment shader.
 // A comma-separated hexadecimal hash list limits it to named shaders. GT7's foliage shader
-// fs_92126594 was measured writing exactly 65000 to 10,563 pixels in one draw because NaNs
-// reached its final guest clamp; those pixels then poisoned bloom and washed out the frame.
-// Normal finite HDR values are left untouched.
+// fs_92126594 was measured writing exactly 65000 to 10,563 pixels in one draw because its
+// guest clamp converts NaNs into the finite fp16 ceiling before this output boundary. Catch
+// both genuinely non-finite values and that saturated ceiling; ordinary finite HDR remains
+// untouched.
 static bool GtRtScrubEnabled(u64 hash) {
     struct Config {
         bool all{};
@@ -354,8 +355,12 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, u32 elemen
             const Id is_nan = ctx.OpIsNan(ctx.U1[1], store_value);
             const Id is_inf = ctx.OpIsInf(ctx.U1[1], store_value);
             const Id non_finite = ctx.OpLogicalOr(ctx.U1[1], is_nan, is_inf);
+            const Id magnitude = ctx.OpFAbs(ctx.F32[1], store_value);
+            const Id saturated = ctx.OpFOrdGreaterThanEqual(
+                ctx.U1[1], magnitude, ctx.ConstF32(65000.0f));
+            const Id poisoned = ctx.OpLogicalOr(ctx.U1[1], non_finite, saturated);
             store_value =
-                ctx.OpSelect(ctx.F32[1], non_finite, ctx.ConstF32(0.0f), store_value);
+                ctx.OpSelect(ctx.F32[1], poisoned, ctx.ConstF32(0.0f), store_value);
         }
         if (info.num_components == 1) {
             return op_store(info.id);
