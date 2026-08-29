@@ -443,6 +443,12 @@ if ($Net -or $Offline) {
     # modules compiled AFTER the flip - the pipeline cache must be cold (a commit bumps the
     # cache generation; GT7_lutident.bat also wipes it explicitly).
     Set-GtDefault 'GT_IMGWRITE_SCRUB' '1'
+    # GT_RT_SCRUB (29 Aug): contain only non-finite fragment outputs from the measured GT7
+    # foliage shader. RenderDoc capture 4 proved fs_92126594 turns 10,563 tree pixels into the
+    # exact 65000 HDR ceiling in one draw; bloom then spreads them into the visible white wash.
+    # A hash list keeps every other shader untouched. This changes emitted SPIR-V, and the full
+    # selector is part of the pipeline-cache ABI.
+    Set-GtDefault 'GT_RT_SCRUB' '92126594'
     # GT_HASH_BASELINE (26 Aug): runtime A/B gate for the reupload-clobber fix (commit
     # 134b9428 - record the per-mip guest hash on EVERY upload of a GpuModified image).
     # '1' = the fix (default); '0' = the upstream rule (record only when !is_gpu_dirty).

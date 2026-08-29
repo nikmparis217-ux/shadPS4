@@ -9,7 +9,11 @@
 #include "shader_recompiler/ir/patch.h"
 #include "shader_recompiler/runtime_info.h"
 
+#include <algorithm>
+#include <cstdlib>
 #include <magic_enum/magic_enum.hpp>
+#include <string>
+#include <vector>
 
 namespace Shader::Backend::SPIRV {
 
@@ -43,6 +47,45 @@ static std::pair<Id, bool> OutputAttrComponentType(EmitContext& ctx, IR::Attribu
     default:
         UNREACHABLE_MSG("Write attribute {}", attr);
     }
+}
+
+// GT_RT_SCRUB=1 enables non-finite render-target containment for every fragment shader.
+// A comma-separated hexadecimal hash list limits it to named shaders. GT7's foliage shader
+// fs_92126594 was measured writing exactly 65000 to 10,563 pixels in one draw because NaNs
+// reached its final guest clamp; those pixels then poisoned bloom and washed out the frame.
+// Normal finite HDR values are left untouched.
+static bool GtRtScrubEnabled(u64 hash) {
+    struct Config {
+        bool all{};
+        std::vector<u64> hashes;
+    };
+    static const Config config = [] {
+        Config result{};
+        const char* env = std::getenv("GT_RT_SCRUB");
+        if (env == nullptr || env[0] == '\0' || (env[0] == '0' && env[1] == '\0')) {
+            return result;
+        }
+        const std::string value{env};
+        if (value == "1") {
+            result.all = true;
+            return result;
+        }
+        size_t pos = 0;
+        while (pos <= value.size()) {
+            size_t comma = value.find(',', pos);
+            if (comma == std::string::npos) {
+                comma = value.size();
+            }
+            if (comma > pos) {
+                result.hashes.push_back(
+                    std::strtoull(value.substr(pos, comma - pos).c_str(), nullptr, 16));
+            }
+            pos = comma + 1;
+        }
+        return result;
+    }();
+    return config.all || std::find(config.hashes.begin(), config.hashes.end(), hash) !=
+                             config.hashes.end();
 }
 
 Id EmitGetUserData(EmitContext& ctx, IR::ScalarReg reg) {
@@ -278,12 +321,13 @@ Id EmitGetAttributeU32(EmitContext& ctx, IR::Attribute attr, u32 comp) {
 }
 
 void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, u32 element) {
+    Id store_value = value;
     const auto op_store = [&](Id pointer) {
         const auto [component_type, is_integer] = OutputAttrComponentType(ctx, attr);
         if (is_integer) {
-            ctx.OpStore(pointer, ctx.OpBitcast(component_type, value));
+            ctx.OpStore(pointer, ctx.OpBitcast(component_type, store_value));
         } else {
-            ctx.OpStore(pointer, value);
+            ctx.OpStore(pointer, store_value);
         }
     };
     if (IR::IsParam(attr)) {
@@ -306,6 +350,13 @@ void EmitSetAttribute(EmitContext& ctx, IR::Attribute attr, Id value, u32 elemen
     if (IR::IsMrt(attr)) {
         const u32 index{u32(attr) - u32(IR::Attribute::RenderTarget0)};
         const auto& info{ctx.frag_outputs.at(index)};
+        if (!info.is_integer && GtRtScrubEnabled(ctx.info.pgm_hash)) {
+            const Id is_nan = ctx.OpIsNan(ctx.U1[1], store_value);
+            const Id is_inf = ctx.OpIsInf(ctx.U1[1], store_value);
+            const Id non_finite = ctx.OpLogicalOr(ctx.U1[1], is_nan, is_inf);
+            store_value =
+                ctx.OpSelect(ctx.F32[1], non_finite, ctx.ConstF32(0.0f), store_value);
+        }
         if (info.num_components == 1) {
             return op_store(info.id);
         } else {

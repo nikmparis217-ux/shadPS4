@@ -59,6 +59,22 @@ inline u32 BuildGeneration() {
         const u8 store_clamp_enabled = store_clamp && store_clamp[0] == '1';
         h ^= store_clamp_enabled;
         h *= 16777619u;
+        // These gates also change emitted SPIR-V. Hash the image-write switch and the full
+        // render-target scrub selector ("1" or a shader-hash list), so changing either can
+        // never replay a module compiled under a different containment policy.
+        const char* image_scrub = std::getenv("GT_IMGWRITE_SCRUB");
+        const u8 image_scrub_enabled = image_scrub && image_scrub[0] == '1';
+        h ^= image_scrub_enabled;
+        h *= 16777619u;
+        const char* rt_scrub = std::getenv("GT_RT_SCRUB");
+        if (rt_scrub != nullptr) {
+            for (const char* c = rt_scrub; *c != 0; ++c) {
+                h ^= static_cast<u8>(*c);
+                h *= 16777619u;
+            }
+        }
+        h ^= 0xffu;
+        h *= 16777619u;
         return h;
     }();
     return gen;
