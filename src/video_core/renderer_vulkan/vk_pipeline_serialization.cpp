@@ -333,9 +333,11 @@ bool PipelineCache::LoadPipelineStage(Serialization::Archive& ar, size_t stage) 
         return false;
     }
 
-    // Permutation hash depends on shader variation index. To prevent collisions, we need insert it
-    // at the exact position rather than append
-
+    // The permutation index is part of the serialized stage hash, so preload must restore that
+    // exact slot. Pipeline records are visited in arbitrary order and the store can legitimately
+    // contain equivalent specializations at different historical indices. Searching every slot
+    // for an equivalent specialization made those records reject each other and forced the same
+    // shaders to compile again on every boot.
     vk::ShaderModule module{};
 
     auto [it_pgm, new_program] = program_cache.try_emplace(program->info.pgm_hash);
@@ -343,27 +345,35 @@ bool PipelineCache::LoadPipelineStage(Serialization::Archive& ar, size_t stage) 
         module = CompileSPV(spv, instance.GetDevice());
         it_pgm.value() = std::move(program);
     } else {
-        const auto& it = std::ranges::find(it_pgm.value()->modules, spec, &Program::Module::spec);
-        if (it != it_pgm.value()->modules.end()) {
-            // A matching permutation is valid only at its original index. A different index means
-            // the store holds entries from more than one cache generation, so this pipeline is
-            // left to compile at runtime.
-            const auto idx = std::distance(it_pgm.value()->modules.begin(), it);
-            if (perm_idx != idx) {
+        auto& modules = it_pgm.value()->modules;
+        if (perm_idx < modules.size() && modules[perm_idx].spec.Valid()) {
+            const auto& loaded = modules[perm_idx];
+            // StageSpecialization is a compatibility relation rather than a plain field compare;
+            // check both directions before trusting an occupied slot from another pipeline record.
+            if (!(loaded.spec == spec) || !(spec == loaded.spec)) {
                 LOG_WARNING(Render_Vulkan,
-                            "Cached permutation {} of {}_{:x} conflicts with index {}, skipping "
-                            "preload",
-                            perm_idx, program->info.stage, program->info.pgm_hash, idx);
+                            "Cached permutation slot {} of {}_{:x} has incompatible metadata, "
+                            "skipping preload",
+                            perm_idx, program->info.stage, program->info.pgm_hash);
                 return false;
             }
-            module = it->module;
+            module = loaded.module;
         } else {
             module = CompileSPV(spv, instance.GetDevice());
         }
     }
-    it_pgm.value()->InsertPermut(module, std::move(spec), perm_idx);
 
-    infos[stage] = &it_pgm.value()->info;
+    auto& loaded_program = *it_pgm.value();
+    if (perm_idx >= loaded_program.modules.size() ||
+        !loaded_program.modules[perm_idx].spec.Valid()) {
+        // Metadata was deserialized against the temporary Program above. Rebind it before that
+        // object is destroyed so future runtime specialization checks never retain a dangling Info
+        // pointer.
+        spec.info = &loaded_program.info;
+        loaded_program.InsertPermut(module, std::move(spec), perm_idx);
+    }
+
+    infos[stage] = &loaded_program.info;
     modules[stage] = module;
 
     return true;
