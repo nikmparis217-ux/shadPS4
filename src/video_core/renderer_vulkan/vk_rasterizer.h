@@ -154,7 +154,11 @@ private:
 
     void ResetBindings() {
         for (auto& image_id : bound_images) {
-            texture_cache.GetImage(image_id).binding = {};
+            auto& image = texture_cache.GetImage(image_id);
+            if (image.binding.is_target || image.binding.force_general) {
+                texture_cache.MarkGpuWritten(image);
+            }
+            image.binding = {};
         }
         bound_images.clear();
     }

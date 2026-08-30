@@ -5,6 +5,7 @@
 #include <memory>
 #include <atomic>
 #include <cstdlib>
+#include <cstring>
 #include "common/alignment.h"
 #include "common/debug.h"
 #include "common/scope_exit.h"
@@ -12,6 +13,7 @@
 #include "video_core/amdgpu/liverpool.h"
 #include "video_core/buffer_cache/buffer_cache.h"
 #include "video_core/buffer_cache/memory_tracker.h"
+#include "video_core/gt_va_watch.h"
 #include "video_core/renderer_vulkan/vk_graphics_pipeline.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
@@ -25,6 +27,28 @@ namespace {
 /// read as an FPS cliff. Counted separately from the [copyclamp] budget (which goes silent
 /// after 16 lines) and reported in the periodic [vram] telemetry line.
 std::atomic<u32> g_temp_download_count{0};
+
+/// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography
+/// through the buffer cache, gated on GT_WATCH_VA. [bufcopy] = a PM4 DMA copy touching a
+/// watched range (this is how the game moves GPU-computed state into the texture's memory);
+/// [bufsync] = a guest->buffer upload overlapping a watched range (THE CLOBBER SUSPECT: a
+/// CPU-dirty tracker page re-uploads guest ZEROS over the DMA'd value inside the cached
+/// buffer); [bufdl] = a readback landing a watched range in guest RAM, with the bytes.
+void GtLogBufEvent(const char* tag, VAddr addr, u64 size, const u8* bytes) {
+    if (GtWatchHit(addr, size) == nullptr) {
+        return;
+    }
+    static u32 gt_bufevent_budget = 0;
+    if (gt_bufevent_budget++ >= 512) {
+        return;
+    }
+    u32 dw[4]{};
+    if (bytes != nullptr) {
+        std::memcpy(dw, bytes, std::min<u64>(sizeof(dw), size));
+    }
+    LOG_WARNING(Render_Vulkan, "[{}] {:#x}+{:#x} dw: {:08x} {:08x} {:08x} {:08x}", tag, addr,
+                size, dw[0], dw[1], dw[2], dw[3]);
+}
 
 /// A dropped or clamped copy region is a bug somewhere upstream, so it must be visible - but
 /// it can happen per range per draw, and run 65 proved that a per-draw CRITICAL is its own I/O
@@ -298,6 +322,7 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
             const u64 dst_offset = copy.dstOffset - offset;
             memory->TryWriteBacking(std::bit_cast<u8*>(copy_device_addr), download + dst_offset,
                                     copy.size);
+            GtLogBufEvent("bufdl", copy_device_addr, copy.size, download + dst_offset);
         }
         memory_tracker->UnmarkRegionAsGpuModified(device_addr, size);
     };
@@ -323,6 +348,7 @@ void BufferCache::DownloadBufferMemory(Buffer& buffer, VAddr device_addr, u64 si
                 const u64 dst_offset = copy.dstOffset - own_offset;
                 memory->TryWriteBacking(std::bit_cast<u8*>(copy_device_addr),
                                         own_download + dst_offset, copy.size);
+                GtLogBufEvent("bufdl", copy_device_addr, copy.size, own_download + dst_offset);
             }
             memory_tracker->UnmarkRegionAsGpuModified(device_addr, size);
         });
@@ -504,12 +530,15 @@ void BufferCache::CopyBuffer(VAddr dst, VAddr src, u32 num_bytes, bool dst_gds, 
         if (!src_gds && !IsRegionGpuModified(src, num_bytes) &&
             !texture_cache.FindImageFromRange(src, num_bytes)) {
             // Both buffers were not transferred to GPU yet. Can safely copy in host memory.
+            GtLogBufEvent("bufcopy cpu dst", dst, num_bytes, std::bit_cast<const u8*>(src));
             memcpy(std::bit_cast<void*>(dst), std::bit_cast<void*>(src), num_bytes);
             return;
         }
         // Without a readback there's nothing we can do with this
         // Fallback to creating dst buffer on GPU to at least have this data there
     }
+    GtLogBufEvent("bufcopy gpu dst", dst, num_bytes, nullptr);
+    GtLogBufEvent("bufcopy gpu src", src, num_bytes, nullptr);
     texture_cache.InvalidateMemoryFromGPU(dst, num_bytes);
     auto& src_buffer = [&] -> const Buffer& {
         if (src_gds) {
@@ -609,19 +638,34 @@ std::pair<Buffer*, u32> BufferCache::ObtainBuffer(VAddr device_addr, u32 size, b
 }
 
 std::pair<Buffer*, u32> BufferCache::ObtainBufferForImage(VAddr gpu_addr, u32 size) {
+    // [imgsrc] (readback hunt): which of the three sources feeds a watched image's refresh.
+    // "cached" can carry GPU data the guest never saw; "staging" is a plain guest-RAM copy -
+    // if the exposure image refreshes from staging, the DMA'd value can never reach it.
+    const bool gt_watched = GtWatchHit(gpu_addr, size) != nullptr;
+    const auto gt_imgsrc = [&](const char* src) {
+        static u32 gt_imgsrc_budget = 0;
+        if (gt_watched && gt_imgsrc_budget++ < 256) {
+            LOG_WARNING(Render_Vulkan, "[imgsrc] {:#x}+{:#x} <- {} (gpumod {:d} cpudirty {:d})",
+                        gpu_addr, size, src, IsRegionGpuModified(gpu_addr, size),
+                        IsRegionCpuModified(gpu_addr, size));
+        }
+    };
     // Check if any buffer contains the full requested range.
     const BufferId buffer_id = page_table[gpu_addr >> CACHING_PAGEBITS].buffer_id;
     if (buffer_id) {
         if (Buffer& buffer = slot_buffers[buffer_id]; buffer.IsInBounds(gpu_addr, size)) {
+            gt_imgsrc("cached");
             SynchronizeBuffer(buffer, gpu_addr, size, false, false);
             return {&buffer, buffer.Offset(gpu_addr)};
         }
     }
     // If some buffer within was GPU modified create a full buffer to avoid losing GPU data.
     if (IsRegionGpuModified(gpu_addr, size)) {
+        gt_imgsrc("gpumod-obtain");
         return ObtainBuffer(gpu_addr, size, false, false);
     }
     // In all other cases, just do a CPU copy to the staging buffer.
+    gt_imgsrc("staging");
     const auto [data, offset] = staging_buffer.Map(size, 16);
     memory->CopySparseMemory(gpu_addr, data, size);
     staging_buffer.Commit();
@@ -940,6 +984,7 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
             if (begin != device_addr_out || clamped_size != range_size) {
                 LogCopyClamp(buffer, device_addr_out, range_size, clamped_size);
             }
+            GtLogBufEvent("bufsync", begin, clamped_size, std::bit_cast<const u8*>(begin));
             copies.emplace_back(total_size_bytes, begin - buffer_start, clamped_size);
             total_size_bytes += clamped_size;
         },

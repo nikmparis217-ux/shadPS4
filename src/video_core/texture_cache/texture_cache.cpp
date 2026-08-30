@@ -1,8 +1,11 @@
 // SPDX-FileCopyrightText: Copyright 2024-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <bit>
 #include <cstdlib>
+#include <cstring>
+#include <unordered_set>
 #include <xxhash.h>
 
 #include "common/assert.h"
@@ -12,6 +15,7 @@
 #include "core/emulator_settings.h"
 #include "core/memory.h"
 #include "video_core/buffer_cache/buffer_cache.h"
+#include "video_core/gt_va_watch.h"
 #include "video_core/page_manager.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_scheduler.h"
@@ -70,6 +74,42 @@ void TextureCache::ProcessDownloadImages() {
     download_images.clear();
 }
 
+// [dlimg] (readback hunt, run 186): run 185 turned GPU readbacks ON and the auto-exposure
+// state STILL uploaded as zeros - so either no image download ever runs, or it runs and the
+// bytes are zero, or TryWriteBacking drops it (it returns false on a VMA without physical
+// backing and the download silently evaporates). One log per download says which.
+static u32 gt_dlimg_seen = 0;
+
+static void GtLogImageDownload(const ImageInfo& info, const void* data, u32 download_size,
+                               bool wrote_backing) {
+    ++gt_dlimg_seen;
+    if (gt_dlimg_seen > 256 && (gt_dlimg_seen & 63u) != 0) {
+        return;
+    }
+    u32 dw[8]{};
+    std::memcpy(dw, data, std::min<u32>(sizeof(dw), download_size));
+    LOG_WARNING(Render_Vulkan,
+                "[dlimg] #{} download {:#x}+{:#x} ({}x{}x{} {} tiled {:d}) wb {:d} dw: {:08x} "
+                "{:08x} {:08x} {:08x} {:08x} {:08x} {:08x} {:08x}",
+                gt_dlimg_seen, info.guest_address, download_size, info.size.width,
+                info.size.height, info.size.depth, vk::to_string(info.pixel_format),
+                info.props.is_tiled ? 1 : 0, wrote_backing ? 1 : 0, dw[0], dw[1], dw[2], dw[3],
+                dw[4], dw[5], dw[6], dw[7]);
+}
+
+// [dlskip] (readback hunt): a GPU-written image the linear-image readback CANNOT service -
+// tiled and wider than 8 texels. If the exposure measurement chain lands here, the game's CPU
+// reads eternal zeros no matter what readbacks_mode says. Once per guest address, 64 max.
+static void GtLogDownloadReject(const char* where, const ImageInfo& info) {
+    static std::unordered_set<VAddr> gt_dlskip_seen;
+    if (gt_dlskip_seen.size() >= 64 || !gt_dlskip_seen.insert(info.guest_address).second) {
+        return;
+    }
+    LOG_WARNING(Render_Vulkan, "[dlskip] {} image not downloadable: {:#x}+{:#x} {}x{}x{} {} tiled {:d}",
+                where, info.guest_address, info.guest_size, info.size.width, info.size.height,
+                info.size.depth, vk::to_string(info.pixel_format), info.props.is_tiled ? 1 : 0);
+}
+
 void TextureCache::DownloadImageMemory(ImageId image_id, bool sync) {
     Image& image = slot_images[image_id];
     if (False(image.flags & ImageFlagBits::GpuModified)) {
@@ -104,13 +144,15 @@ void TextureCache::DownloadImageMemory(ImageId image_id, bool sync) {
 
     if (sync) {
         scheduler.Finish();
-        Core::Memory::Instance()->TryWriteBacking(std::bit_cast<u8*>(image.info.guest_address),
-                                                  download, download_size);
+        const bool wb = Core::Memory::Instance()->TryWriteBacking(
+            std::bit_cast<u8*>(image.info.guest_address), download, download_size);
+        GtLogImageDownload(image.info, download, download_size, wb);
     } else {
         scheduler.DeferPriorityOperation(
-            [this, device_addr = image.info.guest_address, download, download_size] {
-                Core::Memory::Instance()->TryWriteBacking(std::bit_cast<u8*>(device_addr), download,
-                                                          download_size);
+            [info = image.info, download, download_size] {
+                const bool wb = Core::Memory::Instance()->TryWriteBacking(
+                    std::bit_cast<u8*>(info.guest_address), download, download_size);
+                GtLogImageDownload(info, download, download_size, wb);
             });
     }
 }
@@ -505,6 +547,67 @@ ImageId TextureCache::ExpandImage(const ImageInfo& info, ImageId image_id) {
     return new_image_id;
 }
 
+void TextureCache::SynchronizeVerticalAlias(ImageId destination_id,
+                                            const ImageIds& overlapping_images) {
+    static const bool enabled = [] {
+        const char* value = std::getenv("GT_VERTICAL_ALIAS");
+        return value && value[0] == '1';
+    }();
+    if (!enabled) {
+        return;
+    }
+
+    Image& destination = slot_images[destination_id];
+    const ImageInfo& dst = destination.info;
+    if (dst.props.is_depth || dst.props.is_block || dst.resources.levels != 1 ||
+        dst.resources.layers != 1 || dst.size.depth != 1) {
+        return;
+    }
+
+    ImageId source_id{};
+    u64 newest_serial = destination.gpu_write_serial;
+    for (const ImageId candidate_id : overlapping_images) {
+        if (candidate_id == destination_id || !slot_images.is_allocated(candidate_id)) {
+            continue;
+        }
+        Image& candidate = slot_images[candidate_id];
+        const ImageInfo& src = candidate.info;
+        const bool compatible =
+            src.guest_address == dst.guest_address && src.pixel_format == dst.pixel_format &&
+            src.type == dst.type && src.tile_mode == dst.tile_mode &&
+            src.array_mode == dst.array_mode && src.num_bits == dst.num_bits &&
+            src.num_samples == dst.num_samples && src.pitch == dst.pitch &&
+            src.size.width == dst.size.width && src.size.depth == 1 &&
+            src.resources.levels == 1 && src.resources.layers == 1 && !src.props.is_depth &&
+            !src.props.is_block && src.size.height > dst.size.height &&
+            src.size.height % dst.size.height == 0;
+        if (!compatible || candidate.gpu_write_serial <= newest_serial ||
+            candidate.binding.is_target || candidate.binding.force_general) {
+            continue;
+        }
+        source_id = candidate_id;
+        newest_serial = candidate.gpu_write_serial;
+    }
+
+    if (!source_id) {
+        return;
+    }
+
+    Image& source = slot_images[source_id];
+    destination.CopyRect(source, vk::Extent3D{dst.size.width, dst.size.height, 1});
+    destination.gpu_write_serial = newest_serial;
+
+    static u32 log_budget = 0;
+    if (log_budget++ < 128) {
+        LOG_WARNING(Render_Vulkan,
+                    "[imgalias] copied same-base top field {:#x}: {}x{} -> {}x{} pitch {} "
+                    "format {} serial {}",
+                    dst.guest_address, source.info.size.width, source.info.size.height,
+                    dst.size.width, dst.size.height, dst.pitch, vk::to_string(dst.pixel_format),
+                    newest_serial);
+    }
+}
+
 ImageId TextureCache::FindImage(ImageDesc& desc, bool exact_fmt) {
     const auto& info = desc.info;
     ASSERT(info.guest_address != 0);
@@ -579,6 +682,14 @@ ImageId TextureCache::FindImage(ImageDesc& desc, bool exact_fmt) {
     image.tick_accessed_last = scheduler.CurrentTick();
     TouchImage(image);
 
+    // A PS4 allocation may be rendered as one vertically packed image and sampled through a
+    // smaller same-base T#. Vulkan cannot express a view with a different image height, so both
+    // host images must exist. Keep the sampled representation coherent with the newest GPU
+    // render instead of letting UpdateImage upload stale guest RAM into the smaller alias.
+    if (desc.type == BindingType::Texture) {
+        SynchronizeVerticalAlias(image_id, image_ids);
+    }
+
     // If the image requested is a subresource of the image from cache record its location.
     if (view_mip > 0) {
         desc.view_info.range.base.level = view_mip;
@@ -628,6 +739,8 @@ ImageView& TextureCache::FindTexture(ImageId image_id, const ImageDesc& desc) {
             image.info.guest_address != 0) {
             std::unique_lock lk{download_images_mutex};
             download_images.emplace(image_id);
+        } else if (readback_linear_images) {
+            GtLogDownloadReject("storage", image.info);
         }
     }
     UpdateImage(image_id);
@@ -640,6 +753,8 @@ ImageView& TextureCache::FindRenderTarget(ImageId image_id, const ImageDesc& des
     if (readback_linear_images && (!image.info.props.is_tiled || image.info.size.width <= 8)) {
         std::unique_lock lk{download_images_mutex};
         download_images.emplace(image_id);
+    } else if (readback_linear_images) {
+        GtLogDownloadReject("rt", image.info);
     }
     image.usage.render_target = 1u;
     UpdateImage(image_id);
@@ -703,6 +818,88 @@ ImageView& TextureCache::FindDepthTarget(ImageId image_id, const ImageDesc& desc
 void TextureCache::RefreshImage(Image& image) {
     if (False(image.flags & ImageFlagBits::Dirty) || image.info.num_samples > 1) {
         return;
+    }
+
+    // A pure GpuDirty notification promises that newer bytes exist in the buffer cache. If the
+    // image has already been written by a recorded draw/dispatch but no tracked GPU buffer covers
+    // its guest range, ObtainBufferForImage has nothing newer to propagate: it falls back to an
+    // upload from guest RAM. GT7 repeatedly reaches this state for rendered post-process images,
+    // whose guest backing is still zeroed, and the fallback erases the valid host image. Preserve
+    // the completed GPU image only for this orphan notification. CPU dirt and tracked GPU-buffer
+    // writes still follow the normal upload path below.
+    static const bool gpuwrite_noclobber = [] {
+        const char* value = std::getenv("GT_GPUWRITE_NOCLOBBER");
+        return value && value[0] == '1';
+    }();
+    const bool gpu_only_dirty =
+        True(image.flags & ImageFlagBits::GpuDirty) &&
+        False(image.flags & (ImageFlagBits::CpuDirty | ImageFlagBits::MaybeCpuDirty));
+    if (gpuwrite_noclobber && image.gpu_write_serial != 0 && gpu_only_dirty &&
+        !buffer_cache.IsRegionGpuModified(image.info.guest_address, image.info.guest_size)) {
+        static std::unordered_map<u64, u32> coherent_log_budget;
+        u32& seen = coherent_log_budget[image.info.guest_address];
+        if (++seen <= 4 || (seen & 255u) == 0) {
+            LOG_WARNING(Render_Vulkan,
+                        "[imgcoherent] preserved completed GPU image {:#x}+{:#x} "
+                        "({}x{}x{} {}) after orphan GpuDirty, serial {} #{}",
+                        image.info.guest_address, image.info.guest_size, image.info.size.width,
+                        image.info.size.height, image.info.size.depth,
+                        vk::to_string(image.info.pixel_format), image.gpu_write_serial, seen);
+        }
+        image.flags &= ~ImageFlagBits::GpuDirty;
+        return;
+    }
+
+    // ⚠⚠ GT_RT_NOCLOBBER (run 190): THE CLOBBER DOOR IS ALSO OPEN ON THE SCENE ITSELF.
+    //
+    // The GpuDirty clobber this project already closed for the 64^3 grading LUT (c66b0d04) was
+    // closed for THAT SHAPE ONLY - every other image keeps the upstream rule, which is "a dirty
+    // image is re-uploaded from guest memory, no questions asked". Measured on GT7 (run 189,
+    // the [imgsrc]/[aewatch] instruments):
+    //
+    //   [lut3d]   rt: 1920x2160x1 layers 1 at 0x100a0b0000+0x2200000 bound as color target
+    //   [aewatch] upload 0x100a0b0000+0x2200000 (1920x2160x1 R16G16B16A16Sfloat) GPU-dirty
+    //   [imgsrc]  0x100a0b0000+0x2200000 <- staging (gpumod 0 cpudirty 1)
+    //
+    // That is a two-field 1920x2160 atlas sampled through 1920x1080 same-base T#s. Its measured
+    // sample count is 1, so the num_samples guard above does not protect it - and
+    // "<- staging" is ObtainBufferForImage's last resort: CopySparseMemory of the WHOLE 34 MB of
+    // guest RAM, with no dirty-range filtering, straight over everything the GPU just rendered.
+    // gpumod is 0 because rendering INTO an image never marks the BUFFER cache's GPU ranges, so
+    // the render target can never take the cached path; cpudirty is 1 because one CPU write
+    // anywhere inside a 34 MB span marks the whole image.
+    //
+    // Mode 1 MEASURES it and changes nothing (how often, which images, and - decisively - what
+    // the guest bytes actually are: zeros would black the scene, garbage half-floats near 65504
+    // are a white wash). Mode 2 BLOCKS it: an image the GPU has rendered into keeps its rendered
+    // content, and the dirt is consumed rather than obeyed. Default 0 = upstream behaviour.
+    static const int rt_noclobber = [] {
+        const char* v = std::getenv("GT_RT_NOCLOBBER");
+        return v ? std::atoi(v) : 0;
+    }();
+    if (rt_noclobber != 0 && (image.usage.render_target || image.usage.depth_target) &&
+        True(image.flags & ImageFlagBits::GpuModified)) {
+        static std::unordered_map<u64, u32> rtclobber_budget;
+        u32& seen = rtclobber_budget[image.info.guest_address];
+        if (++seen <= 4 || (seen & 255u) == 0) {
+            u32 g[6]{};
+            std::memcpy(g, std::bit_cast<const void*>(image.info.guest_address),
+                        std::min<u64>(sizeof(g), image.info.guest_size));
+            LOG_WARNING(Render_Vulkan,
+                        "[rtclobber] {} {:#x}+{:#x} ({}x{}x{} {} rt {:d} depth {:d}) {} #{} "
+                        "guest dw: {:08x} {:08x} {:08x} {:08x} {:08x} {:08x}",
+                        rt_noclobber >= 2 ? "BLOCKED" : "would clobber", image.info.guest_address,
+                        image.info.guest_size, image.info.size.width, image.info.size.height,
+                        image.info.size.depth, vk::to_string(image.info.pixel_format),
+                        u32(image.usage.render_target), u32(image.usage.depth_target),
+                        True(image.flags & ImageFlagBits::GpuDirty) ? "GPU-dirty" : "CPU-dirty",
+                        seen, g[0], g[1], g[2], g[3], g[4], g[5]);
+        }
+        if (rt_noclobber >= 2) {
+            // Consume the dirt - Image::Upload is what normally clears it, and it is not running.
+            image.flags &= ~ImageFlagBits::Dirty;
+            return;
+        }
     }
 
     // GT7 (Act 11): GT_LUT_IDENT=1 seeds every 64x64x64 RGBA16F volume with an IDENTITY
@@ -862,6 +1059,26 @@ void TextureCache::RefreshImage(Image& image) {
     const bool hash_baseline_had = image.hash_baseline_done;
     if (is_gpu_modified) {
         image.hash_baseline_done = true;
+    }
+
+    // GT7 [aewatch]: historical guest-upload probe for any GT_WATCH_VA range. Capture 4 later
+    // proved the final transform bypasses the 64^3 LUT and that the large HDR corruption is
+    // already produced by the foliage draw fs_92126594, so this remains diagnostics only.
+    if (image.info.guest_size >= 32 && GtWatchHit(image.info.guest_address, image.info.guest_size)) {
+        // Budget PER RANGE - the pyramid range floods a shared budget and starves the two
+        // exposure addresses (run 189: 512 lines, none of them late-run exposure samples).
+        static std::unordered_map<u64, u32> aewatch_budget;
+        if (aewatch_budget[image.info.guest_address & ~0xFFFFULL]++ < 256) {
+            const u32* g = std::bit_cast<const u32*>(image.info.guest_address);
+            LOG_WARNING(Render_Vulkan,
+                        "[aewatch] upload {:#x}+{:#x} ({}x{}x{} {}) {} dw: {:08x} {:08x} {:08x} "
+                        "{:08x} {:08x} {:08x} {:08x} {:08x}",
+                        image.info.guest_address, image.info.guest_size, image.info.size.width,
+                        image.info.size.height, image.info.size.depth,
+                        vk::to_string(image.info.pixel_format),
+                        is_gpu_dirty ? "GPU-dirty" : "CPU-dirty", g[0], g[1], g[2], g[3], g[4],
+                        g[5], g[6], g[7]);
+        }
     }
 
     boost::container::small_vector<vk::BufferImageCopy, 14> image_copies;

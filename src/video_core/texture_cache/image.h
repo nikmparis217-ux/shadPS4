@@ -135,6 +135,7 @@ struct Image {
     void CopyImage(Image& src_image);
     void CopyImageWithBuffer(Image& src_image, vk::Buffer buffer, u64 offset);
     void CopyMip(Image& src_image, u32 mip, u32 slice);
+    void CopyRect(Image& src_image, vk::Extent3D extent);
 
     void Resolve(Image& src_image, const VideoCore::SubresourceRange& mrt0_range,
                  const VideoCore::SubresourceRange& mrt1_range);
@@ -178,6 +179,10 @@ public:
     u64 image_uid{};
     u64 lru_id{};
     u64 tick_accessed_last{};
+    // Monotonic content version assigned after a GPU draw/dispatch has been recorded. Images
+    // which alias the same guest address but require different Vulkan extents use this to copy
+    // from the newest GPU representation instead of re-uploading stale guest RAM.
+    u64 gpu_write_serial{};
     u64 hash{};
     // GT7 GT_LUT_IDENT (Act 11): this image's first upload was replaced with an identity
     // grading LUT. One-shot per image: a later CPU write re-dirties the pages and the normal

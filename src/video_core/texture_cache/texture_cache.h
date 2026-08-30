@@ -111,6 +111,13 @@ public:
     /// Retrieves the depth target with specified properties
     [[nodiscard]] ImageView& FindDepthTarget(ImageId image_id, const ImageDesc& desc);
 
+    /// Records that a draw or dispatch which writes this image has entered the command buffer.
+    /// The rasterizer calls this immediately before clearing the per-command binding state.
+    void MarkGpuWritten(Image& image) {
+        image.gpu_write_serial = ++gpu_write_serial;
+        image.flags |= ImageFlagBits::GpuModified;
+    }
+
     /// Updates image contents if it was modified by CPU.
     void UpdateImage(ImageId image_id) {
         std::scoped_lock lock{mutex};
@@ -286,6 +293,9 @@ private:
     /// Create an image from the given parameters
     [[nodiscard]] ImageId InsertImage(const ImageInfo& info, VAddr cpu_addr);
 
+    /// Synchronizes a smaller same-base vertical alias from the newest GPU-written image.
+    void SynchronizeVerticalAlias(ImageId destination_id, const ImageIds& overlapping_images);
+
     /// Register image in the page table
     void RegisterImage(ImageId image);
 
@@ -343,6 +353,7 @@ private:
     u64 pressure_gc_memory = 0;
     u64 critical_gc_memory = 0;
     u64 total_used_samplers = 0;
+    u64 gpu_write_serial = 0;
     u64 trigger_gc_samplers = 0;
     u64 pressure_gc_samplers = 0;
     u64 critical_gc_samplers = 0;

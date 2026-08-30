@@ -762,6 +762,48 @@ void Image::CopyMip(Image& src_image, u32 mip, u32 slice) {
             vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eTransferRead, {});
 }
 
+void Image::CopyRect(Image& src_image, vk::Extent3D extent) {
+    ASSERT(info.pixel_format == src_image.info.pixel_format);
+    ASSERT(info.num_samples == src_image.info.num_samples);
+    ASSERT(!info.props.is_depth && !src_image.info.props.is_depth);
+    ASSERT(info.resources.levels == 1 && src_image.info.resources.levels == 1);
+    ASSERT(info.resources.layers == 1 && src_image.info.resources.layers == 1);
+
+    SetBackingSamples(info.num_samples, false);
+    src_image.SetBackingSamples(src_image.info.num_samples);
+
+    scheduler->EndRendering();
+    src_image.Transit(vk::ImageLayout::eTransferSrcOptimal,
+                      vk::AccessFlagBits2::eTransferRead, {});
+    Transit(vk::ImageLayout::eTransferDstOptimal, vk::AccessFlagBits2::eTransferWrite, {});
+
+    const vk::ImageCopy region{
+        .srcSubresource{
+            .aspectMask = src_image.aspect_mask & ~vk::ImageAspectFlagBits::eStencil,
+            .mipLevel = 0,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        },
+        .srcOffset = {0, 0, 0},
+        .dstSubresource{
+            .aspectMask = aspect_mask & ~vk::ImageAspectFlagBits::eStencil,
+            .mipLevel = 0,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        },
+        .dstOffset = {0, 0, 0},
+        .extent = extent,
+    };
+    const auto cmdbuf = scheduler->CommandBuffer();
+    cmdbuf.copyImage(src_image.GetImage(), src_image.backing->state.layout, GetImage(),
+                     backing->state.layout, region);
+
+    Transit(vk::ImageLayout::eGeneral,
+            vk::AccessFlagBits2::eShaderRead | vk::AccessFlagBits2::eTransferRead, {});
+    flags |= ImageFlagBits::GpuModified;
+    flags &= ~ImageFlagBits::Dirty;
+}
+
 void Image::Resolve(Image& src_image, const VideoCore::SubresourceRange& mrt0_range,
                     const VideoCore::SubresourceRange& mrt1_range) {
     SetBackingSamples(1, false);

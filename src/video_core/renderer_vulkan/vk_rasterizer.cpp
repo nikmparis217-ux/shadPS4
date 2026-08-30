@@ -18,6 +18,7 @@
 #include "core/memory.h"
 #include "shader_recompiler/runtime_info.h"
 #include "video_core/amdgpu/liverpool.h"
+#include "video_core/gt_va_watch.h"
 #include "video_core/renderer_vulkan/liverpool_to_vk.h"
 #include "video_core/renderer_vulkan/vk_instance.h"
 #include "video_core/renderer_vulkan/vk_rasterizer.h"
@@ -42,25 +43,7 @@ namespace Vulkan {
 // writes call InvalidateMemoryFromGPU (see GT_INVAL_IMG_ON_SSBO at that call site). Budgeted
 // logs, GPU-command-processor thread only; near-zero per-bind cost when the envs are unset.
 namespace {
-struct GtVaWatchRange {
-    u64 base = 0;
-    u64 size = 0;
-};
-
-const GtVaWatchRange& GtWatchRange() {
-    static const GtVaWatchRange range = [] {
-        GtVaWatchRange r{};
-        if (const char* v = std::getenv("GT_WATCH_VA"); v && v[0] != '\0') {
-            r.base = std::strtoull(v, nullptr, 16);
-            r.size = 0x200000;
-            if (const char* s = std::getenv("GT_WATCH_SIZE"); s && s[0] != '\0') {
-                r.size = std::strtoull(s, nullptr, 16);
-            }
-        }
-        return r;
-    }();
-    return range;
-}
+using VideoCore::GtWatchHit;
 
 void GtWatchLog(const char* kind, u64 shader_hash, u64 base, u64 size, bool is_written) {
     static u32 watch_budget = 0;
@@ -71,8 +54,7 @@ void GtWatchLog(const char* kind, u64 shader_hash, u64 base, u64 size, bool is_w
 }
 
 void GtWatchBufferBind(const char* kind, u64 shader_hash, u64 base, u64 size, bool is_written) {
-    const auto& w = GtWatchRange();
-    if (w.size != 0 && base < w.base + w.size && w.base < base + size) {
+    if (GtWatchHit(base, size)) {
         GtWatchLog(kind, shader_hash, base, size, is_written);
     }
 }
@@ -100,11 +82,22 @@ void GtWatchImageBind(const char* kind, u64 shader_hash, const AmdGpu::Image& sh
                         is_written ? "WRITE" : "read");
         }
     }
-    // Point test on the base only: the watched LUT's own T# starts exactly at GT_WATCH_VA, and
-    // a T#'s byte size needs tiling math this probe has no business redoing.
-    const auto& range = GtWatchRange();
-    if (range.size != 0 && va >= range.base && va < range.base + range.size) {
+    // Point test on the base only: a watched image's own T# starts exactly at its GT_WATCH_VA
+    // entry, and a T#'s byte size needs tiling math this probe has no business redoing.
+    if (const auto* watch = GtWatchHit(va, 1)) {
         GtWatchLog(kind, shader_hash, va, 0, is_written);
+        if (va == watch->base) {
+            static u32 texture_shape_budget = 0;
+            if (texture_shape_budget++ < 64) {
+                LOG_WARNING(Render_Vulkan,
+                            "[texshape] {} shader {:#x}: va {:#x} logical {}x{}x{} pitch {} "
+                            "samples {} type {} levels {} tile {} dfmt {} {}",
+                            kind, shader_hash, va, w, h, d, sharp.Pitch(), sharp.NumSamples(),
+                            static_cast<u32>(sharp.GetType()), sharp.NumLevels(),
+                            static_cast<u32>(sharp.GetTileMode()),
+                            static_cast<u32>(sharp.GetDataFmt()), is_written ? "WRITE" : "read");
+            }
+        }
     }
 }
 } // namespace
@@ -222,13 +215,11 @@ void Rasterizer::PrepareRenderState(const GraphicsPipeline* pipeline) {
         // GT7 [lut3d]/[vawatch]: a 3D grading LUT can also be written as a render target, one
         // slice per draw - the T#-side watches cannot see that path.
         {
-            const auto& w = GtWatchRange();
             const bool lut_shaped = desc.info.size.width == 64 && desc.info.size.height == 64 &&
                                     (desc.info.size.depth >= 64 ||
                                      desc.info.resources.layers >= 64);
-            const bool watched = w.size != 0 &&
-                                 desc.info.guest_address < w.base + w.size &&
-                                 w.base < desc.info.guest_address + desc.info.guest_size;
+            const bool watched =
+                GtWatchHit(desc.info.guest_address, desc.info.guest_size) != nullptr;
             if (lut_shaped || watched) {
                 static u32 rt_budget = 0;
                 if (rt_budget++ < 128) {
@@ -238,6 +229,33 @@ void Rasterizer::PrepareRenderState(const GraphicsPipeline* pipeline) {
                                 desc.info.size.width, desc.info.size.height, desc.info.size.depth,
                                 desc.info.resources.layers, desc.info.guest_address,
                                 desc.info.guest_size);
+                }
+                if (const auto* watch =
+                        GtWatchHit(desc.info.guest_address, desc.info.guest_size);
+                    watch && desc.info.guest_address == watch->base) {
+                    static u32 rt_shape_budget = 0;
+                    if (rt_shape_budget++ < 64) {
+                        const auto& vp = regs.viewports[0];
+                        LOG_WARNING(
+                            Render_Vulkan,
+                            "[rtshape] cb {} fs {:#x}: va {:#x} hint {}x{} derived {}x{} "
+                            "pitch {} cb_height {} guest {:#x} samples {} cov_log2 {} frag_log2 "
+                            "{} attrib {:#010x} pitch_tiles {} slice_tiles {} key_samples {} "
+                            "raster_samples {} msaa {:d} viewport {}x{} at {},{} scissor {}x{}",
+                            cb,
+                            key.stage_hashes[static_cast<u32>(Shader::LogicalStage::Fragment)],
+                            desc.info.guest_address, hint.width, hint.height,
+                            desc.info.size.width, desc.info.size.height, col_buf.Pitch(),
+                            col_buf.Height(), desc.info.guest_size, col_buf.NumSamples(),
+                            col_buf.attrib.num_samples_log2,
+                            col_buf.attrib.num_fragments_log2, col_buf.attrib.raw,
+                            col_buf.pitch.tile_max + 1, col_buf.slice.tile_max + 1,
+                            key.color_samples[cb], key.num_samples,
+                            u32(regs.mode_control.msaa_enable), vp.xscale * 2.0f,
+                            vp.yscale * 2.0f, vp.xoffset - vp.xscale,
+                            vp.yoffset - vp.yscale, regs.screen_scissor.GetWidth(),
+                            regs.screen_scissor.GetHeight());
+                    }
                 }
             }
         }
@@ -1501,8 +1519,65 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
             } else if (desc.buffer_type == Shader::BufferType::Flatbuf) {
                 auto& vk_buffer = buffer_cache.GetUtilityBuffer(VideoCore::MemoryUsage::Stream);
                 const u32 ubo_size = stage.flattened_ud_buf.size() * sizeof(u32);
-                const u64 offset =
-                    vk_buffer.Copy(stage.flattened_ud_buf.data(), ubo_size, alignment);
+                const u32* flatbuf_data = stage.flattened_ud_buf.data();
+                std::vector<u32> guarded_flatbuf;
+
+                // GT_18256C0_GUARD: device-fault dumps repeatedly isolate a GT7 timeout to this
+                // 8x8 light-volume shader. Signed flatbuf record counts must stay inside their
+                // 64/128-byte V# capacities. Do not touch fixed flatbuf slots for the layer block
+                // or extent: GT_DYNRC_WINDOW shifts their assigned offsets, and runs 190/191
+                // proved that the old [66]/[67] locations are window payload, not those scalars.
+                // This edits only the transient flatbuf copy uploaded for this dispatch.
+                static const bool gt18256_guard = [] {
+                    const char* v = std::getenv("GT_18256C0_GUARD");
+                    return v && std::atoi(v) != 0;
+                }();
+                if (gt18256_guard && stage.pgm_hash == 0x018256c0 &&
+                    stage.flattened_ud_buf.size() > 53 && buffer_bindings.size() >= 2) {
+                    static const u32 watchdog_cap = [] {
+                        const char* v = std::getenv("GT_18256C0_LOOP_MAX");
+                        const unsigned long parsed = v ? std::strtoul(v, nullptr, 10) : 0;
+                        return static_cast<u32>(
+                            std::clamp<unsigned long>(parsed != 0 ? parsed : 1024, 1, 65536));
+                    }();
+
+                    guarded_flatbuf = stage.flattened_ud_buf;
+                    const u32 raw0 = guarded_flatbuf[52];
+                    const u32 raw1 = guarded_flatbuf[53];
+                    const u64 size0 = std::get<2>(buffer_bindings[0]);
+                    const u64 size1 = std::get<2>(buffer_bindings[1]);
+                    const u32 capacity0 = static_cast<u32>(
+                        std::min<u64>(size0 / 64, std::numeric_limits<u32>::max()));
+                    const u32 capacity1 = static_cast<u32>(
+                        std::min<u64>(size1 / 128, std::numeric_limits<u32>::max()));
+                    const u32 safe0 = std::min(capacity0, watchdog_cap);
+                    const u32 safe1 = std::min(capacity1, watchdog_cap);
+                    const auto clamp_positive = [](u32 raw, u32 safe) {
+                        return std::bit_cast<s32>(raw) > 0 && raw > safe ? safe : raw;
+                    };
+                    const u32 final0 = clamp_positive(raw0, safe0);
+                    const u32 final1 = clamp_positive(raw1, safe1);
+                    guarded_flatbuf[52] = final0;
+                    guarded_flatbuf[53] = final1;
+                    flatbuf_data = guarded_flatbuf.data();
+
+                    static std::atomic<u32> gt18256_logs{0};
+                    const u32 n = gt18256_logs.fetch_add(1, std::memory_order_relaxed);
+                    if (n < 128 || raw0 != final0 || raw1 != final1 || (n & 255) == 0) {
+                        const auto& cs = liverpool->GetCsRegs();
+                        LOG_CRITICAL(
+                            Render_Vulkan,
+                            "[cshang] seq {} cs {:#x}: groups {}x{}x{}, flat counts "
+                            "{:#x}/{} and {:#x}/{} -> {}/{}; V# bytes {:#x}/{:#x}, "
+                            "record capacities {}/{}, watchdog {} (n={})",
+                            instance.PeekGpuWorkSeq(), stage.pgm_hash, cs.dim_x, cs.dim_y,
+                            cs.dim_z, raw0, std::bit_cast<s32>(raw0), raw1,
+                            std::bit_cast<s32>(raw1), final0, final1, size0, size1, capacity0,
+                            capacity1, watchdog_cap, n);
+                    }
+                }
+
+                const u64 offset = vk_buffer.Copy(flatbuf_data, ubo_size, alignment);
                 buffer_infos.emplace_back(vk_buffer.Handle(), offset, ubo_size);
             } else if (desc.buffer_type == Shader::BufferType::ClipPlanes) {
                 // Permutations compiled without enabled planes never read the buffer, so the
