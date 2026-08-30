@@ -54,6 +54,20 @@ public:
                             });
     }
 
+    /// Mark region as modified from the host GPU without the upload walk. GT_BIND_SKIP's
+    /// clean-window gate uses this so a skipped is_written synchronize still records the GPU
+    /// write (readbacks, IsRegionGpuModified and GC downloads read these bits). IteratePages
+    /// <true> because ForEachUploadRange's first pass - which normally creates the regions -
+    /// is exactly what is being skipped.
+    void MarkRegionAsGpuModified(VAddr dirty_cpu_addr, u64 query_size) {
+        IteratePages<true>(dirty_cpu_addr, query_size,
+                           [](RegionManager* manager, u64 offset, size_t size) {
+                               std::scoped_lock lk{manager->lock};
+                               manager->template ChangeRegionState<Type::GPU, true>(
+                                   manager->GetCpuAddr() + offset, size);
+                           });
+    }
+
     /// Unmark region as modified from the host GPU
     void UnmarkRegionAsGpuModified(VAddr dirty_cpu_addr, u64 query_size) noexcept {
         IteratePages<false>(dirty_cpu_addr, query_size,

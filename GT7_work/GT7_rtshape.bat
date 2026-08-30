@@ -31,6 +31,12 @@ REM 11-12 cores and the GPU at 21 percent. The cost is the per-DMA-draw full wal
 REM cached buffer. The dirty log syncs only what became CPU-dirty since the last DMA draw.
 REM Set 0 to restore the upstream full walk for an A/B.
 set GT_DMA_DIRTY_LOG=1
+REM Run 205: [obtprof] convicted the cached ObtainBuffer path - ~30k SynchronizeBuffer calls
+REM per 2 s window, 230-660 ms, almost all finding nothing dirty. This gate mirrors the
+REM tracker's CPU-dirty state into a range set (fed by the same producers as the DMA log) and
+REM skips the per-region walk when the bound window is clean. Requires GT_DMA_DIRTY_LOG=1.
+REM Set 0 for an A/B against the full walk.
+set GT_BIND_SKIP=1
 REM Run 200 (warm cache, dirty log armed): FPS still decayed 11-4 and the GpuCommandProcessor
 REM burned ~66 ms of real CPU per 110 ms frame while the ~60 guest Job# threads spun 9.5 cores
 REM waiting on it. The profiler prints one [fprof] line per 2 s naming where those

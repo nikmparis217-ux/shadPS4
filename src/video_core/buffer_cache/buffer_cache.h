@@ -302,6 +302,12 @@ private:
     std::mutex dma_dirty_mutex;
     RangeSet dma_dirty_log;
     bool dma_dirty_seeded = false;
+
+    /// GT_BIND_SKIP state, guarded by the SAME mutex. Unlike dma_dirty_log (swapped whole per
+    /// DMA draw), this mirror is persistent and subtractive: producers add 64 KiB-aligned
+    /// CPU-dirty transitions, SynchronizeBuffer subtracts the window it is about to walk.
+    /// Invariant: always a SUPERSET of the tracker's CPU-dirty pages.
+    RangeSet bind_dirty_ranges;
 };
 
 } // namespace VideoCore

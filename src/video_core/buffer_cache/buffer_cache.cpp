@@ -39,6 +39,26 @@ bool DmaDirtyLogEnabled() {
     return enabled;
 }
 
+/// GT_BIND_SKIP (run 205): [obtprof] convicted the CACHED half of ObtainBuffer - ~30,000
+/// SynchronizeBuffer calls per 2 s window costing 230-660 ms, ~13 us each, almost all of them
+/// finding NOTHING dirty. The cost is ForEachUploadRange's per-region dance (spin lock, bitset
+/// mask copy, UnsetRange, protection XOR) paid on every bind of every draw, and an is_written
+/// bind window can span 256 MiB = 64 regions. The fix mirrors the tracker's CPU-dirty state
+/// into a persistent RangeSet fed by the SAME four producers as the DMA dirty log, so the gate
+/// in SynchronizeBuffer answers "did anything become CPU-dirty here since the last sync?" in
+/// O(log n) instead of walking regions. INVARIANT: mirror is a SUPERSET of the tracker's
+/// CPU-dirty pages - producers mark the tracker FIRST then add here; the consumer subtracts
+/// only the exact window it is about to synchronize (the sync clears full pages, a superset of
+/// that window). A stale mirror entry costs one wasted walk; a missing one would ship stale
+/// data, which is why this requires GT_DMA_DIRTY_LOG (the producers only log under it).
+bool BindSkipEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_BIND_SKIP");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled && DmaDirtyLogEnabled();
+}
+
 /// GT_FRAME_PROF companion (run 201): the rasterizer's [fprof] measured the uses_dma block at
 /// 460-745 ms per 2 s window while the sampled consumptions read ZERO ranges - impossible for
 /// the empty-log path unless the time is spent WAITING on dma_dirty_mutex. Every producer takes
@@ -77,6 +97,12 @@ struct ObtainProf {
     std::atomic<u64> stream_ns{0};
     std::atomic<u64> cached_calls{0};
     std::atomic<u64> sync_ns{0};
+    // GT_BIND_SKIP verdict counters: how many SynchronizeBuffer calls the mirror short-circuited
+    // (read-only vs written - the written ones still pay the cheap GPU marking), against how
+    // many had to walk. Counted inside the gate so every caller is covered, not only the binds.
+    std::atomic<u64> skip_read{0};
+    std::atomic<u64> skip_written{0};
+    std::atomic<u64> walked{0};
 };
 ObtainProf g_obtprof;
 
@@ -89,10 +115,12 @@ void MaybeFlushObtainProf() {
     window_start = now;
     LOG_INFO(Render_Vulkan,
              "[obtprof] stream: {} calls {} KiB, gpumod {:.1f}ms copy {:.1f}ms | cached: {} "
-             "calls, sync {:.1f}ms",
+             "calls, sync {:.1f}ms | skip: {} read {} written, {} walked",
              g_obtprof.stream_calls.exchange(0), g_obtprof.stream_bytes.exchange(0) >> 10,
              g_obtprof.gpumod_ns.exchange(0) / 1e6, g_obtprof.stream_ns.exchange(0) / 1e6,
-             g_obtprof.cached_calls.exchange(0), g_obtprof.sync_ns.exchange(0) / 1e6);
+             g_obtprof.cached_calls.exchange(0), g_obtprof.sync_ns.exchange(0) / 1e6,
+             g_obtprof.skip_read.exchange(0), g_obtprof.skip_written.exchange(0),
+             g_obtprof.walked.exchange(0));
 }
 
 /// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography
@@ -1060,6 +1088,41 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
         }
         size = static_cast<u32>(buffer_end - device_addr);
     }
+    // GT_BIND_SKIP: if no producer logged a CPU-dirty transition inside this (clamped) window
+    // since it was last synchronized, the tracker walk below can only find clean pages - skip
+    // it. The subtract happens BEFORE the walk (a claim): a producer racing in during the walk
+    // re-adds its range after our subtract, so it survives for the next sync. What must NOT be
+    // skipped: the GPU marking an is_written bind performs (readbacks, the stream path's
+    // IsRegionGpuModified and buffer-GC downloads all read those bits - done cheaply via
+    // MarkRegionAsGpuModified, no mask copies), and the image->buffer refresh a texel-buffer
+    // bind runs (GPU-side data, not gated by CPU dirtiness).
+    if (BindSkipEnabled()) {
+        bool clean = false;
+        {
+            std::scoped_lock lk{dma_dirty_mutex};
+            if (!bind_dirty_ranges.Intersects(device_addr, size)) {
+                clean = true;
+            } else {
+                bind_dirty_ranges.Subtract(device_addr, size);
+            }
+        }
+        if (clean) {
+            if (DmaProfEnabled()) {
+                auto& counter = is_written ? g_obtprof.skip_written : g_obtprof.skip_read;
+                counter.fetch_add(1, std::memory_order_relaxed);
+            }
+            if (is_written) {
+                memory_tracker->MarkRegionAsGpuModified(device_addr, size);
+            }
+            if (is_texel_buffer && !is_written) {
+                return SynchronizeBufferFromImage(buffer, device_addr, size);
+            }
+            return false;
+        }
+        if (DmaProfEnabled()) {
+            g_obtprof.walked.fetch_add(1, std::memory_order_relaxed);
+        }
+    }
     vk::Buffer src_buffer = VK_NULL_HANDLE;
     memory_tracker->ForEachUploadRange(
         device_addr, size, is_written,
@@ -1240,6 +1303,9 @@ void BufferCache::LogDmaDirty(VAddr device_addr, u64 size) {
             std::scoped_lock lk{dma_dirty_mutex};
             lock_ns = u64((std::chrono::steady_clock::now() - t0).count());
             dma_dirty_log.Add(aligned, aligned_size);
+            if (BindSkipEnabled()) {
+                bind_dirty_ranges.Add(aligned, aligned_size);
+            }
         }
         g_dmaprof.log_calls.fetch_add(1, std::memory_order_relaxed);
         g_dmaprof.log_lock_ns.fetch_add(lock_ns, std::memory_order_relaxed);
@@ -1247,6 +1313,9 @@ void BufferCache::LogDmaDirty(VAddr device_addr, u64 size) {
     }
     std::scoped_lock lk{dma_dirty_mutex};
     dma_dirty_log.Add(aligned, aligned_size);
+    if (BindSkipEnabled()) {
+        bind_dirty_ranges.Add(aligned, aligned_size);
+    }
 }
 
 bool BufferCache::ConsumeDmaDirtyLog() {
