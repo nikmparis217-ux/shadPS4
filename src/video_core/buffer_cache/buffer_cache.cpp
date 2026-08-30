@@ -1170,20 +1170,31 @@ void BufferCache::LogDmaDirty(VAddr device_addr, u64 size) {
     if (!DmaDirtyLogEnabled() || size == 0) {
         return;
     }
+    // Run 202 [dmaprof]: ~25,000 ranges per 2 s window totalling ~1 MiB - the guest writes
+    // tens of thousands of TINY scattered chunks per second (mean 58 bytes), and each logged
+    // range costs one SynchronizeBuffersInRange lookup (~25 us) at consumption: 440-790 ms per
+    // window, i.e. the whole 'dma' bill of [fprof] (the lock measured innocent at 0.1 ms).
+    // Aligning every entry to 64 KiB pages lets RangeSet coalesce neighbours into a handful of
+    // spans. Over-wide spans are SAFE: they are range QUERIES, and ForEachUploadRange only
+    // uploads what the tracker holds as CPU-dirty inside them - the pre-fix full walk queried
+    // the entire mapped space through the same filter.
+    constexpr VAddr kPageMask = 0xFFFF;
+    const VAddr aligned = device_addr & ~kPageMask;
+    const u64 aligned_size = ((device_addr + size + kPageMask) & ~kPageMask) - aligned;
     if (DmaProfEnabled()) {
         const auto t0 = std::chrono::steady_clock::now();
         u64 lock_ns = 0;
         {
             std::scoped_lock lk{dma_dirty_mutex};
             lock_ns = u64((std::chrono::steady_clock::now() - t0).count());
-            dma_dirty_log.Add(device_addr, size);
+            dma_dirty_log.Add(aligned, aligned_size);
         }
         g_dmaprof.log_calls.fetch_add(1, std::memory_order_relaxed);
         g_dmaprof.log_lock_ns.fetch_add(lock_ns, std::memory_order_relaxed);
         return;
     }
     std::scoped_lock lk{dma_dirty_mutex};
-    dma_dirty_log.Add(device_addr, size);
+    dma_dirty_log.Add(aligned, aligned_size);
 }
 
 bool BufferCache::ConsumeDmaDirtyLog() {
