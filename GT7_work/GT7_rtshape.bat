@@ -42,6 +42,14 @@ REM texel-buffer image lookup (a page-table walk per bind that usually finds not
 REM caches the overlap candidates against the image registration generation; the live flags
 REM are re-checked every call. Set 0 for an A/B.
 set GT_TEXEL_MEMO=1
+REM Run 210: [protprof] closed the sync ledger - memcpy 5-16 ms and recording 5-27 ms are
+REM innocent; the bill is the page-protection PING-PONG: 12-23k claimed write faults and
+REM 1.8-3.3 SECONDS of VirtualProtect per 2 s window (about 190 us each, under the region
+REM locks the GPU thread's upload walk then spins on). The game sweeps its per-frame buffers
+REM linearly, paying one fault + one protect per 4K page. This widens each write fault to a
+REM 64 KiB window (buffer cache only, GPU-modified pages excluded, clamped to the mapped
+REM interval) so a sweep pays ONE fault + ONE protect per window. Set 0 for an A/B.
+set GT_FAULT_WIDE=65536
 REM Run 200 (warm cache, dirty log armed): FPS still decayed 11-4 and the GpuCommandProcessor
 REM burned ~66 ms of real CPU per 110 ms frame while the ~60 guest Job# threads spun 9.5 cores
 REM waiting on it. The profiler prints one [fprof] line per 2 s naming where those

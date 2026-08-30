@@ -38,6 +38,11 @@ inline std::atomic<u64> faults_read{0};
 // watch_span_ns - span_ns; the bitset walk itself = spanprof cpu - memcpy - watch_span_ns.
 inline std::atomic<u64> watch_span_ns{0};
 inline std::atomic<u64> watch_other_ns{0};
+// GT_FAULT_WIDE verdict counters: how many write faults got a widened window and how many
+// bytes those windows covered. Faults stays the honest denominator - if wide_marks tracks
+// faults 1:1 but faults do not DROP across runs, the widening is not collapsing the sweep.
+inline std::atomic<u64> wide_marks{0};
+inline std::atomic<u64> wide_bytes{0};
 inline thread_local bool in_span_walk = false;
 
 inline bool Enabled() {

@@ -2659,6 +2659,43 @@ bool Rasterizer::InvalidateMemory(VAddr addr, u64 size) {
     }
     buffer_cache.InvalidateMemory(addr, size);
     texture_cache.InvalidateMemory(addr, size);
+    // GT_FAULT_WIDE=<bytes> (run 211): run 210's [protprof] measured 12-23k claimed write
+    // faults and 1.8-3.3 SECONDS of protect syscalls per 2 s window - the game sweeps its
+    // per-frame buffers linearly and pays one fault + one ~190 us VirtualProtect per 4K page,
+    // under the very region locks the GPU thread's upload walk spins on. Widening marks the
+    // rest of the window CPU-dirty in one pass (ONE VirtualProtect for the run), so the sweep
+    // proceeds fault-free. Buffer cache only - the texture cache keeps its exact 4K blast
+    // radius (widening it would re-upload neighbouring GPU-produced images: the wash/red-map
+    // class). GPU-modified pages are excluded inside the tracker (cs_018256c0 lesson), and
+    // the window is clamped to the mapped interval the fault address lives in, because an
+    // InvalidateMemory that strays onto unmapped space is how runs 88/90 died on the guest's
+    // own heap. size <= 8 gates this to the fault path - DMA/library invalidations pass real
+    // sizes and keep exact semantics.
+    static const u64 wide = [] {
+        const char* v = std::getenv("GT_FAULT_WIDE");
+        return v ? static_cast<u64>(std::strtoull(v, nullptr, 0)) : u64{0};
+    }();
+    if (wide != 0 && size <= 8) {
+        VAddr waddr = Common::AlignDown(addr, wide);
+        VAddr wend = waddr + wide;
+        {
+            Common::RecursiveSharedLock lock{mapped_ranges_mutex};
+            const auto it = mapped_ranges.find(addr);
+            if (it == mapped_ranges.end()) {
+                return true; // cannot happen after IsMapped above, but never widen blind
+            }
+            waddr = std::max<VAddr>(waddr, boost::icl::lower(*it));
+            wend = std::min<VAddr>(wend, boost::icl::upper(*it));
+        }
+        if (wend > waddr) {
+            buffer_cache.WidenCpuDirty(waddr, wend - waddr);
+            if (VideoCore::GtProtProf::Enabled()) {
+                VideoCore::GtProtProf::wide_marks.fetch_add(1, std::memory_order_relaxed);
+                VideoCore::GtProtProf::wide_bytes.fetch_add(wend - waddr,
+                                                            std::memory_order_relaxed);
+            }
+        }
+    }
     return true;
 }
 

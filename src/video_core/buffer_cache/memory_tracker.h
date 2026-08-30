@@ -54,6 +54,19 @@ public:
                             });
     }
 
+    /// GT_FAULT_WIDE: mark the non-GPU-modified pages of a range CPU-dirty (see
+    /// RegionManager::MarkCleanPagesAsCpuModified). IteratePages<false> like
+    /// MarkRegionAsCpuModified - a region with no manager is born all-dirty and unprotected,
+    /// so there is nothing to widen there.
+    void MarkCleanRegionAsCpuModified(VAddr dirty_cpu_addr, u64 query_size) {
+        IteratePages<false>(dirty_cpu_addr, query_size,
+                            [](RegionManager* manager, u64 offset, size_t size) {
+                                std::scoped_lock lk{manager->lock};
+                                manager->MarkCleanPagesAsCpuModified(
+                                    manager->GetCpuAddr() + offset, size);
+                            });
+    }
+
     /// Mark region as modified from the host GPU without the upload walk. GT_BIND_SKIP's
     /// clean-window gate uses this so a skipped is_written synchronize still records the GPU
     /// write (readbacks, IsRegionGpuModified and GC downloads read these bits). IteratePages

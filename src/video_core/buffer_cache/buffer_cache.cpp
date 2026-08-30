@@ -170,11 +170,12 @@ void MaybeFlushObtainProf() {
              g_obtprof.span_empty.exchange(0), g_obtprof.span_rp_breaks.exchange(0));
     LOG_INFO(Render_Vulkan,
              "[protprof] span-walk: {} protects {:.1f}ms of watch {:.1f}ms | other: {} protects "
-             "{:.1f}ms of watch {:.1f}ms | claimed faults: {} wr {} rd",
+             "{:.1f}ms of watch {:.1f}ms | claimed faults: {} wr {} rd | wide: {} marks {} KiB",
              GtProtProf::span_calls.exchange(0), GtProtProf::span_ns.exchange(0) / 1e6,
              GtProtProf::watch_span_ns.exchange(0) / 1e6, GtProtProf::other_calls.exchange(0),
              GtProtProf::other_ns.exchange(0) / 1e6, GtProtProf::watch_other_ns.exchange(0) / 1e6,
-             GtProtProf::faults_write.exchange(0), GtProtProf::faults_read.exchange(0));
+             GtProtProf::faults_write.exchange(0), GtProtProf::faults_read.exchange(0),
+             GtProtProf::wide_marks.exchange(0), GtProtProf::wide_bytes.exchange(0) >> 10);
 }
 
 /// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography
@@ -281,6 +282,16 @@ void BufferCache::InvalidateMemory(VAddr device_addr, u64 size) {
     memory_tracker->InvalidateRegion(
         device_addr, size, [this, device_addr, size] { ReadMemory(device_addr, size, true); });
     // AFTER the tracker change (see LogDmaDirty's contract).
+    LogDmaDirty(device_addr, size);
+}
+
+void BufferCache::WidenCpuDirty(VAddr device_addr, u64 size) {
+    // No IsRegionRegistered gate on purpose: pages outside any registered buffer are harmless
+    // to mark (their manager either does not exist - born all-dirty - or nobody uploads them),
+    // and gating on the WHOLE widened window being registered would refuse the common case of
+    // a window straddling a buffer edge.
+    memory_tracker->MarkCleanRegionAsCpuModified(device_addr, size);
+    // AFTER the tracker change (LogDmaDirty's contract), so the mirror stays a superset.
     LogDmaDirty(device_addr, size);
 }
 

@@ -138,6 +138,33 @@ public:
     }
 
     /**
+     * GT_FAULT_WIDE (run 211): mark the non-GPU-modified pages of a range CPU-dirty in ONE
+     * pass, so one guest write fault can unprotect a whole window with one VirtualProtect
+     * instead of one per 4K page (run 210 measured 12-23k faults and 1.8-3.3 s of protect
+     * syscalls per 2 s window, most of it under these very region locks). GPU-modified pages
+     * are EXCLUDED: GT7's flatbufs carry GPU-written scalars right beside CPU-written data
+     * (the cs_018256c0 lesson), and marking those CPU-dirty would upload stale guest bytes
+     * over them. The pages this widens were CPU-clean, so their guest bytes equal what the
+     * VkBuffer already holds - the extra upload is redundant bandwidth, never wrong data.
+     * Caller must hold the region lock.
+     */
+    void MarkCleanPagesAsCpuModified(u64 dirty_addr, u64 size) {
+        RENDERER_TRACE;
+        const size_t offset = dirty_addr - cpu_addr;
+        const size_t start_page = SanitizeAddress(offset) / TRACKER_BYTES_PER_PAGE;
+        const size_t end_page =
+            Common::DivCeil(SanitizeAddress(offset + size), TRACKER_BYTES_PER_PAGE);
+        if (start_page >= NUM_PAGES_PER_REGION || end_page <= start_page) {
+            return;
+        }
+        RegionBits mask;
+        mask.SetRange(start_page, end_page);
+        mask &= ~gpu;
+        cpu |= mask;
+        UpdateProtection<false, false>();
+    }
+
+    /**
      * Returns true when a region has been modified
      *
      * @param offset Offset in bytes from the start of the buffer

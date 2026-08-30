@@ -109,6 +109,12 @@ public:
     /// Invalidates any buffer in the logical page range.
     void InvalidateMemory(VAddr device_addr, u64 size);
 
+    /// GT_FAULT_WIDE (run 211): mark the non-GPU-modified pages of a widened window around a
+    /// guest write fault CPU-dirty, so the game's linear sweep over its per-frame buffers pays
+    /// ONE fault + ONE VirtualProtect per window instead of one per 4K page. Feeds the
+    /// GT_BIND_SKIP mirror like every other producer. See Rasterizer::InvalidateMemory.
+    void WidenCpuDirty(VAddr device_addr, u64 size);
+
     /// Flushes any GPU modified buffer in the logical page range back to CPU memory.
     void ReadMemory(VAddr device_addr, u64 size, bool is_write = false);
 
