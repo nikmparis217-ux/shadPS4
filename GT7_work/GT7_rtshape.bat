@@ -1,0 +1,41 @@
+@echo off
+REM ASCII + 8.3 SHORT PATHS ONLY - the user profile is Greek and cmd.exe reads this file in the
+REM OEM codepage, so a real path here would be mangled and "not found".
+REM
+REM GT7 vertical-atlas alias plus the cs_0x018256c0 live-loop watchdog.
+REM
+REM The same guest address was measured as a 1920x2160 color target and a 1920x1080 sampled
+REM texture. Sample count is 1 and the two negative-height viewports select the top and bottom
+REM 1920x1080 fields. This run copies the newest GPU-rendered top field into the separate Vulkan
+REM image required by the smaller same-base T# before it can upload stale guest RAM.
+REM Device-fault dumps isolate a deterministic GPU timeout to cs_0x018256c0. Runs 191/192
+REM disproved the GPU-time-read theory: the CPU walker already captures valid block/extent
+REM scalars at flatbuf 2114/2115, while the BDA override makes the dispatch hang. Keep only the
+REM record-count watchdog and trace the true post-window scalar slots.
+
+title GT7 - render target shape probe
+
+set GT_RT_NOCLOBBER=0
+set GT_LUT_IDENT=0
+set GT_IMG_TRACE=0
+set GT_VERTICAL_ALIAS=1
+set GT_GPUWRITE_NOCLOBBER=0
+REM Runs 196/197 proved that N=64 and N=8 can both leave enough parse-to-execute lag for
+REM NVIDIA to time out, while N=1 passes the same wall. Keep the known-stable cadence until
+REM the lighter queue-pacing replacement is implemented.
+set GT_SPLIT_DISPATCH=1
+set GT_18256C0_GUARD=1
+set GT_18256C0_LOOP_MAX=1024
+REM The shader/VA watches already answered their questions and produced thousands of log lines
+REM during the old split=1 performance run. Disable them for an honest FPS/audio measurement.
+set GT_CB_TRACE=
+set GT_WATCH_VA=0
+set GT_WATCH_SIZE=0
+
+powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\3E30~1\DOCUME~1\GitHub\shadPS4\GT7_work\run_gt7.ps1 -Net %*
+
+echo.
+echo ================================================================
+echo  Window stays open so the messages above can be read.
+echo ================================================================
+pause

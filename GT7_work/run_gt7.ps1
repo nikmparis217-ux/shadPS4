@@ -306,7 +306,10 @@ Set-GtDefault 'GT_STORE_CLAMP' '1'
 # DYNRC_WINDOW), so dropping them would invalidate the warm cache (run-117 law). -Offline
 # keeps codegen byte-identical and flips ONLY the JSON network flags to signed-out.
 if ($Net -or $Offline) {
-    $env:GT_SPLIT_DISPATCH = '1'
+    # N=1 was the device-hang isolation mode and submits after every compute dispatch. It
+    # answered that question, but its hundreds of extra queue submissions per frame caused the
+    # persistent 4-10 FPS and audio slowdown during normal GT7 testing. Honor the caller or the
+    # stable N=64 default above instead.
     $env:GT_DEFER_EOP = '1'
     $env:GT_DEFER_RELEASEMEM = '1'
     $env:GT_BINDLESS_STUB = '1'
