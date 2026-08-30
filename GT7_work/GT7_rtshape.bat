@@ -46,10 +46,16 @@ REM Run 210: [protprof] closed the sync ledger - memcpy 5-16 ms and recording 5-
 REM innocent; the bill is the page-protection PING-PONG: 12-23k claimed write faults and
 REM 1.8-3.3 SECONDS of VirtualProtect per 2 s window (about 190 us each, under the region
 REM locks the GPU thread's upload walk then spins on). The game sweeps its per-frame buffers
-REM linearly, paying one fault + one protect per 4K page. This widens each write fault to a
-REM 64 KiB window (buffer cache only, GPU-modified pages excluded, clamped to the mapped
-REM interval) so a sweep pays ONE fault + ONE protect per window. Set 0 for an A/B.
-set GT_FAULT_WIDE=65536
+REM linearly, paying one fault + one protect per 4K page. GT_FAULT_WIDE widens each write
+REM fault to a 64 KiB window so a sweep pays ONE fault + ONE protect per window.
+REM Run 211 VERDICT: the mechanism WORKED (faults 12-23k -> 53-1145 per window, protect time
+REM 1.8-3.3 s -> 2.5-14 ms) and the safety guard did NOT: the tracker's gpu bits are blind to
+REM BDA stores, so the widening uploaded stale guest bytes over GPU-written flatbuf state and
+REM cs_018256c0 hung the device (59 IPs parked, no memory fault). There is no CPU-side record
+REM of BDA store targets, so the exclusion cannot be fixed - REFUTED for GT7. Keep 0. The same
+REM bill is the target of the unified-memory (imported host pointer) work, which has no second
+REM copy to clobber.
+set GT_FAULT_WIDE=0
 REM Run 200 (warm cache, dirty log armed): FPS still decayed 11-4 and the GpuCommandProcessor
 REM burned ~66 ms of real CPU per 110 ms frame while the ~60 guest Job# threads spun 9.5 cores
 REM waiting on it. The profiler prints one [fprof] line per 2 s naming where those
