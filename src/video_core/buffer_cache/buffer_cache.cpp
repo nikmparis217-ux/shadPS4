@@ -29,6 +29,72 @@ namespace {
 /// after 16 lines) and reported in the periodic [vram] telemetry line.
 std::atomic<u32> g_temp_download_count{0};
 
+/// GT_DMA_DIRTY_LOG: default OFF preserves upstream behaviour (the full mapped-range walk on
+/// every DMA draw). The launcher opts in.
+bool DmaDirtyLogEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_DMA_DIRTY_LOG");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+
+/// GT_FRAME_PROF companion (run 201): the rasterizer's [fprof] measured the uses_dma block at
+/// 460-745 ms per 2 s window while the sampled consumptions read ZERO ranges - impossible for
+/// the empty-log path unless the time is spent WAITING on dma_dirty_mutex. Every producer takes
+/// that lock, including InvalidateMemory on the page-fault path that each of GT7's ~60 Job#
+/// threads runs through, so the consumer can starve behind a stampede. These counters split the
+/// block into lock wait / sync work / range volume ON BOTH SIDES; one [dmaprof] line per 2 s
+/// window, flushed from the consumer thread. (Run 202 verdict: the lock measured 0.1 ms - the
+/// cost was 25,000 byte-exact ranges per window, fixed by 64 KiB coalescing in LogDmaDirty.)
+bool DmaProfEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_FRAME_PROF");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+
+struct DmaProf {
+    std::atomic<u64> log_calls{0};
+    std::atomic<u64> log_lock_ns{0};
+    std::atomic<u64> consume_calls{0};
+    std::atomic<u64> consume_lock_ns{0};
+    std::atomic<u64> sync_ns{0};
+    std::atomic<u64> ranges{0};
+    std::atomic<u64> bytes{0};
+};
+DmaProf g_dmaprof;
+
+/// Run 204's [fprof] split of BindBuffers convicted ObtainBuffer alone (374-596 ms per 2 s
+/// window over ~108k binds; clamp/findbuf/flatcopy measured 1-8 ms). Three costs live inside
+/// it: the IsRegionGpuModified tracker walk, the stream-buffer memcpy every read-only bind
+/// pays by design, and SynchronizeBuffer on the cached path. One [obtprof] line per 2 s.
+struct ObtainProf {
+    std::atomic<u64> stream_calls{0};
+    std::atomic<u64> stream_bytes{0};
+    std::atomic<u64> gpumod_ns{0};
+    std::atomic<u64> stream_ns{0};
+    std::atomic<u64> cached_calls{0};
+    std::atomic<u64> sync_ns{0};
+};
+ObtainProf g_obtprof;
+
+void MaybeFlushObtainProf() {
+    static auto window_start = std::chrono::steady_clock::now();
+    const auto now = std::chrono::steady_clock::now();
+    if (now - window_start < std::chrono::seconds(2)) {
+        return;
+    }
+    window_start = now;
+    LOG_INFO(Render_Vulkan,
+             "[obtprof] stream: {} calls {} KiB, gpumod {:.1f}ms copy {:.1f}ms | cached: {} "
+             "calls, sync {:.1f}ms",
+             g_obtprof.stream_calls.exchange(0), g_obtprof.stream_bytes.exchange(0) >> 10,
+             g_obtprof.gpumod_ns.exchange(0) / 1e6, g_obtprof.stream_ns.exchange(0) / 1e6,
+             g_obtprof.cached_calls.exchange(0), g_obtprof.sync_ns.exchange(0) / 1e6);
+}
+
 /// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography
 /// through the buffer cache, gated on GT_WATCH_VA. [bufcopy] = a PM4 DMA copy touching a
 /// watched range (this is how the game moves GPU-computed state into the texture's memory);
@@ -625,16 +691,40 @@ void BufferCache::CopyBuffer(VAddr dst, VAddr src, u32 num_bytes, bool dst_gds, 
 
 std::pair<Buffer*, u32> BufferCache::ObtainBuffer(VAddr device_addr, u32 size, bool is_written,
                                                   bool is_texel_buffer, BufferId buffer_id) {
+    const bool prof = DmaProfEnabled();
+    using Clock = std::chrono::steady_clock;
+    const auto t0 = prof ? Clock::now() : Clock::time_point{};
     // For read-only buffers use device local stream buffer to reduce renderpass breaks.
-    if (!is_written && size <= CACHING_PAGESIZE && !IsRegionGpuModified(device_addr, size)) {
-        const u64 offset = stream_buffer.Copy(device_addr, size, instance.UniformMinAlignment());
-        return {&stream_buffer, offset};
+    if (!is_written && size <= CACHING_PAGESIZE) {
+        const bool gpu_modified = IsRegionGpuModified(device_addr, size);
+        const auto t1 = prof ? Clock::now() : Clock::time_point{};
+        if (prof) {
+            g_obtprof.gpumod_ns.fetch_add(u64((t1 - t0).count()), std::memory_order_relaxed);
+        }
+        if (!gpu_modified) {
+            const u64 offset =
+                stream_buffer.Copy(device_addr, size, instance.UniformMinAlignment());
+            if (prof) {
+                g_obtprof.stream_calls.fetch_add(1, std::memory_order_relaxed);
+                g_obtprof.stream_bytes.fetch_add(size, std::memory_order_relaxed);
+                g_obtprof.stream_ns.fetch_add(u64((Clock::now() - t1).count()),
+                                              std::memory_order_relaxed);
+                MaybeFlushObtainProf();
+            }
+            return {&stream_buffer, offset};
+        }
     }
     if (IsBufferInvalid(buffer_id)) {
         buffer_id = FindBuffer(device_addr, size);
     }
     Buffer& buffer = slot_buffers[buffer_id];
+    const auto t2 = prof ? Clock::now() : Clock::time_point{};
     SynchronizeBuffer(buffer, device_addr, size, is_written, is_texel_buffer);
+    if (prof) {
+        g_obtprof.cached_calls.fetch_add(1, std::memory_order_relaxed);
+        g_obtprof.sync_ns.fetch_add(u64((Clock::now() - t2).count()), std::memory_order_relaxed);
+        MaybeFlushObtainProf();
+    }
     if (is_written) {
         gpu_modified_ranges.Add(device_addr, size);
     }
@@ -1127,44 +1217,6 @@ void BufferCache::SynchronizeBuffersInRange(VAddr device_addr, u64 size) {
         SynchronizeBuffer(buffer, start, size, false, false);
     });
 }
-
-namespace {
-/// GT_DMA_DIRTY_LOG: default OFF preserves upstream behaviour (the full mapped-range walk on
-/// every DMA draw). The launcher opts in.
-bool DmaDirtyLogEnabled() {
-    static const bool enabled = [] {
-        const char* v = std::getenv("GT_DMA_DIRTY_LOG");
-        return v && std::atoi(v) != 0;
-    }();
-    return enabled;
-}
-
-/// GT_FRAME_PROF companion (run 201): the rasterizer's [fprof] measured the uses_dma block at
-/// 460-745 ms per 2 s window while the sampled consumptions read ZERO ranges - impossible for
-/// the empty-log path unless the time is spent WAITING on dma_dirty_mutex. Every producer takes
-/// that lock, including InvalidateMemory on the page-fault path that each of GT7's ~60 Job#
-/// threads runs through, so the consumer can starve behind a stampede. These counters split the
-/// block into lock wait / sync work / range volume ON BOTH SIDES; one [dmaprof] line per 2 s
-/// window, flushed from the consumer thread.
-bool DmaProfEnabled() {
-    static const bool enabled = [] {
-        const char* v = std::getenv("GT_FRAME_PROF");
-        return v && std::atoi(v) != 0;
-    }();
-    return enabled;
-}
-
-struct DmaProf {
-    std::atomic<u64> log_calls{0};
-    std::atomic<u64> log_lock_ns{0};
-    std::atomic<u64> consume_calls{0};
-    std::atomic<u64> consume_lock_ns{0};
-    std::atomic<u64> sync_ns{0};
-    std::atomic<u64> ranges{0};
-    std::atomic<u64> bytes{0};
-};
-DmaProf g_dmaprof;
-} // namespace
 
 void BufferCache::LogDmaDirty(VAddr device_addr, u64 size) {
     if (!DmaDirtyLogEnabled() || size == 0) {

@@ -139,6 +139,10 @@ struct GtFrameProf {
     double findbuf_ms = 0;
     double obtain_ms = 0;
     double flatcopy_ms = 0;
+    // Inside BindTextures (run 204: bindtex 160-400 ms/window is the second bill).
+    u64 img_binds = 0;
+    double findimg_ms = 0;
+    double findtex_ms = 0;
 
     void Flush() {
         if (!enabled) {
@@ -169,17 +173,20 @@ struct GtFrameProf {
                  "draw {:.0f}ms (pipe {:.0f} bindbuf {:.0f} bindtex {:.0f} state {:.0f} vtx "
                  "{:.0f}) disp {:.0f}ms dma {:.0f}ms | submit: fault {:.0f} texgc {:.0f} "
                  "bufgc {:.0f} deaths {:.0f} | bindbuf: {} binds clamp {:.0f} findbuf {:.0f} "
-                 "obtain {:.0f} flatcopy {:.0f}",
+                 "obtain {:.0f} flatcopy {:.0f} | bindtex: {} binds findimg {:.0f} findtex "
+                 "{:.0f}",
                  std::chrono::duration<double>(now - process_start).count(), win_s, busy_ms,
                  draws, dispatches, submits, draw_ms, pipe_ms, bindbuf_ms, bindtex_ms, state_ms,
                  vtx_ms, dispatch_ms, dma_ms, fault_ms, texgc_ms, bufgc_ms, deaths_ms, buf_binds,
-                 clamp_ms, findbuf_ms, obtain_ms, flatcopy_ms);
+                 clamp_ms, findbuf_ms, obtain_ms, flatcopy_ms, img_binds, findimg_ms, findtex_ms);
         window_start = now;
         draws = dispatches = submits = 0;
         draw_ms = pipe_ms = bindbuf_ms = bindtex_ms = state_ms = vtx_ms = 0;
         dispatch_ms = dma_ms = fault_ms = texgc_ms = bufgc_ms = deaths_ms = 0;
         buf_binds = 0;
         clamp_ms = findbuf_ms = obtain_ms = flatcopy_ms = 0;
+        img_binds = 0;
+        findimg_ms = findtex_ms = 0;
     }
     double last_thread_busy_ms = 0;
 };
@@ -2003,6 +2010,9 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
     };
 
     for (const auto& image_desc : stage.images) {
+        if (g_fprof.enabled) {
+            ++g_fprof.img_binds;
+        }
         const auto tsharp = image_desc.GetSharp(stage);
         // The set layout was built from the BAKED count (run 116); every path below must emit
         // exactly this many descriptors or the write lands past the layout's array.
@@ -2095,7 +2105,10 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 GtWatchImageBind("imgwin", stage.pgm_hash, slot_sharp, image_desc.is_written);
                 auto& [image_id, desc] = image_bindings.emplace_back(
                     std::piecewise_construct, std::tuple{}, std::tuple{slot_sharp, image_desc});
-                image_id = texture_cache.FindImage(desc);
+                {
+                    GtProfScope gt_prof_find{&g_fprof.findimg_ms};
+                    image_id = texture_cache.FindImage(desc);
+                }
                 auto* image = &texture_cache.GetImage(image_id);
                 if (auto depth_image_id = texture_cache.GetAssociatedDepth(*image)) {
                     image_id = depth_image_id;
@@ -2255,7 +2268,10 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 desc.view_info.range.extent.levels = 1;
             }
 
-            image_id = texture_cache.FindImage(desc);
+            {
+                GtProfScope gt_prof_find{&g_fprof.findimg_ms};
+                image_id = texture_cache.FindImage(desc);
+            }
             auto* image = &texture_cache.GetImage(image_id);
             if (trace_this) {
                 LOG_CRITICAL(Render_Vulkan,
@@ -2301,7 +2317,10 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
             bound_images.emplace_back(image_id);
 
             auto& image = texture_cache.GetImage(image_id);
-            auto& image_view = texture_cache.FindTexture(image_id, desc);
+            auto& image_view = [&]() -> VideoCore::ImageView& {
+                GtProfScope gt_prof_find{&g_fprof.findtex_ms};
+                return texture_cache.FindTexture(image_id, desc);
+            }();
 
             // [lutview] (Act 11): the LUT's memory layout measured CORRECT (ABGR, per the
             // T#'s dsel 7654) and every code link of the read path reads correct - yet the
