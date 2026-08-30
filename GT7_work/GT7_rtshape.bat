@@ -37,6 +37,11 @@ REM tracker's CPU-dirty state into a range set (fed by the same producers as the
 REM skips the per-region walk when the bound window is clean. Requires GT_DMA_DIRTY_LOG=1.
 REM Set 0 for an A/B against the full walk.
 set GT_BIND_SKIP=1
+REM Run 206: the gate fired (94 percent skips) and sync did NOT move - the shared bill is the
+REM texel-buffer image lookup (a page-table walk per bind that usually finds nothing). The memo
+REM caches the overlap candidates against the image registration generation; the live flags
+REM are re-checked every call. Set 0 for an A/B.
+set GT_TEXEL_MEMO=1
 REM Run 200 (warm cache, dirty log armed): FPS still decayed 11-4 and the GpuCommandProcessor
 REM burned ~66 ms of real CPU per 110 ms frame while the ~60 guest Job# threads spun 9.5 cores
 REM waiting on it. The profiler prints one [fprof] line per 2 s naming where those

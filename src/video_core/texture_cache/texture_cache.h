@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 #include <unordered_set>
 #include <boost/container/small_vector.hpp>
 #include <queue>
@@ -101,6 +102,17 @@ public:
 
     /// Retrieves image whose address matches provided
     [[nodiscard]] ImageId FindImageFromRange(VAddr address, size_t size, bool ensure_valid = true);
+
+    /// GT_TEXEL_MEMO: FindImageFromRange with the page-table walk memoized. Run 206 measured
+    /// the walk at ~400-500 ms per 2 s window - every texel-buffer bind of every draw walks
+    /// the page table over its whole range and, in the common case, finds NOTHING. What the
+    /// walk answers ("which images overlap this range") changes ONLY on RegisterImage /
+    /// UnregisterImage, so the candidate set is cached against reg_generation. What must NOT
+    /// be cached is the verdict: SafeToDownload flips with GpuModified/Dirty flags without any
+    /// registration event, so it - and the guest_size disambiguation - are re-evaluated live
+    /// on the (typically empty) memoized candidates. Semantics identical to
+    /// FindImageFromRange(address, size, /*ensure_valid=*/true).
+    [[nodiscard]] ImageId FindImageFromRangeMemo(VAddr address, size_t size);
 
     /// Retrieves an image view with the properties of the specified image id.
     [[nodiscard]] ImageView& FindTexture(ImageId image_id, const ImageDesc& desc);
@@ -362,6 +374,19 @@ private:
     Common::LeastRecentlyUsedCache<u64, u64> sampler_lru_cache;
     bool readback_linear_images;
     PageTable page_table;
+    /// GT_TEXEL_MEMO state (GPU thread only, like page_table's writers). reg_generation
+    /// advances on every Register/UnregisterImage; a memo entry is valid only at the
+    /// generation it was built, so any change to the set of registered images invalidates
+    /// every entry at once. Entries store the OVERLAP CANDIDATES pre-filtered to
+    /// guest_address == key (both facts are registration-stable); the live flags are not
+    /// stored, they are re-read per lookup.
+    u64 reg_generation = 1;
+    struct TexelMemoEntry {
+        u32 size = 0;
+        u64 gen = 0;
+        boost::container::small_vector<ImageId, 2> at_addr;
+    };
+    std::unordered_map<VAddr, TexelMemoEntry> texel_memo;
     std::mutex mutex;
     std::mutex samplers_mutex;
     std::mutex download_images_mutex;

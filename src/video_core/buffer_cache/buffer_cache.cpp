@@ -103,6 +103,15 @@ struct ObtainProf {
     std::atomic<u64> skip_read{0};
     std::atomic<u64> skip_written{0};
     std::atomic<u64> walked{0};
+    // Run 206: the gate fired (94% skips) and sync_ms DID NOT MOVE (188-635 ms, same as run
+    // 205) - so the ForEachUploadRange walk was never the bill. The cost both paths share is
+    // SynchronizeBufferFromImage's page-table walk on every texel bind. These name the
+    // remaining components of the sync window so run 207 cannot be argued with: the gate's
+    // own mutex+intersect, the written-skip GPU marking, and the texel FromImage calls.
+    std::atomic<u64> gate_ns{0};
+    std::atomic<u64> markgpu_ns{0};
+    std::atomic<u64> texel_calls{0};
+    std::atomic<u64> fromimg_ns{0};
 };
 ObtainProf g_obtprof;
 
@@ -115,12 +124,15 @@ void MaybeFlushObtainProf() {
     window_start = now;
     LOG_INFO(Render_Vulkan,
              "[obtprof] stream: {} calls {} KiB, gpumod {:.1f}ms copy {:.1f}ms | cached: {} "
-             "calls, sync {:.1f}ms | skip: {} read {} written, {} walked",
+             "calls, sync {:.1f}ms | skip: {} read {} written, {} walked | gate {:.1f}ms "
+             "markgpu {:.1f}ms | texel: {} calls fromimg {:.1f}ms",
              g_obtprof.stream_calls.exchange(0), g_obtprof.stream_bytes.exchange(0) >> 10,
              g_obtprof.gpumod_ns.exchange(0) / 1e6, g_obtprof.stream_ns.exchange(0) / 1e6,
              g_obtprof.cached_calls.exchange(0), g_obtprof.sync_ns.exchange(0) / 1e6,
              g_obtprof.skip_read.exchange(0), g_obtprof.skip_written.exchange(0),
-             g_obtprof.walked.exchange(0));
+             g_obtprof.walked.exchange(0), g_obtprof.gate_ns.exchange(0) / 1e6,
+             g_obtprof.markgpu_ns.exchange(0) / 1e6, g_obtprof.texel_calls.exchange(0),
+             g_obtprof.fromimg_ns.exchange(0) / 1e6);
 }
 
 /// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography
@@ -1097,6 +1109,9 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
     // MarkRegionAsGpuModified, no mask copies), and the image->buffer refresh a texel-buffer
     // bind runs (GPU-side data, not gated by CPU dirtiness).
     if (BindSkipEnabled()) {
+        const bool prof = DmaProfEnabled();
+        using Clock = std::chrono::steady_clock;
+        const auto t0 = prof ? Clock::now() : Clock::time_point{};
         bool clean = false;
         {
             std::scoped_lock lk{dma_dirty_mutex};
@@ -1106,20 +1121,29 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
                 bind_dirty_ranges.Subtract(device_addr, size);
             }
         }
+        if (prof) {
+            g_obtprof.gate_ns.fetch_add(u64((Clock::now() - t0).count()),
+                                        std::memory_order_relaxed);
+        }
         if (clean) {
-            if (DmaProfEnabled()) {
+            if (prof) {
                 auto& counter = is_written ? g_obtprof.skip_written : g_obtprof.skip_read;
                 counter.fetch_add(1, std::memory_order_relaxed);
             }
             if (is_written) {
+                const auto t1 = prof ? Clock::now() : Clock::time_point{};
                 memory_tracker->MarkRegionAsGpuModified(device_addr, size);
+                if (prof) {
+                    g_obtprof.markgpu_ns.fetch_add(u64((Clock::now() - t1).count()),
+                                                   std::memory_order_relaxed);
+                }
             }
             if (is_texel_buffer && !is_written) {
                 return SynchronizeBufferFromImage(buffer, device_addr, size);
             }
             return false;
         }
-        if (DmaProfEnabled()) {
+        if (prof) {
             g_obtprof.walked.fetch_add(1, std::memory_order_relaxed);
         }
     }
@@ -1228,7 +1252,23 @@ vk::Buffer BufferCache::UploadCopies(Buffer& buffer, std::span<vk::BufferCopy> c
 }
 
 bool BufferCache::SynchronizeBufferFromImage(Buffer& buffer, VAddr device_addr, u32 size) {
-    const ImageId image_id = texture_cache.FindImageFromRange(device_addr, size);
+    // GT_TEXEL_MEMO: the memoized variant skips the per-page walk when the set of registered
+    // images has not changed (see FindImageFromRangeMemo). Same verdict either way; the env
+    // exists so run 207 can A/B the two.
+    static const bool memo_enabled = [] {
+        const char* v = std::getenv("GT_TEXEL_MEMO");
+        return v && std::atoi(v) != 0;
+    }();
+    const bool prof = DmaProfEnabled();
+    using Clock = std::chrono::steady_clock;
+    const auto t0 = prof ? Clock::now() : Clock::time_point{};
+    const ImageId image_id = memo_enabled ? texture_cache.FindImageFromRangeMemo(device_addr, size)
+                                          : texture_cache.FindImageFromRange(device_addr, size);
+    if (prof) {
+        g_obtprof.texel_calls.fetch_add(1, std::memory_order_relaxed);
+        g_obtprof.fromimg_ns.fetch_add(u64((Clock::now() - t0).count()),
+                                       std::memory_order_relaxed);
+    }
     if (!image_id) {
         return false;
     }

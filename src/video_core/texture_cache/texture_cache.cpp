@@ -731,6 +731,50 @@ ImageId TextureCache::FindImageFromRange(VAddr address, size_t size, bool ensure
     return {};
 }
 
+ImageId TextureCache::FindImageFromRangeMemo(VAddr address, size_t size) {
+    auto& memo = texel_memo[address];
+    if (memo.gen != reg_generation || memo.size != static_cast<u32>(size)) {
+        // Unbounded growth guard: the map holds one entry per distinct texel-buffer address;
+        // a generation bump does not erase stale entries (they refill lazily), so cap it.
+        if (texel_memo.size() > 16384) {
+            texel_memo.clear();
+            return FindImageFromRangeMemo(address, size);
+        }
+        memo.at_addr.clear();
+        ForEachImageInRegion(address, size, [&](ImageId image_id, Image& image) {
+            if (image.info.guest_address == address) {
+                memo.at_addr.push_back(image_id);
+            }
+        });
+        memo.gen = reg_generation;
+        memo.size = static_cast<u32>(size);
+    }
+    // Live filter - identical to FindImageFromRange(ensure_valid=true): SafeToDownload reads
+    // GpuModified/Dirty, which flip without a registration event and therefore must never be
+    // memoized. The common case is an empty candidate list and this loop costs nothing.
+    ImageIds image_ids;
+    for (const ImageId image_id : memo.at_addr) {
+        if (slot_images[image_id].SafeToDownload()) {
+            image_ids.push_back(image_id);
+        }
+    }
+    if (image_ids.size() == 1) {
+        return image_ids.back();
+    }
+    if (!image_ids.empty()) {
+        for (s32 i = 0; i < image_ids.size(); ++i) {
+            Image& image = slot_images[image_ids[i]];
+            if (image.info.guest_size == size) {
+                return image_ids[i];
+            }
+        }
+        LOG_WARNING(Render_Vulkan,
+                    "Failed to find exact image match for copy addr={:#x}, size={:#x}", address,
+                    size);
+    }
+    return {};
+}
+
 ImageView& TextureCache::FindTexture(ImageId image_id, const ImageDesc& desc) {
     Image& image = slot_images[image_id];
     if (desc.type == BindingType::Storage) {
@@ -1239,6 +1283,7 @@ void TextureCache::RegisterImage(ImageId image_id) {
     ASSERT_MSG(False(image.flags & ImageFlagBits::Registered),
                "Trying to register an already registered image");
     image.flags |= ImageFlagBits::Registered;
+    ++reg_generation; // invalidates every GT_TEXEL_MEMO entry
     total_used_memory += Common::AlignUp(image.info.guest_size, 1024);
     live_image_bytes += Common::AlignUp(image.info.guest_size, 1024);
     ++live_image_count;
@@ -1252,6 +1297,7 @@ void TextureCache::UnregisterImage(ImageId image_id) {
     ASSERT_MSG(True(image.flags & ImageFlagBits::Registered),
                "Trying to unregister an already unregistered image");
     image.flags &= ~ImageFlagBits::Registered;
+    ++reg_generation; // invalidates every GT_TEXEL_MEMO entry (the ImageIds inside would dangle)
     lru_cache.Free(image.lru_id);
     total_used_memory -= Common::AlignUp(image.info.guest_size, 1024);
     live_image_bytes -= Common::AlignUp(image.info.guest_size, 1024);
