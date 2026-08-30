@@ -100,6 +100,97 @@ void GtWatchImageBind(const char* kind, u64 shader_hash, const AmdGpu::Image& sh
         }
     }
 }
+
+// GT_FRAME_PROF (run 200): with the compile storm gone (warm cache, 265 compiles) and the DMA
+// dirty log consuming near-zero ranges, the GpuCommandProcessor still burns ~66 ms of REAL CPU
+// per 110 ms frame (0.6 cores at 9 FPS, measured per thread with GetThreadDescription) - that
+// alone caps the game near 15 FPS, and the ~60 guest Job# threads spinning 9.5 cores are the
+// SYMPTOM (they spin per frame). This names where those milliseconds go, in 2-second windows so
+// growth over time (the 11->9->4 decay) is visible. Env-gated; when unset the cost is one
+// branch per scope. Every touched site runs on the GpuCommandProcessor thread, so plain
+// doubles are safe. bindbuf/bindtex are shared by draws AND dispatches (both go through
+// BindResources).
+struct GtFrameProf {
+    const bool enabled = [] {
+        const char* v = std::getenv("GT_FRAME_PROF");
+        return v && std::atoi(v) != 0;
+    }();
+    using Clock = std::chrono::steady_clock;
+    Clock::time_point process_start = Clock::now();
+    Clock::time_point window_start = Clock::now();
+    u64 draws = 0;
+    u64 dispatches = 0;
+    u64 submits = 0;
+    double draw_ms = 0;
+    double pipe_ms = 0;
+    double bindbuf_ms = 0;
+    double bindtex_ms = 0;
+    double state_ms = 0;
+    double vtx_ms = 0;
+    double dispatch_ms = 0;
+    double dma_ms = 0;
+    double fault_ms = 0;
+    double texgc_ms = 0;
+    double bufgc_ms = 0;
+    double deaths_ms = 0;
+
+    void Flush() {
+        if (!enabled) {
+            return;
+        }
+        const auto now = Clock::now();
+        const double win_s = std::chrono::duration<double>(now - window_start).count();
+        if (win_s < 2.0) {
+            return;
+        }
+        // Whole-thread busy time (kernel+user) of the GpuCommandProcessor - Flush only ever
+        // runs on it. Whatever "busy" carries beyond the named categories is command parsing,
+        // register writes and everything else outside the rasterizer entry points.
+        double busy_ms = -1.0;
+#ifdef _WIN32
+        FILETIME ft_create, ft_exit, ft_kernel, ft_user;
+        if (GetThreadTimes(GetCurrentThread(), &ft_create, &ft_exit, &ft_kernel, &ft_user)) {
+            const auto to_ms = [](const FILETIME& ft) {
+                return double((u64(ft.dwHighDateTime) << 32) | ft.dwLowDateTime) / 10000.0;
+            };
+            const double total_ms = to_ms(ft_kernel) + to_ms(ft_user);
+            busy_ms = total_ms - last_thread_busy_ms;
+            last_thread_busy_ms = total_ms;
+        }
+#endif
+        LOG_INFO(Render_Vulkan,
+                 "[fprof] t={:.0f}s win={:.1f}s busy={:.0f}ms {} draws {} disp {} submits | "
+                 "draw {:.0f}ms (pipe {:.0f} bindbuf {:.0f} bindtex {:.0f} state {:.0f} vtx "
+                 "{:.0f}) disp {:.0f}ms dma {:.0f}ms | submit: fault {:.0f} texgc {:.0f} "
+                 "bufgc {:.0f} deaths {:.0f}",
+                 std::chrono::duration<double>(now - process_start).count(), win_s, busy_ms,
+                 draws, dispatches, submits, draw_ms, pipe_ms, bindbuf_ms, bindtex_ms, state_ms,
+                 vtx_ms, dispatch_ms, dma_ms, fault_ms, texgc_ms, bufgc_ms, deaths_ms);
+        window_start = now;
+        draws = dispatches = submits = 0;
+        draw_ms = pipe_ms = bindbuf_ms = bindtex_ms = state_ms = vtx_ms = 0;
+        dispatch_ms = dma_ms = fault_ms = texgc_ms = bufgc_ms = deaths_ms = 0;
+    }
+    double last_thread_busy_ms = 0;
+};
+GtFrameProf g_fprof;
+
+// RAII accumulator for one category; two clock reads when armed, one branch when not.
+struct GtProfScope {
+    double* acc;
+    GtFrameProf::Clock::time_point t0;
+    explicit GtProfScope(double* acc_) : acc(g_fprof.enabled ? acc_ : nullptr) {
+        if (acc) {
+            t0 = GtFrameProf::Clock::now();
+        }
+    }
+    ~GtProfScope() {
+        if (acc) {
+            *acc +=
+                std::chrono::duration<double, std::milli>(GtFrameProf::Clock::now() - t0).count();
+        }
+    }
+};
 } // namespace
 
 static Shader::PushData MakeUserData(const AmdGpu::Regs& regs) {
@@ -399,6 +490,11 @@ bool Rasterizer::TryReadIndirectArgs(VAddr addr, u32 num_dwords, u32* out, bool*
 void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
     RENDERER_TRACE;
 
+    GtProfScope gt_prof_draw{&g_fprof.draw_ms};
+    if (g_fprof.enabled) {
+        ++g_fprof.draws;
+    }
+
     scheduler.PopPendingOperations();
 
     if (!FilterDraw()) {
@@ -406,25 +502,40 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
     }
 
     const auto& regs = liverpool->regs;
-    const GraphicsPipeline* pipeline = pipeline_cache.GetGraphicsPipeline();
+    const GraphicsPipeline* pipeline = [&] {
+        GtProfScope gt_prof{&g_fprof.pipe_ms};
+        return pipeline_cache.GetGraphicsPipeline();
+    }();
     if (!pipeline) {
         return;
     }
 
-    PrepareRenderState(pipeline);
+    {
+        GtProfScope gt_prof{&g_fprof.state_ms};
+        PrepareRenderState(pipeline);
+    }
     if (!BindResources(pipeline)) {
         return;
     }
-    const auto state = BeginRendering(pipeline);
+    const auto state = [&] {
+        GtProfScope gt_prof{&g_fprof.state_ms};
+        return BeginRendering(pipeline);
+    }();
 
-    buffer_cache.BindVertexBuffers(*pipeline, buffer_barriers);
-    if (is_indexed) {
-        buffer_cache.BindIndexBuffer(index_offset, buffer_barriers);
+    {
+        GtProfScope gt_prof{&g_fprof.vtx_ms};
+        buffer_cache.BindVertexBuffers(*pipeline, buffer_barriers);
+        if (is_indexed) {
+            buffer_cache.BindIndexBuffer(index_offset, buffer_barriers);
+        }
     }
 
-    pipeline->BindResources(set_writes, buffer_barriers, push_data);
-    UpdateDynamicState(pipeline, is_indexed);
-    scheduler.BeginRendering(state);
+    {
+        GtProfScope gt_prof{&g_fprof.state_ms};
+        pipeline->BindResources(set_writes, buffer_barriers, push_data);
+        UpdateDynamicState(pipeline, is_indexed);
+        scheduler.BeginRendering(state);
+    }
 
     const auto& vs_info = pipeline->GetStage(Shader::LogicalStage::Vertex);
     const auto& fetch_shader = pipeline->GetFetchShader();
@@ -459,6 +570,11 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
 void Rasterizer::DrawIndirect(bool is_indexed, VAddr arg_address, u32 offset, u32 stride,
                               u32 max_count, VAddr count_address) {
     RENDERER_TRACE;
+
+    GtProfScope gt_prof_draw{&g_fprof.draw_ms};
+    if (g_fprof.enabled) {
+        ++g_fprof.draws;
+    }
 
     scheduler.PopPendingOperations();
 
@@ -771,10 +887,18 @@ void Rasterizer::SyncWindowedImageTables(const Shader::Info& stage, u32 dim_x, u
 void Rasterizer::DispatchDirect() {
     RENDERER_TRACE;
 
+    GtProfScope gt_prof_disp{&g_fprof.dispatch_ms};
+    if (g_fprof.enabled) {
+        ++g_fprof.dispatches;
+    }
+
     scheduler.PopPendingOperations();
 
     const auto& cs_program = liverpool->GetCsRegs();
-    const ComputePipeline* pipeline = pipeline_cache.GetComputePipeline();
+    const ComputePipeline* pipeline = [&] {
+        GtProfScope gt_prof{&g_fprof.pipe_ms};
+        return pipeline_cache.GetComputePipeline();
+    }();
     if (!pipeline) {
         return;
     }
@@ -902,10 +1026,18 @@ void Rasterizer::DispatchDirect() {
 void Rasterizer::DispatchIndirect(VAddr address, u32 offset, u32 size) {
     RENDERER_TRACE;
 
+    GtProfScope gt_prof_disp{&g_fprof.dispatch_ms};
+    if (g_fprof.enabled) {
+        ++g_fprof.dispatches;
+    }
+
     scheduler.PopPendingOperations();
 
     const auto& cs_program = liverpool->GetCsRegs();
-    const ComputePipeline* pipeline = pipeline_cache.GetComputePipeline();
+    const ComputePipeline* pipeline = [&] {
+        GtProfScope gt_prof{&g_fprof.pipe_ms};
+        return pipeline_cache.GetComputePipeline();
+    }();
     if (!pipeline) {
         return;
     }
@@ -1033,17 +1165,31 @@ void Rasterizer::Finish() {
 }
 
 void Rasterizer::OnSubmit() {
+    if (g_fprof.enabled) {
+        ++g_fprof.submits;
+    }
     if (fault_process_pending) {
         fault_process_pending = false;
+        GtProfScope gt_prof{&g_fprof.fault_ms};
         buffer_cache.ProcessFaultBuffer();
     }
-    texture_cache.ProcessDownloadImages();
-    texture_cache.RunGarbageCollector();
-    buffer_cache.RunGarbageCollector();
+    {
+        GtProfScope gt_prof{&g_fprof.texgc_ms};
+        texture_cache.ProcessDownloadImages();
+        texture_cache.RunGarbageCollector();
+    }
+    {
+        GtProfScope gt_prof{&g_fprof.bufgc_ms};
+        buffer_cache.RunGarbageCollector();
+    }
     // Drain the all-timelines-gated buffer graveyard here (per submit, on the one thread
     // every DeleteBuffer caller uses) - NOT via DeferOperation, whose callbacks run under
     // pending_ops_mutex and cannot re-queue themselves.
-    buffer_cache.ProcessPendingDeaths();
+    {
+        GtProfScope gt_prof{&g_fprof.deaths_ms};
+        buffer_cache.ProcessPendingDeaths();
+    }
+    g_fprof.Flush();
 }
 
 bool Rasterizer::BindResources(const Pipeline* pipeline) {
@@ -1082,6 +1228,7 @@ bool Rasterizer::BindResources(const Pipeline* pipeline) {
         // (CPU 11-12 cores, GPU 21%). When the dirty log is armed, ConsumeDmaDirtyLog() syncs
         // only the ranges that became CPU-dirty since the last DMA draw; the first call
         // returns false so this walk runs once as the seed.
+        GtProfScope gt_prof{&g_fprof.dma_ms};
         if (!buffer_cache.ConsumeDmaDirtyLog()) {
             Common::RecursiveSharedLock lock{mapped_ranges_mutex};
             for (auto& range : mapped_ranges) {
@@ -1256,6 +1403,7 @@ bool Rasterizer::IsComputeImageClear(const Pipeline* pipeline) {
 
 void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Bindings& binding,
                              Shader::PushData& push_data) {
+    GtProfScope gt_prof{&g_fprof.bindbuf_ms};
     buffer_bindings.clear();
 
     for (const auto& desc : stage.buffers) {
@@ -1779,6 +1927,7 @@ void Rasterizer::MaybeDumpLut(VideoCore::Image& image) {
 }
 
 void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindings& binding) {
+    GtProfScope gt_prof{&g_fprof.bindtex_ms};
     image_bindings.clear();
     const u32 first_image_idx = image_infos.size();
     // GT_IMG_TRACE=1: one line per image binding of the three GT7 producer shaders, carrying the
