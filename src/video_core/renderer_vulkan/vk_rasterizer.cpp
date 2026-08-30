@@ -133,6 +133,12 @@ struct GtFrameProf {
     double texgc_ms = 0;
     double bufgc_ms = 0;
     double deaths_ms = 0;
+    // Inside BindBuffers (run 203: bindbuf 412-700 ms/window is the top bill, ~31 us/draw).
+    u64 buf_binds = 0;
+    double clamp_ms = 0;
+    double findbuf_ms = 0;
+    double obtain_ms = 0;
+    double flatcopy_ms = 0;
 
     void Flush() {
         if (!enabled) {
@@ -162,14 +168,18 @@ struct GtFrameProf {
                  "[fprof] t={:.0f}s win={:.1f}s busy={:.0f}ms {} draws {} disp {} submits | "
                  "draw {:.0f}ms (pipe {:.0f} bindbuf {:.0f} bindtex {:.0f} state {:.0f} vtx "
                  "{:.0f}) disp {:.0f}ms dma {:.0f}ms | submit: fault {:.0f} texgc {:.0f} "
-                 "bufgc {:.0f} deaths {:.0f}",
+                 "bufgc {:.0f} deaths {:.0f} | bindbuf: {} binds clamp {:.0f} findbuf {:.0f} "
+                 "obtain {:.0f} flatcopy {:.0f}",
                  std::chrono::duration<double>(now - process_start).count(), win_s, busy_ms,
                  draws, dispatches, submits, draw_ms, pipe_ms, bindbuf_ms, bindtex_ms, state_ms,
-                 vtx_ms, dispatch_ms, dma_ms, fault_ms, texgc_ms, bufgc_ms, deaths_ms);
+                 vtx_ms, dispatch_ms, dma_ms, fault_ms, texgc_ms, bufgc_ms, deaths_ms, buf_binds,
+                 clamp_ms, findbuf_ms, obtain_ms, flatcopy_ms);
         window_start = now;
         draws = dispatches = submits = 0;
         draw_ms = pipe_ms = bindbuf_ms = bindtex_ms = state_ms = vtx_ms = 0;
         dispatch_ms = dma_ms = fault_ms = texgc_ms = bufgc_ms = deaths_ms = 0;
+        buf_binds = 0;
+        clamp_ms = findbuf_ms = obtain_ms = flatcopy_ms = 0;
     }
     double last_thread_busy_ms = 0;
 };
@@ -1407,6 +1417,9 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
     buffer_bindings.clear();
 
     for (const auto& desc : stage.buffers) {
+        if (g_fprof.enabled) {
+            ++g_fprof.buf_binds;
+        }
         const auto vsharp = desc.GetSharp(stage);
         if (!desc.IsSpecial() && vsharp.base_address != 0 && vsharp.GetSize() > 0) {
             // A V# whose base sits below the guest floor (or within a page of the top of the
@@ -1510,7 +1523,10 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                     wanted_size = mapped_prefix;
                 }
             }
-            const u64 size = memory->ClampRangeSize(vsharp.base_address, wanted_size);
+            const u64 size = [&] {
+                GtProfScope gt_prof_clamp{&g_fprof.clamp_ms};
+                return memory->ClampRangeSize(vsharp.base_address, wanted_size);
+            }();
             if (size == 0) {
                 // GT_SOFT_CLAMP survivor: a torn V# (see ClampRangeSize). Null-bind it loudly
                 // instead of asking the buffer cache for a buffer at an unmapped address.
@@ -1520,7 +1536,10 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                 buffer_bindings.emplace_back(VideoCore::BufferId{}, vsharp, 0);
                 continue;
             }
-            const auto buffer_id = buffer_cache.FindBuffer(vsharp.base_address, size);
+            const auto buffer_id = [&] {
+                GtProfScope gt_prof_find{&g_fprof.findbuf_ms};
+                return buffer_cache.FindBuffer(vsharp.base_address, size);
+            }();
             buffer_bindings.emplace_back(buffer_id, vsharp, size);
         } else {
             buffer_bindings.emplace_back(VideoCore::BufferId{}, vsharp, 0);
@@ -1733,7 +1752,10 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                     }
                 }
 
-                const u64 offset = vk_buffer.Copy(flatbuf_data, ubo_size, alignment);
+                const u64 offset = [&] {
+                    GtProfScope gt_prof_flat{&g_fprof.flatcopy_ms};
+                    return vk_buffer.Copy(flatbuf_data, ubo_size, alignment);
+                }();
                 buffer_infos.emplace_back(vk_buffer.Handle(), offset, ubo_size);
             } else if (desc.buffer_type == Shader::BufferType::ClipPlanes) {
                 // Permutations compiled without enabled planes never read the buffer, so the
@@ -1773,8 +1795,11 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
         } else {
             GtWatchBufferBind(desc.is_formatted ? "buf-fmt" : "buf", stage.pgm_hash,
                               vsharp.base_address, size, desc.is_written);
-            const auto [vk_buffer, offset] = buffer_cache.ObtainBuffer(
-                vsharp.base_address, size, desc.is_written, desc.is_formatted, buffer_id);
+            const auto [vk_buffer, offset] = [&] {
+                GtProfScope gt_prof_obtain{&g_fprof.obtain_ms};
+                return buffer_cache.ObtainBuffer(vsharp.base_address, size, desc.is_written,
+                                                 desc.is_formatted, buffer_id);
+            }();
             const u32 offset_aligned = Common::AlignDown(offset, alignment);
             const u32 adjust = offset - offset_aligned;
             // GT_SOFT_CLAMP family, symptom #2: a V# whose base is MAPPED but garbage-misaligned
