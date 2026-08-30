@@ -221,6 +221,132 @@ static Shader::PushData MakeUserData(const AmdGpu::Regs& regs) {
     return push_data;
 }
 
+/// GT_HOSTIMPORT=1 - unified-memory stage 1 (run 212): the decisive driver probe. The only
+/// facts about in-place GPU access to guest RAM that the repo cannot prove are (a) whether
+/// NVIDIA accepts a MapViewOfFile3 SEC_COMMIT section view as a HOST_ALLOCATION import and
+/// (b) whether BufferDeviceAddress works on imported memory. This imports 64 MiB of the
+/// guest backing view, binds a buffer, asks for its device address, logs every verdict
+/// under [hostimport], and frees everything. It changes NOTHING about rendering: if either
+/// step fails, the import family (BDA-pagetable fallback, in-place stream reads) is dead
+/// and the plan collapses to fault-widening + ReBAR buffers with no code wasted.
+static void GtHostImportProbe(const Instance& instance) {
+    const char* v = std::getenv("GT_HOSTIMPORT");
+    if (!v || std::atoi(v) == 0) {
+        return;
+    }
+    if (!instance.IsExternalMemoryHostSupported()) {
+        LOG_CRITICAL(Render_Vulkan, "[hostimport] VERDICT: VK_EXT_external_memory_host is NOT "
+                                    "supported by this driver - the import family is dead");
+        return;
+    }
+    const u64 align = instance.MinImportedHostPointerAlignment();
+    u8* const base = Core::Memory::Instance()->GetAddressSpace().BackingBase();
+    constexpr u64 probe_bytes = 64_MB;
+    LOG_CRITICAL(Render_Vulkan,
+                 "[hostimport] probing {} MiB of the guest backing at {} (required alignment "
+                 "{:#x})",
+                 probe_bytes >> 20, fmt::ptr(base), align);
+    if (align == 0 || reinterpret_cast<uintptr_t>(base) % align != 0) {
+        LOG_CRITICAL(Render_Vulkan, "[hostimport] VERDICT: backing base not aligned - dead");
+        return;
+    }
+    const vk::Device device = instance.GetDevice();
+    const auto host_props = device.getMemoryHostPointerPropertiesEXT(
+        vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT, base);
+    if (host_props.result != vk::Result::eSuccess) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "[hostimport] VERDICT: getMemoryHostPointerPropertiesEXT on the "
+                     "MapViewOfFile3 backing view failed with {} - the import family is dead",
+                     vk::to_string(host_props.result));
+        return;
+    }
+    const u32 type_bits = host_props.value.memoryTypeBits;
+    const auto& mem_props = instance.GetMemoryProperties();
+    s32 type_index = -1;
+    for (u32 i = 0; i < mem_props.memoryTypeCount; ++i) {
+        if (type_bits & (1u << i)) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[hostimport]   importable memoryType {}: heap {} flags {}", i,
+                         mem_props.memoryTypes[i].heapIndex,
+                         vk::to_string(mem_props.memoryTypes[i].propertyFlags));
+            if (type_index < 0) {
+                type_index = static_cast<s32>(i);
+            }
+        }
+    }
+    if (type_index < 0) {
+        LOG_CRITICAL(Render_Vulkan, "[hostimport] VERDICT: memoryTypeBits is empty - dead");
+        return;
+    }
+    vk::StructureChain<vk::MemoryAllocateInfo, vk::ImportMemoryHostPointerInfoEXT,
+                       vk::MemoryAllocateFlagsInfo>
+        alloc_chain = {
+            vk::MemoryAllocateInfo{
+                .allocationSize = probe_bytes,
+                .memoryTypeIndex = static_cast<u32>(type_index),
+            },
+            vk::ImportMemoryHostPointerInfoEXT{
+                .handleType = vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT,
+                .pHostPointer = base,
+            },
+            vk::MemoryAllocateFlagsInfo{
+                .flags = vk::MemoryAllocateFlagBits::eDeviceAddress,
+            },
+        };
+    auto mem = device.allocateMemory(alloc_chain.get<vk::MemoryAllocateInfo>());
+    if (mem.result != vk::Result::eSuccess) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "[hostimport] VERDICT: importing the backing view failed with {} - the "
+                     "import family is dead",
+                     vk::to_string(mem.result));
+        return;
+    }
+    vk::StructureChain<vk::BufferCreateInfo, vk::ExternalMemoryBufferCreateInfo> buffer_chain = {
+        vk::BufferCreateInfo{
+            .size = probe_bytes,
+            .usage = vk::BufferUsageFlagBits::eTransferSrc |
+                     vk::BufferUsageFlagBits::eTransferDst |
+                     vk::BufferUsageFlagBits::eUniformBuffer |
+                     vk::BufferUsageFlagBits::eIndexBuffer |
+                     vk::BufferUsageFlagBits::eVertexBuffer |
+                     vk::BufferUsageFlagBits::eIndirectBuffer |
+                     vk::BufferUsageFlagBits::eStorageBuffer |
+                     vk::BufferUsageFlagBits::eShaderDeviceAddress,
+        },
+        vk::ExternalMemoryBufferCreateInfo{
+            .handleTypes = vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT,
+        },
+    };
+    auto buf = device.createBuffer(buffer_chain.get<vk::BufferCreateInfo>());
+    if (buf.result != vk::Result::eSuccess) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "[hostimport] VERDICT: buffer creation on imported memory failed with {} - "
+                     "dead",
+                     vk::to_string(buf.result));
+        device.freeMemory(mem.value);
+        return;
+    }
+    if (const auto bind = device.bindBufferMemory(buf.value, mem.value, 0);
+        bind != vk::Result::eSuccess) {
+        LOG_CRITICAL(Render_Vulkan, "[hostimport] VERDICT: bindBufferMemory failed with {} - dead",
+                     vk::to_string(bind));
+        device.destroyBuffer(buf.value);
+        device.freeMemory(mem.value);
+        return;
+    }
+    const vk::BufferDeviceAddressInfo bda_info{
+        .buffer = buf.value,
+    };
+    const u64 bda = device.getBufferAddress(bda_info);
+    LOG_CRITICAL(Render_Vulkan,
+                 "[hostimport] VERDICT {}: imported 64 MiB of the guest backing as memoryType "
+                 "{}, bda={:#x} - stages 4-5 (BDA fallback, in-place stream) are {}",
+                 bda != 0 ? "OK" : "PARTIAL", type_index, bda,
+                 bda != 0 ? "licensed" : "dead (no device address on imported memory)");
+    device.destroyBuffer(buf.value);
+    device.freeMemory(mem.value);
+}
+
 Rasterizer::Rasterizer(const Instance& instance_, Scheduler& scheduler_,
                        AmdGpu::Liverpool* liverpool_)
     : instance{instance_}, scheduler{scheduler_}, page_manager{this},
@@ -232,6 +358,7 @@ Rasterizer::Rasterizer(const Instance& instance_, Scheduler& scheduler_,
         liverpool->BindRasterizer(this);
     }
     memory->SetRasterizer(this);
+    GtHostImportProbe(instance);
 }
 
 Rasterizer::~Rasterizer() = default;
@@ -1742,6 +1869,19 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                     guarded_flatbuf[52] = final0;
                     guarded_flatbuf[53] = final1;
                     flatbuf_data = guarded_flatbuf.data();
+
+                    // GT_FAULT_WIDE stage-2 instrument (run 212): the record buffers this
+                    // dispatch loops over are exactly the guest ranges a stale widened upload
+                    // would poison (run 211 hung HERE with no evidence of which range was
+                    // hit). Remember them so WidenCpuDirty logs [widetbl] on the overlap.
+                    for (size_t bi = 0; bi < std::min<size_t>(buffer_bindings.size(), 4); ++bi) {
+                        const auto& record_sharp = std::get<1>(buffer_bindings[bi]);
+                        if (record_sharp.base_address >= 0x10000 && record_sharp.GetSize() > 0) {
+                            buffer_cache.GtNoteWideSuspect(record_sharp.base_address,
+                                                           record_sharp.GetSize(),
+                                                           "cs18256c0-records");
+                        }
+                    }
 
                     static std::atomic<u32> gt18256_logs{0};
                     const u32 n = gt18256_logs.fetch_add(1, std::memory_order_relaxed);

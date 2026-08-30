@@ -115,6 +115,13 @@ public:
     /// GT_BIND_SKIP mirror like every other producer. See Rasterizer::InvalidateMemory.
     void WidenCpuDirty(VAddr device_addr, u64 size);
 
+    /// GT_FAULT_WIDE stage-2 instrument (run 212): remember a guest range the GPU writes
+    /// through paths the tracker cannot see (BDA stores - e.g. the record buffers of
+    /// cs_018256c0, the windowed T# tables), so WidenCpuDirty can log [widetbl] the moment a
+    /// widened range overlaps one. Run 211 died on exactly that stale-upload class with no
+    /// evidence of WHICH range was hit; this is the evidence. Log-only, ~a few calls/frame.
+    void GtNoteWideSuspect(VAddr addr, u64 size, const char* tag);
+
     /// Flushes any GPU modified buffer in the logical page range back to CPU memory.
     void ReadMemory(VAddr device_addr, u64 size, bool is_write = false);
 

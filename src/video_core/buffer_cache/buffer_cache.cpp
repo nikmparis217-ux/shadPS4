@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <array>
 #include <memory>
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
 #include "common/alignment.h"
 #include "common/debug.h"
 #include "common/scope_exit.h"
@@ -285,7 +287,56 @@ void BufferCache::InvalidateMemory(VAddr device_addr, u64 size) {
     LogDmaDirty(device_addr, size);
 }
 
+namespace {
+// GT_FAULT_WIDE stage-2 instrument state (see GtNoteWideSuspect). A tiny fixed table: the
+// suspects are a handful of stable per-frame ranges, deduplicated by base address.
+struct WideSuspect {
+    VAddr addr;
+    u64 size;
+    const char* tag;
+};
+std::array<WideSuspect, 32> g_wide_suspects{};
+size_t g_wide_suspect_count = 0;
+std::mutex g_wide_suspect_mutex;
+} // namespace
+
+void BufferCache::GtNoteWideSuspect(VAddr addr, u64 size, const char* tag) {
+    if (addr < 0x10000 || size == 0) {
+        return;
+    }
+    std::scoped_lock lk{g_wide_suspect_mutex};
+    for (size_t i = 0; i < g_wide_suspect_count; ++i) {
+        auto& s = g_wide_suspects[i];
+        if (s.addr == addr) {
+            s.size = std::max(s.size, size);
+            s.tag = tag;
+            return;
+        }
+    }
+    if (g_wide_suspect_count < g_wide_suspects.size()) {
+        g_wide_suspects[g_wide_suspect_count++] = {addr, size, tag};
+    }
+}
+
 void BufferCache::WidenCpuDirty(VAddr device_addr, u64 size) {
+    // Stage-2 instrument: name the overlap BEFORE the damage is done, so the log carries the
+    // mechanism even if the device dies later in the same run. Taking a mutex here (the fault
+    // handler) has precedent: LogDmaDirty below takes dma_dirty_mutex on the same path.
+    {
+        std::scoped_lock lk{g_wide_suspect_mutex};
+        for (size_t i = 0; i < g_wide_suspect_count; ++i) {
+            const auto& s = g_wide_suspects[i];
+            if (device_addr < s.addr + s.size && device_addr + size > s.addr) {
+                static std::atomic<u32> widetbl_logs{0};
+                if (widetbl_logs.fetch_add(1, std::memory_order_relaxed) < 128) {
+                    LOG_CRITICAL(Render_Vulkan,
+                                 "[widetbl] widened range {:#x}+{:#x} overlaps {} suspect "
+                                 "{:#x}+{:#x} - the stale-upload clobber in the act",
+                                 device_addr, size, s.tag, s.addr, s.size);
+                }
+            }
+        }
+    }
     // No IsRegionRegistered gate on purpose: pages outside any registered buffer are harmless
     // to mark (their manager either does not exist - born all-dirty - or nobody uploads them),
     // and gating on the WHOLE widened window being registered would refuse the common case of

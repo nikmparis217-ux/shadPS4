@@ -272,11 +272,14 @@ bool Instance::CreateDevice() {
     const vk::StructureChain properties_chain = physical_device.getProperties2<
         vk::PhysicalDeviceProperties2, vk::PhysicalDeviceVulkan11Properties,
         vk::PhysicalDeviceVulkan12Properties, vk::PhysicalDeviceVulkan13Properties,
-        vk::PhysicalDevicePushDescriptorPropertiesKHR>();
+        vk::PhysicalDevicePushDescriptorPropertiesKHR,
+        vk::PhysicalDeviceExternalMemoryHostPropertiesEXT>();
     vk11_props = properties_chain.get<vk::PhysicalDeviceVulkan11Properties>();
     vk12_props = properties_chain.get<vk::PhysicalDeviceVulkan12Properties>();
     vk13_props = properties_chain.get<vk::PhysicalDeviceVulkan13Properties>();
     push_descriptor_props = properties_chain.get<vk::PhysicalDevicePushDescriptorPropertiesKHR>();
+    external_memory_host_props =
+        properties_chain.get<vk::PhysicalDeviceExternalMemoryHostPropertiesEXT>();
     LOG_INFO(Render_Vulkan, "Physical device subgroup size {}", vk11_props.subgroupSize);
 
     if (available_extensions.empty()) {
@@ -284,7 +287,9 @@ bool Instance::CreateDevice() {
         return false;
     }
 
-    boost::container::static_vector<const char*, 32> enabled_extensions;
+    // 48, not 32: the list ran at 31 of 32 before VK_EXT_external_memory_host joined - a
+    // static_vector overflow here is UB, not a log line.
+    boost::container::static_vector<const char*, 48> enabled_extensions;
     const auto add_extension = [&](std::string_view extension) -> bool {
         const auto result =
             std::find_if(available_extensions.begin(), available_extensions.end(),
@@ -399,6 +404,16 @@ bool Instance::CreateDevice() {
     }
     image_view_min_lod = add_extension(VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME);
     supports_memory_budget = add_extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+    // Unified-memory stage 1 (GT_HOSTIMPORT): lets the GPU adopt the guest's own backing
+    // memory as a VkDeviceMemory, PS4-style. Enabling the extension costs nothing until an
+    // import is made; the boot probe in vk_rasterizer.cpp decides whether the driver accepts
+    // our MapViewOfFile3 SEC_COMMIT backing view.
+    external_memory_host = add_extension(VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME);
+    if (external_memory_host) {
+        LOG_INFO(Render_Vulkan, "External memory host enabled (minImportedHostPointerAlignment "
+                                "{:#x})",
+                 external_memory_host_props.minImportedHostPointerAlignment);
+    }
 
     // VK_EXT_device_fault turns "the device was lost" into an address and a fault type. It costs
     // nothing while nothing goes wrong: the driver only fills anything in after a device loss.

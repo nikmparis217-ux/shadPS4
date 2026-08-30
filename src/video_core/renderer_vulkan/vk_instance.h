@@ -571,6 +571,17 @@ public:
         return push_descriptor_props.maxPushDescriptors;
     }
 
+    /// GT_HOSTIMPORT (unified-memory stage 1): true when VK_EXT_external_memory_host was
+    /// enabled - the door to importing the guest backing view as GPU-readable memory.
+    bool IsExternalMemoryHostSupported() const {
+        return external_memory_host;
+    }
+
+    /// Required alignment for imported host pointers (4 KiB on NVIDIA 591.86, measured).
+    u64 MinImportedHostPointerAlignment() const {
+        return external_memory_host_props.minImportedHostPointerAlignment;
+    }
+
     /// Returns the vulkan 1.2 physical device properties.
     const vk::PhysicalDeviceVulkan12Properties& GetVk12Properties() const noexcept {
         return vk12_props;
@@ -821,6 +832,8 @@ private:
     vk::PhysicalDeviceMemoryProperties memory_properties;
     vk::PhysicalDeviceVulkan11Properties vk11_props;
     vk::PhysicalDeviceVulkan12Properties vk12_props;
+    vk::PhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
+    bool external_memory_host{};
     vk::PhysicalDeviceVulkan13Properties vk13_props;
     vk::PhysicalDevicePushDescriptorPropertiesKHR push_descriptor_props;
     vk::PhysicalDeviceFeatures features;
