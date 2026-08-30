@@ -1680,6 +1680,28 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
         }
     }
 
+    // GT_FAULT_WIDE stage 2, the run-213 lesson: the heal must run BEFORE the second pass
+    // records any upload. cs_018256c0's record buffers are bindings 0/1 and their ObtainBuffer
+    // runs before the flatbuf branch, so noting suspects there (run 212's harvest site) could
+    // never save the CURRENT dispatch - run 213 fired one clip and hung anyway, and the work
+    // journal named DispatchDirect 0x18256c0 as the frozen tick. Note the ranges AND clear any
+    // speculative CPU-dirty marks a widen left on their pages, so the poisoned upload is never
+    // recorded. Gated on GT_FAULT_WIDE: without widening, dirt on those pages comes from REAL
+    // guest writes (the stable pre-widening behavior) and must stay.
+    static const bool gt_fault_wide_on = [] {
+        const char* v = std::getenv("GT_FAULT_WIDE");
+        return v && std::strtoull(v, nullptr, 0) != 0;
+    }();
+    if (gt_fault_wide_on && stage.pgm_hash == 0x018256c0) {
+        for (size_t bi = 0; bi < std::min<size_t>(buffer_bindings.size(), 4); ++bi) {
+            const auto& record_sharp = std::get<1>(buffer_bindings[bi]);
+            if (record_sharp.base_address >= 0x10000 && record_sharp.GetSize() > 0) {
+                buffer_cache.GtHealSuspect(record_sharp.base_address, record_sharp.GetSize(),
+                                           "cs18256c0-records");
+            }
+        }
+    }
+
     // Second pass to re-bind buffers that were updated after binding
     bool expo_logged = false;
     bool cbtrace_logged = false;
@@ -1870,18 +1892,10 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
                     guarded_flatbuf[53] = final1;
                     flatbuf_data = guarded_flatbuf.data();
 
-                    // GT_FAULT_WIDE stage-2 instrument (run 212): the record buffers this
-                    // dispatch loops over are exactly the guest ranges a stale widened upload
-                    // would poison (run 211 hung HERE with no evidence of which range was
-                    // hit). Remember them so WidenCpuDirty logs [widetbl] on the overlap.
-                    for (size_t bi = 0; bi < std::min<size_t>(buffer_bindings.size(), 4); ++bi) {
-                        const auto& record_sharp = std::get<1>(buffer_bindings[bi]);
-                        if (record_sharp.base_address >= 0x10000 && record_sharp.GetSize() > 0) {
-                            buffer_cache.GtNoteWideSuspect(record_sharp.base_address,
-                                                           record_sharp.GetSize(),
-                                                           "cs18256c0-records");
-                        }
-                    }
+                    // (run 213: the suspect harvest that lived here moved ABOVE the second
+                    // pass and became a heal - by this point the record V#s' ObtainBuffer has
+                    // already recorded its uploads, so noting them here was always too late
+                    // for the current dispatch.)
 
                     static std::atomic<u32> gt18256_logs{0};
                     const u32 n = gt18256_logs.fetch_add(1, std::memory_order_relaxed);

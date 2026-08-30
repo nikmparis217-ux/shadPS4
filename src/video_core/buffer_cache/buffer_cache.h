@@ -125,6 +125,16 @@ public:
     /// the record buffers in the act; run 213 clips around them. ~a few calls/frame.
     void GtNoteWideSuspect(VAddr addr, u64 size, const char* tag);
 
+    /// GT_FAULT_WIDE stage 2, the run-213 lesson: the clip alone cannot save the CURRENT
+    /// dispatch - a widen that landed on the records BEFORE their address was ever noted has
+    /// already marked the pages, and the dispatch's own ObtainBuffer records the poisoned
+    /// upload before the note site (the flatbuf branch) even runs. This both notes the range
+    /// AND clears any speculative CPU-dirty marks on its pages ([healtbl]), so the upload never
+    /// happens. Call it BEFORE the bind loop that obtains the range. Only valid while fault
+    /// widening is on: without widening, dirt on those pages comes from REAL guest writes and
+    /// must be uploaded.
+    void GtHealSuspect(VAddr addr, u64 size, const char* tag);
+
     /// Flushes any GPU modified buffer in the logical page range back to CPU memory.
     void ReadMemory(VAddr device_addr, u64 size, bool is_write = false);
 

@@ -165,6 +165,37 @@ public:
     }
 
     /**
+     * GT_FAULT_WIDE stage 2 (run 213): clear the CPU-dirty bits of pages holding a GPU-written
+     * structure the tracker cannot see (BDA-store targets, e.g. cs_018256c0's record buffers),
+     * so the next SynchronizeBuffer does NOT upload stale guest bytes over live GPU data. Only
+     * meaningful while fault widening is on: without it these pages get dirty only from a REAL
+     * guest write fault (the stable pre-widening behavior) and the caller must not clear them.
+     * Re-protects through UpdateProtection<track=true> so a later genuine CPU write faults
+     * normally. Returns how many pages were actually cleared. Caller must hold the region lock.
+     */
+    size_t ClearCpuDirtyPages(u64 dirty_addr, u64 size) {
+        RENDERER_TRACE;
+        const size_t offset = dirty_addr - cpu_addr;
+        const size_t start_page = SanitizeAddress(offset) / TRACKER_BYTES_PER_PAGE;
+        const size_t end_page =
+            Common::DivCeil(SanitizeAddress(offset + size), TRACKER_BYTES_PER_PAGE);
+        if (start_page >= NUM_PAGES_PER_REGION || end_page <= start_page) {
+            return 0;
+        }
+        RegionBits mask(cpu, start_page, end_page);
+        if (mask.None()) {
+            return 0;
+        }
+        size_t cleared = 0;
+        for (const auto& [start, end] : mask) {
+            cleared += end - start;
+        }
+        cpu.UnsetRange(start_page, end_page);
+        UpdateProtection<true, false>();
+        return cleared;
+    }
+
+    /**
      * Returns true when a region has been modified
      *
      * @param offset Offset in bytes from the start of the buffer

@@ -329,6 +329,22 @@ void BufferCache::GtNoteWideSuspect(VAddr addr, u64 size, const char* tag) {
     }
 }
 
+void BufferCache::GtHealSuspect(VAddr addr, u64 size, const char* tag) {
+    GtNoteWideSuspect(addr, size, tag);
+    const size_t cleared = memory_tracker->UnmarkRegionAsCpuModified(addr, size);
+    if (cleared != 0) {
+        // The GT_BIND_SKIP dirty mirror is deliberately NOT healed: it stays a superset, which
+        // only costs a skipped skip, never a missed upload.
+        static std::atomic<u32> heal_logs{0};
+        if (heal_logs.fetch_add(1, std::memory_order_relaxed) < 128) {
+            LOG_WARNING(Render_Vulkan,
+                        "[healtbl] {} {:#x}+{:#x}: cleared {} speculatively-dirty page(s) before "
+                        "the bind could upload stale bytes over the GPU's records",
+                        tag, addr, size, cleared);
+        }
+    }
+}
+
 void BufferCache::WidenCpuDirty(VAddr device_addr, u64 size) {
     // Run 212 proved the mechanism this table exists for ([widetbl], 5 distinct ranges): a
     // widened mark swept pages holding a dispatch's GPU-written record buffers - BDA stores

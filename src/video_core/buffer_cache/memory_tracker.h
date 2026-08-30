@@ -67,6 +67,20 @@ public:
                             });
     }
 
+    /// GT_FAULT_WIDE stage 2 (run 213): clear speculative CPU-dirty marks on pages holding a
+    /// GPU-written structure the tracker cannot see, so the next upload cannot clobber it
+    /// (see RegionManager::ClearCpuDirtyPages). Returns how many pages were actually cleared.
+    size_t UnmarkRegionAsCpuModified(VAddr dirty_cpu_addr, u64 query_size) {
+        size_t cleared = 0;
+        IteratePages<false>(dirty_cpu_addr, query_size,
+                            [&cleared](RegionManager* manager, u64 offset, size_t size) {
+                                std::scoped_lock lk{manager->lock};
+                                cleared += manager->ClearCpuDirtyPages(
+                                    manager->GetCpuAddr() + offset, size);
+                            });
+        return cleared;
+    }
+
     /// Mark region as modified from the host GPU without the upload walk. GT_BIND_SKIP's
     /// clean-window gate uses this so a skipped is_written synchronize still records the GPU
     /// write (readbacks, IsRegionGpuModified and GC downloads read these bits). IteratePages
