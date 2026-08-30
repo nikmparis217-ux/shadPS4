@@ -119,6 +119,19 @@ struct ObtainProf {
     // actually dirty. The fix walks ONLY the mirror's dirty spans; these time it.
     std::atomic<u64> walk_spans{0};
     std::atomic<u64> walked_ns{0};
+    // Run 208: the span walk landed and walked_ns STILL reads 450-880 ms - ~80 us per span,
+    // which cannot be region iteration (one region's dance is ~2 us). The bill is the upload
+    // MACHINERY per span: staging map+memcpy, an EndRendering that may break the open
+    // renderpass, two pipelineBarrier2 and a copyBuffer recording - paid ~700-1500 times per
+    // frame. These split machinery from memcpy and count the REAL renderpass breaks so the
+    // fix aims at a measured component, not the next guess.
+    std::atomic<u64> walked_written{0};
+    std::atomic<u64> span_cpu_ns{0};
+    std::atomic<u64> span_rec_ns{0};
+    std::atomic<u64> span_copies{0};
+    std::atomic<u64> span_bytes{0};
+    std::atomic<u64> span_empty{0};
+    std::atomic<u64> span_rp_breaks{0};
 };
 ObtainProf g_obtprof;
 
@@ -141,6 +154,13 @@ void MaybeFlushObtainProf() {
              g_obtprof.walked_ns.exchange(0) / 1e6, g_obtprof.gate_ns.exchange(0) / 1e6,
              g_obtprof.markgpu_ns.exchange(0) / 1e6, g_obtprof.texel_calls.exchange(0),
              g_obtprof.fromimg_ns.exchange(0) / 1e6);
+    LOG_INFO(Render_Vulkan,
+             "[spanprof] {} written calls | cpu {:.1f}ms rec {:.1f}ms | {} copies {} KiB, {} "
+             "empty spans, {} rp-breaks",
+             g_obtprof.walked_written.exchange(0), g_obtprof.span_cpu_ns.exchange(0) / 1e6,
+             g_obtprof.span_rec_ns.exchange(0) / 1e6, g_obtprof.span_copies.exchange(0),
+             g_obtprof.span_bytes.exchange(0) >> 10, g_obtprof.span_empty.exchange(0),
+             g_obtprof.span_rp_breaks.exchange(0));
 }
 
 /// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography
@@ -1149,6 +1169,9 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
             }
             if (prof) {
                 g_obtprof.walked.fetch_add(1, std::memory_order_relaxed);
+                if (is_written) {
+                    g_obtprof.walked_written.fetch_add(1, std::memory_order_relaxed);
+                }
                 g_obtprof.walk_spans.fetch_add(dirty_spans.size(), std::memory_order_relaxed);
                 g_obtprof.walked_ns.fetch_add(u64((Clock::now() - t1).count()),
                                               std::memory_order_relaxed);
@@ -1179,6 +1202,9 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
 
 void BufferCache::SynchronizeBufferSpan(Buffer& buffer, VAddr device_addr, u32 size,
                                         bool is_written) {
+    const bool prof = DmaProfEnabled();
+    using ProfClock = std::chrono::steady_clock;
+    const auto prof_t0 = prof ? ProfClock::now() : ProfClock::time_point{};
     boost::container::small_vector<vk::BufferCopy, 4> copies;
     size_t total_size_bytes = 0;
     const VAddr buffer_start = buffer.CpuAddr();
@@ -1211,6 +1237,18 @@ void BufferCache::SynchronizeBufferSpan(Buffer& buffer, VAddr device_addr, u32 s
         },
         [&] { src_buffer = UploadCopies(buffer, copies, total_size_bytes); });
 
+    const auto prof_t1 = prof ? ProfClock::now() : ProfClock::time_point{};
+    if (prof) {
+        g_obtprof.span_cpu_ns.fetch_add(u64((prof_t1 - prof_t0).count()),
+                                        std::memory_order_relaxed);
+        g_obtprof.span_copies.fetch_add(copies.size(), std::memory_order_relaxed);
+        g_obtprof.span_bytes.fetch_add(total_size_bytes, std::memory_order_relaxed);
+        if (copies.empty()) {
+            g_obtprof.span_empty.fetch_add(1, std::memory_order_relaxed);
+        } else if (scheduler.IsRendering()) {
+            g_obtprof.span_rp_breaks.fetch_add(1, std::memory_order_relaxed);
+        }
+    }
     if (src_buffer) {
         scheduler.EndRendering();
         const auto cmdbuf = scheduler.CommandBuffer();
@@ -1246,6 +1284,10 @@ void BufferCache::SynchronizeBufferSpan(Buffer& buffer, VAddr device_addr, u32 s
             .pBufferMemoryBarriers = &post_barrier,
         });
         TouchBuffer(buffer);
+    }
+    if (prof) {
+        g_obtprof.span_rec_ns.fetch_add(u64((ProfClock::now() - prof_t1).count()),
+                                        std::memory_order_relaxed);
     }
 }
 

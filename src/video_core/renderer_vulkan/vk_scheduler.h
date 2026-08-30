@@ -374,6 +374,12 @@ public:
     /// Ends current rendering scope.
     void EndRendering();
 
+    /// True while a dynamic rendering scope is open - i.e. an EndRendering here would be a
+    /// real renderpass break, not the early-out. Profiling only ([spanprof]).
+    bool IsRendering() const {
+        return is_rendering;
+    }
+
     /// Returns the current render state.
     const RenderState& GetRenderState() const {
         return render_state;
