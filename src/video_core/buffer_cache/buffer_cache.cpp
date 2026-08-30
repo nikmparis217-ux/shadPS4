@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <memory>
 #include <atomic>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include "common/alignment.h"
@@ -1137,10 +1138,48 @@ bool DmaDirtyLogEnabled() {
     }();
     return enabled;
 }
+
+/// GT_FRAME_PROF companion (run 201): the rasterizer's [fprof] measured the uses_dma block at
+/// 460-745 ms per 2 s window while the sampled consumptions read ZERO ranges - impossible for
+/// the empty-log path unless the time is spent WAITING on dma_dirty_mutex. Every producer takes
+/// that lock, including InvalidateMemory on the page-fault path that each of GT7's ~60 Job#
+/// threads runs through, so the consumer can starve behind a stampede. These counters split the
+/// block into lock wait / sync work / range volume ON BOTH SIDES; one [dmaprof] line per 2 s
+/// window, flushed from the consumer thread.
+bool DmaProfEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_FRAME_PROF");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+
+struct DmaProf {
+    std::atomic<u64> log_calls{0};
+    std::atomic<u64> log_lock_ns{0};
+    std::atomic<u64> consume_calls{0};
+    std::atomic<u64> consume_lock_ns{0};
+    std::atomic<u64> sync_ns{0};
+    std::atomic<u64> ranges{0};
+    std::atomic<u64> bytes{0};
+};
+DmaProf g_dmaprof;
 } // namespace
 
 void BufferCache::LogDmaDirty(VAddr device_addr, u64 size) {
     if (!DmaDirtyLogEnabled() || size == 0) {
+        return;
+    }
+    if (DmaProfEnabled()) {
+        const auto t0 = std::chrono::steady_clock::now();
+        u64 lock_ns = 0;
+        {
+            std::scoped_lock lk{dma_dirty_mutex};
+            lock_ns = u64((std::chrono::steady_clock::now() - t0).count());
+            dma_dirty_log.Add(device_addr, size);
+        }
+        g_dmaprof.log_calls.fetch_add(1, std::memory_order_relaxed);
+        g_dmaprof.log_lock_ns.fetch_add(lock_ns, std::memory_order_relaxed);
         return;
     }
     std::scoped_lock lk{dma_dirty_mutex};
@@ -1151,6 +1190,7 @@ bool BufferCache::ConsumeDmaDirtyLog() {
     if (!DmaDirtyLogEnabled()) {
         return false;
     }
+    const auto t0 = std::chrono::steady_clock::now();
     RangeSet local;
     {
         std::scoped_lock lk{dma_dirty_mutex};
@@ -1168,6 +1208,7 @@ bool BufferCache::ConsumeDmaDirtyLog() {
         }
         std::swap(local.m_ranges_set, dma_dirty_log.m_ranges_set);
     }
+    const auto t_lock = std::chrono::steady_clock::now();
     u32 ranges = 0;
     u64 bytes = 0;
     local.ForEach([&](VAddr start, VAddr end) {
@@ -1175,6 +1216,28 @@ bool BufferCache::ConsumeDmaDirtyLog() {
         bytes += end - start;
         SynchronizeBuffersInRange(start, end - start);
     });
+    const auto t_sync = std::chrono::steady_clock::now();
+    if (DmaProfEnabled()) {
+        g_dmaprof.consume_calls.fetch_add(1, std::memory_order_relaxed);
+        g_dmaprof.consume_lock_ns.fetch_add(u64((t_lock - t0).count()),
+                                            std::memory_order_relaxed);
+        g_dmaprof.sync_ns.fetch_add(u64((t_sync - t_lock).count()), std::memory_order_relaxed);
+        g_dmaprof.ranges.fetch_add(ranges, std::memory_order_relaxed);
+        g_dmaprof.bytes.fetch_add(bytes, std::memory_order_relaxed);
+        // Flushed here because this is the one thread that consumes; producers only add.
+        static auto window_start = t_sync;
+        if (t_sync - window_start >= std::chrono::seconds(2)) {
+            window_start = t_sync;
+            LOG_INFO(Render_Vulkan,
+                     "[dmaprof] consume: {} calls, lock {:.1f}ms sync {:.1f}ms, {} ranges {} "
+                     "KiB | producers: {} calls, lock {:.1f}ms",
+                     g_dmaprof.consume_calls.exchange(0),
+                     g_dmaprof.consume_lock_ns.exchange(0) / 1e6,
+                     g_dmaprof.sync_ns.exchange(0) / 1e6, g_dmaprof.ranges.exchange(0),
+                     g_dmaprof.bytes.exchange(0) >> 10, g_dmaprof.log_calls.exchange(0),
+                     g_dmaprof.log_lock_ns.exchange(0) / 1e6);
+        }
+    }
     static std::atomic<u32> dmasync_logs{0};
     const u32 n = dmasync_logs.fetch_add(1, std::memory_order_relaxed);
     if ((ranges != 0 && n < 16) || (n & 4095u) == 0) {
