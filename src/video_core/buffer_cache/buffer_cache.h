@@ -117,6 +117,11 @@ public:
     /// buffers keep precedence and are left untouched.
     void UnmapGuestMemory(VAddr device_addr, u64 size);
 
+    /// GT_BDA_IMPORT: apply guest map/unmap notifications on the GPU command-processor thread.
+    /// Memory syscalls arrive from arbitrary guest threads, which must never record into the
+    /// Vulkan scheduler's command buffer directly.
+    void ProcessGuestMemoryUpdates();
+
     /// GT_FAULT_WIDE (run 211): mark the non-GPU-modified pages of a widened window around a
     /// guest write fault CPU-dirty, so the game's linear sweep over its per-frame buffers pays
     /// ONE fault + ONE VirtualProtect per window instead of one per 4K page. Pages overlapping
@@ -283,10 +288,25 @@ private:
         u64 size{};
     };
 
+    struct BdaBackingSegment {
+        VAddr virtual_addr{};
+        PAddr physical_addr{};
+        u64 size{};
+    };
+
+    struct PendingBdaGuestUpdate {
+        bool is_map{};
+        VAddr virtual_addr{};
+        u64 size{};
+        std::vector<BdaBackingSegment> segments;
+    };
+
     bool InitializeBdaBacking();
     void DestroyBdaBacking();
     [[nodiscard]] vk::DeviceAddress ImportedBdaAddress(PAddr physical_addr) const;
     [[nodiscard]] u64 WriteBdaFallbackSegment(VAddr virtual_addr, PAddr physical_addr, u64 size);
+    void ApplyBdaGuestUnmap(VAddr device_addr, u64 size);
+    void RestoreBdaFallback(VAddr device_addr, u64 size);
 
     void TouchBuffer(const Buffer& buffer);
 
@@ -332,6 +352,8 @@ private:
     Buffer bda_pagetable_buffer;
     std::vector<ImportedBackingChunk> imported_backing_chunks;
     bool bda_import_enabled = false;
+    std::mutex pending_bda_guest_updates_mutex;
+    std::vector<PendingBdaGuestUpdate> pending_bda_guest_updates;
     Common::SlotVector<Buffer> slot_buffers;
     u64 total_used_memory = 0;
     // Live census, maintained in ChangeRegister (see the twin counters in TextureCache):

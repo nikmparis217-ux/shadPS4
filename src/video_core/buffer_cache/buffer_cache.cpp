@@ -545,25 +545,84 @@ void BufferCache::MapGuestMemory(VAddr device_addr, u64 size) {
         return;
     }
     const auto segments = memory->GetPhysicalBackingSegments(device_addr, size);
-    u64 written_pages = 0;
-    for (const auto& segment : segments) {
-        written_pages +=
-            WriteBdaFallbackSegment(segment.virtual_addr, segment.physical_addr, segment.size);
+    if (segments.empty()) {
+        return;
     }
-    if (written_pages != 0) {
-        static std::atomic<u32> map_log_budget{0};
-        if (map_log_budget.fetch_add(1, std::memory_order_relaxed) < 64) {
-            LOG_INFO(Render_Vulkan,
-                     "[bdaimport] mapped {:#x}+{:#x}: {} physical segment(s), {} fallback "
-                     "page(s)",
-                     device_addr, size, segments.size(), written_pages);
-        }
+
+    PendingBdaGuestUpdate update{
+        .is_map = true,
+        .virtual_addr = device_addr,
+        .size = size,
+    };
+    update.segments.reserve(segments.size());
+    for (const auto& segment : segments) {
+        update.segments.push_back({segment.virtual_addr, segment.physical_addr, segment.size});
+    }
+    std::scoped_lock lock{pending_bda_guest_updates_mutex};
+    pending_bda_guest_updates.push_back(std::move(update));
+}
+
+void BufferCache::RestoreBdaFallback(VAddr device_addr, u64 size) {
+    if (!bda_import_enabled || size == 0) {
+        return;
+    }
+    const auto segments = memory->GetPhysicalBackingSegments(device_addr, size);
+    for (const auto& segment : segments) {
+        [[maybe_unused]] const u64 written_pages =
+            WriteBdaFallbackSegment(segment.virtual_addr, segment.physical_addr, segment.size);
     }
 }
 
 void BufferCache::UnmapGuestMemory(VAddr device_addr, u64 size) {
     if (!bda_import_enabled || size == 0 ||
         device_addr > std::numeric_limits<VAddr>::max() - size) {
+        return;
+    }
+
+    PendingBdaGuestUpdate update{
+        .is_map = false,
+        .virtual_addr = device_addr,
+        .size = size,
+    };
+    std::scoped_lock lock{pending_bda_guest_updates_mutex};
+    pending_bda_guest_updates.push_back(std::move(update));
+}
+
+void BufferCache::ProcessGuestMemoryUpdates() {
+    if (!bda_import_enabled) {
+        return;
+    }
+
+    std::vector<PendingBdaGuestUpdate> updates;
+    {
+        std::scoped_lock lock{pending_bda_guest_updates_mutex};
+        updates.swap(pending_bda_guest_updates);
+    }
+
+    static std::atomic<u32> map_log_budget{0};
+    for (const auto& update : updates) {
+        if (!update.is_map) {
+            ApplyBdaGuestUnmap(update.virtual_addr, update.size);
+            continue;
+        }
+
+        u64 written_pages = 0;
+        for (const auto& segment : update.segments) {
+            written_pages +=
+                WriteBdaFallbackSegment(segment.virtual_addr, segment.physical_addr, segment.size);
+        }
+        if (written_pages != 0 &&
+            map_log_budget.fetch_add(1, std::memory_order_relaxed) < 64) {
+            LOG_INFO(Render_Vulkan,
+                     "[bdaimport] mapped {:#x}+{:#x}: {} physical segment(s), {} fallback "
+                     "page(s) [GPU thread]",
+                     update.virtual_addr, update.size, update.segments.size(), written_pages);
+        }
+    }
+}
+
+void BufferCache::ApplyBdaGuestUnmap(VAddr device_addr, u64 size) {
+    if (size == 0 || device_addr > std::numeric_limits<VAddr>::max() - size) {
         return;
     }
     constexpr VAddr GuestBdaLimit = CACHING_NUMPAGES * CACHING_PAGESIZE;
@@ -1557,7 +1616,7 @@ void BufferCache::ChangeRegister(BufferId buffer_id) {
         bda_pagetable_buffer.Fill(offset, size_pages * sizeof(vk::DeviceAddress), 0);
         // A cached buffer always wins while registered. Once it dies, restore the direct
         // imported-backing address for pages that still have a physical guest mapping.
-        MapGuestMemory(device_addr_begin, size);
+        RestoreBdaFallback(device_addr_begin, size);
         buffer_ranges.Subtract(buffer.CpuAddr(), buffer.SizeBytes());
     }
 }

@@ -1337,6 +1337,10 @@ void Rasterizer::OnSubmit() {
 }
 
 bool Rasterizer::BindResources(const Pipeline* pipeline) {
+    // Guest memory syscalls run on Game:Main/FWRKR threads. Their imported-BDA page-table
+    // updates are queued there and must be recorded only here, on the GPU command thread.
+    buffer_cache.ProcessGuestMemoryUpdates();
+
     if (IsComputeImageCopy(pipeline) || IsComputeMetaClear(pipeline) ||
         IsComputeImageClear(pipeline)) {
         return false;
