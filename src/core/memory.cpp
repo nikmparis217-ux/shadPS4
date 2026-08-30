@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: Copyright 2025-2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <limits>
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/debug.h"
@@ -183,6 +184,73 @@ void MemoryManager::CopySparseMemory(VAddr virtual_addr, u8* dest, u64 size) {
         dest += copy_size;
         ++vma;
     }
+}
+
+std::vector<MemoryManager::PhysicalBackingSegment> MemoryManager::GetPhysicalBackingSegments(
+    VAddr virtual_addr, u64 size) {
+    std::vector<PhysicalBackingSegment> segments;
+    if (size == 0 || virtual_addr > std::numeric_limits<VAddr>::max() - size) {
+        return segments;
+    }
+
+    const VAddr range_end = virtual_addr + size;
+    std::shared_lock lk{mutex};
+    if (vma_map.empty()) {
+        return segments;
+    }
+
+    auto vma_it = vma_map.upper_bound(virtual_addr);
+    if (vma_it != vma_map.begin()) {
+        --vma_it;
+    }
+
+    const auto append = [&segments](VAddr va, PAddr pa, u64 bytes) {
+        if (bytes == 0) {
+            return;
+        }
+        if (!segments.empty()) {
+            auto& previous = segments.back();
+            if (previous.virtual_addr + previous.size == va &&
+                previous.physical_addr + previous.size == pa) {
+                previous.size += bytes;
+                return;
+            }
+        }
+        segments.push_back({va, pa, bytes});
+    };
+
+    for (; vma_it != vma_map.end() && vma_it->second.base < range_end; ++vma_it) {
+        const auto& vma = vma_it->second;
+        const VAddr vma_end = vma.base + vma.size;
+        if (vma_end <= virtual_addr || !HasPhysicalBacking(vma) || vma.phys_areas.empty()) {
+            continue;
+        }
+
+        const VAddr overlap_begin = std::max(virtual_addr, vma.base);
+        const VAddr overlap_end = std::min(range_end, vma_end);
+        const u64 offset_begin = overlap_begin - vma.base;
+        const u64 offset_end = overlap_end - vma.base;
+
+        auto phys_it = vma.phys_areas.upper_bound(offset_begin);
+        if (phys_it != vma.phys_areas.begin()) {
+            --phys_it;
+        }
+        for (; phys_it != vma.phys_areas.end() && phys_it->first < offset_end; ++phys_it) {
+            const u64 area_offset = phys_it->first;
+            const auto& area = phys_it->second;
+            const u64 area_end = area_offset + area.size;
+            if (area_end <= offset_begin) {
+                continue;
+            }
+            const u64 segment_begin = std::max(offset_begin, area_offset);
+            const u64 segment_end = std::min(offset_end, area_end);
+            if (segment_begin < segment_end) {
+                append(vma.base + segment_begin, area.base + segment_begin - area_offset,
+                       segment_end - segment_begin);
+            }
+        }
+    }
+    return segments;
 }
 
 bool MemoryManager::TryWriteBacking(void* address, const void* data, u64 size) {

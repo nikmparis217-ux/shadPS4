@@ -58,8 +58,11 @@ static constexpr u64 SystemManagedSize = SYSTEM_MANAGED_MAX - SYSTEM_MANAGED_MIN
 static constexpr u64 SystemReservedSize = SYSTEM_RESERVED_MAX - SYSTEM_RESERVED_MIN + 1;
 static constexpr u64 UserSize = USER_MAX - USER_MIN + 1;
 
-// Required backing file size for mapping physical address space.
-static u64 BackingSize = ORBIS_KERNEL_TOTAL_MEM_DEV_PRO + ORBIS_KERNEL_FLEXIBLE_MEMORY_SIZE;
+// Required base size for mapping physical address space. Configuration extras are added per
+// AddressSpace instance; keeping a mutable process-global total used to add them again if an
+// instance was ever reconstructed.
+static constexpr u64 BaseBackingSize =
+    ORBIS_KERNEL_TOTAL_MEM_DEV_PRO + ORBIS_KERNEL_FLEXIBLE_MEMORY_SIZE;
 
 #ifdef _WIN32
 
@@ -190,25 +193,24 @@ struct AddressSpace::Impl {
         user_base = reinterpret_cast<u8*>(USER_MIN);
         user_size = supported_user_max - USER_MIN - 1;
 
-        // Increase BackingSize to account for config options.
-        BackingSize += EmulatorSettings.GetExtraDmemInMBytes() * 1_MB +
+        backing_size = BaseBackingSize + EmulatorSettings.GetExtraDmemInMBytes() * 1_MB +
                        EmulatorSettings.GetExtraFmemInMBytes() * 1_MB;
 
         // Allocate backing file that represents the total physical memory.
         backing_handle = CreateFileMapping2(INVALID_HANDLE_VALUE, nullptr, FILE_MAP_ALL_ACCESS,
-                                            PAGE_EXECUTE_READWRITE, SEC_COMMIT, BackingSize,
+                                            PAGE_EXECUTE_READWRITE, SEC_COMMIT, backing_size,
                                             nullptr, nullptr, 0);
 
         ASSERT_MSG(backing_handle, "{}", Common::GetLastErrorMsg());
         // Allocate a virtual memory for the backing file map as placeholder
-        backing_base = static_cast<u8*>(VirtualAlloc2(process, nullptr, BackingSize,
+        backing_base = static_cast<u8*>(VirtualAlloc2(process, nullptr, backing_size,
                                                       MEM_RESERVE | MEM_RESERVE_PLACEHOLDER,
                                                       PAGE_NOACCESS, nullptr, 0));
         ASSERT_MSG(backing_base, "{}", Common::GetLastErrorMsg());
 
         // Map backing placeholder. This will commit the pages
         void* const ret =
-            MapViewOfFile3(backing_handle, process, backing_base, 0, BackingSize,
+            MapViewOfFile3(backing_handle, process, backing_base, 0, backing_size,
                            MEM_REPLACE_PLACEHOLDER, PAGE_EXECUTE_READWRITE, nullptr, 0);
         ASSERT_MSG(ret == backing_base, "{}", Common::GetLastErrorMsg());
     }
@@ -633,6 +635,7 @@ struct AddressSpace::Impl {
     HANDLE process{};
     HANDLE backing_handle{};
     u8* backing_base{};
+    u64 backing_size{};
     u8* virtual_base{};
     u8* system_managed_base{};
     u64 system_managed_size{};
@@ -687,7 +690,7 @@ enum PosixPageProtection {
 
 struct AddressSpace::Impl {
     Impl() {
-        BackingSize += EmulatorSettings.GetExtraDmemInMBytes() * 1_MB +
+        backing_size = BaseBackingSize + EmulatorSettings.GetExtraDmemInMBytes() * 1_MB +
                        EmulatorSettings.GetExtraFmemInMBytes() * 1_MB;
         // Allocate virtual address placeholder for our address space.
         system_managed_size = SystemManagedSize;
@@ -779,7 +782,7 @@ struct AddressSpace::Impl {
 #endif
 
         // Defined to extend the file with zeros
-        int ret = ftruncate(backing_fd, BackingSize);
+        int ret = ftruncate(backing_fd, backing_size);
         if (ret != 0) {
             LOG_CRITICAL(Kernel_Vmm, "ftruncate failed with {}, are you out-of-memory?",
                          strerror(errno));
@@ -788,7 +791,7 @@ struct AddressSpace::Impl {
 
         // Map backing dmem handle.
         backing_base = static_cast<u8*>(
-            mmap(nullptr, BackingSize, PROT_READ | PROT_WRITE, MAP_SHARED, backing_fd, 0));
+            mmap(nullptr, backing_size, PROT_READ | PROT_WRITE, MAP_SHARED, backing_fd, 0));
         if (backing_base == MAP_FAILED) {
             LOG_CRITICAL(Kernel_Vmm, "mmap failed: {}", strerror(errno));
             throw std::bad_alloc{};
@@ -853,6 +856,7 @@ struct AddressSpace::Impl {
 
     int backing_fd;
     u8* backing_base{};
+    u64 backing_size{};
     u8* system_managed_base{};
     u64 system_managed_size{};
     u8* system_reserved_base{};
@@ -865,6 +869,7 @@ struct AddressSpace::Impl {
 
 AddressSpace::AddressSpace() : impl{std::make_unique<Impl>()} {
     backing_base = impl->backing_base;
+    backing_size = impl->backing_size;
     system_managed_base = impl->system_managed_base;
     system_managed_size = impl->system_managed_size;
     system_reserved_base = impl->system_reserved_base;

@@ -7,6 +7,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <vector>
 #include "common/enum.h"
 #include "common/shared_first_mutex.h"
 #include "common/singleton.h"
@@ -164,6 +165,12 @@ class MemoryManager {
     using VMAHandle = VMAMap::iterator;
 
 public:
+    struct PhysicalBackingSegment {
+        VAddr virtual_addr{};
+        PAddr physical_addr{};
+        u64 size{};
+    };
+
     explicit MemoryManager();
     ~MemoryManager();
 
@@ -254,6 +261,11 @@ public:
 
     void CopySparseMemory(VAddr source, u8* dest, u64 size);
 
+    /// Returns the physically-backed portions of a guest virtual range. Private, file and
+    /// reserved mappings are intentionally omitted because they are not aliases of the process-
+    /// lifetime AddressSpace backing allocation.
+    std::vector<PhysicalBackingSegment> GetPhysicalBackingSegments(VAddr virtual_addr, u64 size);
+
     bool TryWriteBacking(void* address, const void* data, u64 size);
 
     void SetupMemoryRegions(u64 flexible_size, bool use_extended_mem1, bool use_extended_mem2);
@@ -317,7 +329,7 @@ private:
         return std::prev(fmem_map.upper_bound(target));
     }
 
-    bool HasPhysicalBacking(VirtualMemoryArea vma) {
+    bool HasPhysicalBacking(const VirtualMemoryArea& vma) {
         return vma.type == VMAType::Direct || vma.type == VMAType::Flexible ||
                vma.type == VMAType::Pooled;
     }

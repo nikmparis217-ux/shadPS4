@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <mutex>
 #include <boost/container/static_vector.hpp>
 #include "common/alignment.h"
@@ -37,6 +38,17 @@ std::atomic<u32> g_temp_download_count{0};
 bool DmaDirtyLogEnabled() {
     static const bool enabled = [] {
         const char* v = std::getenv("GT_DMA_DIRTY_LOG");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+
+/// GT_BDA_IMPORT (unified-memory stage 4): expose physically-backed guest pages directly to
+/// BDA shaders only when no normal cached Vulkan buffer owns the page. The launcher opts in;
+/// every other title retains the zero-entry fault path byte-for-byte.
+bool GtBdaImportEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_BDA_IMPORT");
         return v && std::atoi(v) != 0;
     }();
     return enabled;
@@ -253,6 +265,11 @@ BufferCache::BufferCache(const Vulkan::Instance& instance_, Vulkan::Scheduler& s
 
     memory_tracker = std::make_unique<MemoryTracker>(tracker);
 
+    if (GtBdaImportEnabled() && InitializeBdaBacking()) {
+        bda_import_enabled = true;
+        MapGuestMemory(0, CACHING_NUMPAGES * CACHING_PAGESIZE);
+    }
+
     std::memset(gds_buffer.mapped_data.data(), 0, DataShareBufferSize);
 
     // Set up garbage collection parameters
@@ -276,7 +293,313 @@ BufferCache::BufferCache(const Vulkan::Instance& instance_, Vulkan::Scheduler& s
                       DEFAULT_CRITICAL_GC_MEMORY));
 }
 
-BufferCache::~BufferCache() = default;
+BufferCache::~BufferCache() {
+    DestroyBdaBacking();
+}
+
+bool BufferCache::InitializeBdaBacking() {
+    if (!instance.IsExternalMemoryHostSupported()) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "[bdaimport] disabled: VK_EXT_external_memory_host is unavailable");
+        return false;
+    }
+
+    const auto device = instance.GetDevice();
+    const auto& address_space = memory->GetAddressSpace();
+    u8* const backing_base = address_space.BackingBase();
+    const u64 backing_size = address_space.BackingSizeBytes();
+    const u64 host_alignment = instance.MinImportedHostPointerAlignment();
+    if (backing_base == nullptr || backing_size == 0 || host_alignment == 0 ||
+        reinterpret_cast<uintptr_t>(backing_base) % host_alignment != 0 ||
+        backing_size % host_alignment != 0) {
+        LOG_CRITICAL(Render_Vulkan,
+                     "[bdaimport] disabled: backing {}+{:#x} does not satisfy host alignment "
+                     "{:#x}",
+                     fmt::ptr(backing_base), backing_size, host_alignment);
+        return false;
+    }
+
+    // One-GiB imports stay below conservative single-allocation limits while keeping the whole
+    // 8.25-GiB backing to only nine Vulkan objects on a stock devkit configuration.
+    constexpr u64 ImportChunkSize = 1_GB;
+    const vk::BufferUsageFlags usage = AllFlags | vk::BufferUsageFlagBits::eShaderDeviceAddress;
+    const auto& memory_properties = instance.GetMemoryProperties();
+    imported_backing_chunks.reserve(Common::DivCeil(backing_size, ImportChunkSize));
+
+    for (u64 physical_addr = 0; physical_addr < backing_size;) {
+        const u64 chunk_size = std::min(ImportChunkSize, backing_size - physical_addr);
+        u8* const host_pointer = backing_base + physical_addr;
+        const auto host_props = device.getMemoryHostPointerPropertiesEXT(
+            vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT, host_pointer);
+        if (host_props.result != vk::Result::eSuccess) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[bdaimport] disabled: host-pointer query failed at physical {:#x}: {}",
+                         physical_addr, vk::to_string(host_props.result));
+            DestroyBdaBacking();
+            return false;
+        }
+
+        vk::StructureChain<vk::BufferCreateInfo, vk::ExternalMemoryBufferCreateInfo>
+            buffer_chain = {
+                vk::BufferCreateInfo{
+                    .size = chunk_size,
+                    .usage = usage,
+                },
+                vk::ExternalMemoryBufferCreateInfo{
+                    .handleTypes = vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT,
+                },
+            };
+        auto buffer_result = device.createBuffer(buffer_chain.get<vk::BufferCreateInfo>());
+        if (buffer_result.result != vk::Result::eSuccess) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[bdaimport] disabled: buffer creation failed at physical {:#x}: {}",
+                         physical_addr, vk::to_string(buffer_result.result));
+            DestroyBdaBacking();
+            return false;
+        }
+        const vk::Buffer buffer = buffer_result.value;
+        const vk::MemoryRequirements requirements = device.getBufferMemoryRequirements(buffer);
+        const u32 type_bits = host_props.value.memoryTypeBits & requirements.memoryTypeBits;
+        s32 memory_type = -1;
+        for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
+            const auto flags = memory_properties.memoryTypes[i].propertyFlags;
+            if ((type_bits & (1u << i)) == 0 ||
+                !(flags & vk::MemoryPropertyFlagBits::eHostCoherent)) {
+                continue;
+            }
+            // CPU writes reach this allocation through the AddressSpace mapping, not
+            // vkMapMemory, so there is no legal non-coherent flush path. Prefer cached coherent
+            // host memory when the driver exposes both choices (NVIDIA does).
+            if (memory_type < 0 || (flags & vk::MemoryPropertyFlagBits::eHostCached)) {
+                memory_type = static_cast<s32>(i);
+            }
+            if (flags & vk::MemoryPropertyFlagBits::eHostCached) {
+                break;
+            }
+        }
+        if (memory_type < 0 || requirements.size > chunk_size) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[bdaimport] disabled: incompatible import at physical {:#x} "
+                         "(type bits {:#x}, required {:#x}, chunk {:#x})",
+                         physical_addr, type_bits, requirements.size, chunk_size);
+            device.destroyBuffer(buffer);
+            DestroyBdaBacking();
+            return false;
+        }
+
+        vk::StructureChain<vk::MemoryAllocateInfo, vk::ImportMemoryHostPointerInfoEXT,
+                           vk::MemoryAllocateFlagsInfo>
+            allocation_chain = {
+                vk::MemoryAllocateInfo{
+                    .allocationSize = requirements.size,
+                    .memoryTypeIndex = static_cast<u32>(memory_type),
+                },
+                vk::ImportMemoryHostPointerInfoEXT{
+                    .handleType = vk::ExternalMemoryHandleTypeFlagBits::eHostAllocationEXT,
+                    .pHostPointer = host_pointer,
+                },
+                vk::MemoryAllocateFlagsInfo{
+                    .flags = vk::MemoryAllocateFlagBits::eDeviceAddress,
+                },
+            };
+        auto allocation_result =
+            device.allocateMemory(allocation_chain.get<vk::MemoryAllocateInfo>());
+        if (allocation_result.result != vk::Result::eSuccess) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[bdaimport] disabled: allocation import failed at physical {:#x}: {}",
+                         physical_addr, vk::to_string(allocation_result.result));
+            device.destroyBuffer(buffer);
+            DestroyBdaBacking();
+            return false;
+        }
+        const vk::DeviceMemory allocation = allocation_result.value;
+        if (const vk::Result result = device.bindBufferMemory(buffer, allocation, 0);
+            result != vk::Result::eSuccess) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[bdaimport] disabled: bind failed at physical {:#x}: {}", physical_addr,
+                         vk::to_string(result));
+            device.freeMemory(allocation);
+            device.destroyBuffer(buffer);
+            DestroyBdaBacking();
+            return false;
+        }
+
+        const vk::DeviceAddress device_addr =
+            device.getBufferAddress(vk::BufferDeviceAddressInfo{.buffer = buffer});
+        if (device_addr == 0) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[bdaimport] disabled: imported chunk at physical {:#x} has no BDA",
+                         physical_addr);
+            device.destroyBuffer(buffer);
+            device.freeMemory(allocation);
+            DestroyBdaBacking();
+            return false;
+        }
+
+        imported_backing_chunks.push_back(
+            {buffer, allocation, device_addr, physical_addr, chunk_size});
+        Vulkan::SetObjectName(device, buffer, "Imported Guest Backing {:#x}:{:#x}", physical_addr,
+                              chunk_size);
+        LOG_INFO(Render_Vulkan,
+                 "[bdaimport] imported physical {:#x}+{:#x} as memory type {} at BDA {:#x}",
+                 physical_addr, chunk_size, memory_type, device_addr);
+        physical_addr += chunk_size;
+    }
+
+    LOG_CRITICAL(Render_Vulkan,
+                 "[bdaimport] ACTIVE: {} MiB guest backing imported in {} chunk(s); cached "
+                 "buffers retain precedence",
+                 backing_size >> 20, imported_backing_chunks.size());
+    return true;
+}
+
+void BufferCache::DestroyBdaBacking() {
+    const auto device = instance.GetDevice();
+    for (auto chunk = imported_backing_chunks.rbegin();
+         chunk != imported_backing_chunks.rend(); ++chunk) {
+        if (chunk->buffer) {
+            device.destroyBuffer(chunk->buffer);
+        }
+        if (chunk->allocation) {
+            device.freeMemory(chunk->allocation);
+        }
+    }
+    imported_backing_chunks.clear();
+    bda_import_enabled = false;
+}
+
+vk::DeviceAddress BufferCache::ImportedBdaAddress(PAddr physical_addr) const {
+    for (const auto& chunk : imported_backing_chunks) {
+        if (physical_addr >= chunk.physical_addr &&
+            physical_addr < chunk.physical_addr + chunk.size) {
+            return chunk.device_addr + physical_addr - chunk.physical_addr;
+        }
+    }
+    return 0;
+}
+
+u64 BufferCache::WriteBdaFallbackSegment(VAddr virtual_addr, PAddr physical_addr, u64 size) {
+    constexpr VAddr GuestBdaLimit = CACHING_NUMPAGES * CACHING_PAGESIZE;
+    if (size == 0 || virtual_addr >= GuestBdaLimit ||
+        virtual_addr > std::numeric_limits<VAddr>::max() - size) {
+        return 0;
+    }
+    size = std::min<u64>(size, GuestBdaLimit - virtual_addr);
+
+    // PS4 physical mappings are 16-KiB granular. Handle clipped queries too, but only when the
+    // virtual and physical offsets agree so a page-base BDA remains exact.
+    const u64 page_mask = CACHING_PAGESIZE - 1;
+    if (((virtual_addr ^ physical_addr) & page_mask) != 0) {
+        LOG_WARNING(Render_Vulkan,
+                    "[bdaimport] skipped differently-aligned mapping {:#x}->{:#x}+{:#x}",
+                    virtual_addr, physical_addr, size);
+        return 0;
+    }
+    const VAddr aligned_begin = Common::AlignUp(virtual_addr, CACHING_PAGESIZE);
+    const u64 head = aligned_begin - virtual_addr;
+    if (head >= size) {
+        return 0;
+    }
+    physical_addr += head;
+    size = Common::AlignDown(size - head, CACHING_PAGESIZE);
+    if (size == 0) {
+        return 0;
+    }
+
+    const u64 first_page = aligned_begin >> CACHING_PAGEBITS;
+    const u64 page_count = size >> CACHING_PAGEBITS;
+    std::vector<vk::DeviceAddress> run;
+    run.reserve(static_cast<size_t>(std::min<u64>(page_count, 65536)));
+    u64 run_first_page = 0;
+    u64 written_pages = 0;
+    const auto flush = [&] {
+        if (run.empty()) {
+            return;
+        }
+        WriteDataBuffer(bda_pagetable_buffer, run_first_page * sizeof(vk::DeviceAddress),
+                        run.data(), static_cast<u32>(run.size() * sizeof(vk::DeviceAddress)));
+        run.clear();
+    };
+
+    for (u64 i = 0; i < page_count; ++i) {
+        const u64 page = first_page + i;
+        const PageData* const cached = page_table.find(page);
+        const vk::DeviceAddress fallback =
+            ImportedBdaAddress(physical_addr + (i << CACHING_PAGEBITS));
+        if ((cached != nullptr && cached->buffer_id) || fallback == 0) {
+            flush();
+            continue;
+        }
+        if (run.empty()) {
+            run_first_page = page;
+        }
+        run.push_back(fallback);
+        ++written_pages;
+    }
+    flush();
+    return written_pages;
+}
+
+void BufferCache::MapGuestMemory(VAddr device_addr, u64 size) {
+    if (!bda_import_enabled || size == 0) {
+        return;
+    }
+    const auto segments = memory->GetPhysicalBackingSegments(device_addr, size);
+    u64 written_pages = 0;
+    for (const auto& segment : segments) {
+        written_pages +=
+            WriteBdaFallbackSegment(segment.virtual_addr, segment.physical_addr, segment.size);
+    }
+    if (written_pages != 0) {
+        static std::atomic<u32> map_log_budget{0};
+        if (map_log_budget.fetch_add(1, std::memory_order_relaxed) < 64) {
+            LOG_INFO(Render_Vulkan,
+                     "[bdaimport] mapped {:#x}+{:#x}: {} physical segment(s), {} fallback "
+                     "page(s)",
+                     device_addr, size, segments.size(), written_pages);
+        }
+    }
+}
+
+void BufferCache::UnmapGuestMemory(VAddr device_addr, u64 size) {
+    if (!bda_import_enabled || size == 0 ||
+        device_addr > std::numeric_limits<VAddr>::max() - size) {
+        return;
+    }
+    constexpr VAddr GuestBdaLimit = CACHING_NUMPAGES * CACHING_PAGESIZE;
+    const VAddr begin = Common::AlignDown(device_addr, CACHING_PAGESIZE);
+    const VAddr end = std::min<VAddr>(Common::AlignUp(device_addr + size, CACHING_PAGESIZE),
+                                     GuestBdaLimit);
+    if (begin >= end) {
+        return;
+    }
+
+    u64 zero_run_begin = 0;
+    u64 zero_run_pages = 0;
+    const auto flush = [&] {
+        if (zero_run_pages == 0) {
+            return;
+        }
+        const u64 offset =
+            bda_pagetable_buffer.Offset(zero_run_begin * sizeof(vk::DeviceAddress));
+        bda_pagetable_buffer.Fill(
+            offset, static_cast<u32>(zero_run_pages * sizeof(vk::DeviceAddress)), 0);
+        zero_run_pages = 0;
+    };
+
+    for (u64 page = begin >> CACHING_PAGEBITS; page < (end >> CACHING_PAGEBITS); ++page) {
+        const PageData* const cached = page_table.find(page);
+        if (cached != nullptr && cached->buffer_id) {
+            flush();
+            continue;
+        }
+        if (zero_run_pages == 0) {
+            zero_run_begin = page;
+        }
+        ++zero_run_pages;
+    }
+    flush();
+}
 
 void BufferCache::InvalidateMemory(VAddr device_addr, u64 size) {
     if (!IsRegionRegistered(device_addr, size)) {
@@ -1232,6 +1555,9 @@ void BufferCache::ChangeRegister(BufferId buffer_id) {
         lru_cache.Free(buffer.LRUId());
         const u64 offset = bda_pagetable_buffer.Offset(page_begin * sizeof(vk::DeviceAddress));
         bda_pagetable_buffer.Fill(offset, size_pages * sizeof(vk::DeviceAddress), 0);
+        // A cached buffer always wins while registered. Once it dies, restore the direct
+        // imported-backing address for pages that still have a physical guest mapping.
+        MapGuestMemory(device_addr_begin, size);
         buffer_ranges.Subtract(buffer.CpuAddr(), buffer.SizeBytes());
     }
 }

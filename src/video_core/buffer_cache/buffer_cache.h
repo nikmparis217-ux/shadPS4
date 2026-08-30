@@ -109,6 +109,14 @@ public:
     /// Invalidates any buffer in the logical page range.
     void InvalidateMemory(VAddr device_addr, u64 size);
 
+    /// GT_BDA_IMPORT: publish physically-backed guest mappings as the fallback BDA for pages
+    /// that do not currently have a cached Vulkan buffer.
+    void MapGuestMemory(VAddr device_addr, u64 size);
+
+    /// GT_BDA_IMPORT: remove fallback BDA entries for a guest range being unmapped. Cached
+    /// buffers keep precedence and are left untouched.
+    void UnmapGuestMemory(VAddr device_addr, u64 size);
+
     /// GT_FAULT_WIDE (run 211): mark the non-GPU-modified pages of a widened window around a
     /// guest write fault CPU-dirty, so the game's linear sweep over its per-frame buffers pays
     /// ONE fault + ONE VirtualProtect per window instead of one per 4K page. Pages overlapping
@@ -267,6 +275,19 @@ private:
 
     void WriteDataBuffer(Buffer& buffer, VAddr address, const void* value, u32 num_bytes);
 
+    struct ImportedBackingChunk {
+        vk::Buffer buffer{};
+        vk::DeviceMemory allocation{};
+        vk::DeviceAddress device_addr{};
+        PAddr physical_addr{};
+        u64 size{};
+    };
+
+    bool InitializeBdaBacking();
+    void DestroyBdaBacking();
+    [[nodiscard]] vk::DeviceAddress ImportedBdaAddress(PAddr physical_addr) const;
+    [[nodiscard]] u64 WriteBdaFallbackSegment(VAddr virtual_addr, PAddr physical_addr, u64 size);
+
     void TouchBuffer(const Buffer& buffer);
 
     void DeleteBuffer(BufferId buffer_id);
@@ -309,6 +330,8 @@ private:
     StreamBuffer device_buffer;
     Buffer gds_buffer;
     Buffer bda_pagetable_buffer;
+    std::vector<ImportedBackingChunk> imported_backing_chunks;
+    bool bda_import_enabled = false;
     Common::SlotVector<Buffer> slot_buffers;
     u64 total_used_memory = 0;
     // Live census, maintained in ChangeRegister (see the twin counters in TextureCache):
