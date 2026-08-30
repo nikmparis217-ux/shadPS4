@@ -111,15 +111,18 @@ public:
 
     /// GT_FAULT_WIDE (run 211): mark the non-GPU-modified pages of a widened window around a
     /// guest write fault CPU-dirty, so the game's linear sweep over its per-frame buffers pays
-    /// ONE fault + ONE VirtualProtect per window instead of one per 4K page. Feeds the
-    /// GT_BIND_SKIP mirror like every other producer. See Rasterizer::InvalidateMemory.
+    /// ONE fault + ONE VirtualProtect per window instead of one per 4K page. Pages overlapping
+    /// a GtNoteWideSuspect range are clipped OUT of the widen (run 212 proved they are
+    /// GPU-written through BDA stores the tracker cannot see, and widening over them uploads
+    /// stale guest bytes over live GPU data). Feeds the GT_BIND_SKIP mirror like every other
+    /// producer. See Rasterizer::InvalidateMemory.
     void WidenCpuDirty(VAddr device_addr, u64 size);
 
-    /// GT_FAULT_WIDE stage-2 instrument (run 212): remember a guest range the GPU writes
-    /// through paths the tracker cannot see (BDA stores - e.g. the record buffers of
-    /// cs_018256c0, the windowed T# tables), so WidenCpuDirty can log [widetbl] the moment a
-    /// widened range overlaps one. Run 211 died on exactly that stale-upload class with no
-    /// evidence of WHICH range was hit; this is the evidence. Log-only, ~a few calls/frame.
+    /// GT_FAULT_WIDE stage 2 (runs 211-213): remember a guest range the GPU writes through
+    /// paths the tracker cannot see (BDA stores - e.g. the record buffers of cs_018256c0, the
+    /// windowed T# tables), so WidenCpuDirty never widens over it. Run 211 died on exactly that
+    /// stale-upload class with no evidence of WHICH range was hit; run 212's [widetbl] named
+    /// the record buffers in the act; run 213 clips around them. ~a few calls/frame.
     void GtNoteWideSuspect(VAddr addr, u64 size, const char* tag);
 
     /// Flushes any GPU modified buffer in the logical page range back to CPU memory.
