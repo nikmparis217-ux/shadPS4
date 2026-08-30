@@ -205,7 +205,7 @@ struct GpuWorkJournal {
     /// alone held 4553 entries, so stamping each one would cost that much work at every flush.
     struct SubmitRecord {
         u64 tick{};     ///< the timeline value this command buffer signals on completion
-        u64 seq_end{};  ///< journal seq just past this command buffer's last entry
+        u64 seq_end{};  ///< journal sequence of this command buffer's last entry (inclusive)
         u64 cmdbuf{};
         /// ⚠ WHICH TIMELINE the tick belongs to. Ticks are per-Scheduler, so they are NOT comparable
         /// across schedulers: the draw scheduler was at 3637 while the present one was at 2581. The

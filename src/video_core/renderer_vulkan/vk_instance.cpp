@@ -1631,10 +1631,17 @@ void Instance::DumpGpuWorkJournal() const {
                         continue;
                     }
                     ++total_in_flight;
+                    // Journal sequences start at one and seq_end is inclusive. The old walk used
+                    // [prev_end, seq_end), which selected the final entry of the PREVIOUS command
+                    // buffer and omitted the final entry of this one. That produced convincing but
+                    // false shader names while the printed VkCommandBuffer handle named a different
+                    // buffer. Walk (prev_end, seq_end] and verify the handle on every payload.
                     const u64 span = self->seq_end > prev_end ? self->seq_end - prev_end : 0;
+                    const u64 range_begin = span != 0 ? prev_end + 1 : self->seq_end;
                     LOG_CRITICAL(Render_Vulkan,
-                                 "  tick {} on cmdbuf {:#x}: journal seq {}..{} ({} entries){}", tick,
-                                 self->cmdbuf, prev_end, self->seq_end, span,
+                                 "  tick {} on cmdbuf {:#x}: journal seq {}..{} inclusive ({} "
+                                 "entries){}",
+                                 tick, self->cmdbuf, range_begin, self->seq_end, span,
                                  have_prev ? ""
                                            : " ⚠ NO PRECEDING SUBMIT ON THIS TIMELINE IS STILL KEPT, "
                                              "so the START of this range is a floor of 0, not a "
@@ -1662,9 +1669,19 @@ void Instance::DumpGpuWorkJournal() const {
                     u32 nh = 0;              ///< distinct shaders TRACKED
                     u32 overflow_entries = 0; ///< entries whose shader did not fit the table
                     u32 readable = 0;
-                    for (u64 s = prev_end; s < self->seq_end; ++s) {
+                    u32 unreadable = 0;
+                    u32 foreign_cmdbuf = 0;
+                    for (u64 offset = 0; offset < span; ++offset) {
+                        const u64 s = range_begin + offset;
                         GpuWorkPayload p{};
                         if (!read_entry(s, p)) {
+                            ++unreadable;
+                            continue;
+                        }
+                        if (p.cmdbuf != self->cmdbuf) {
+                            // A global journal can interleave entries recorded by another
+                            // Scheduler. Never attribute those entries to this command buffer.
+                            ++foreign_cmdbuf;
                             continue;
                         }
                         ++readable;
@@ -1716,12 +1733,18 @@ void Instance::DumpGpuWorkJournal() const {
                     }
                     // What the ring could not answer bounds every conclusion drawn from the census,
                     // so it is stated rather than left to be inferred from two other numbers.
-                    if (span > readable) {
+                    if (unreadable > 0) {
                         LOG_CRITICAL(Render_Vulkan,
                                      "    ⚠ {} of these {} entries have already scrolled out of the "
                                      "{}-entry journal ring and CANNOT be censused - the shader that "
                                      "hung may be among them",
-                                     span - readable, span, GpuWorkJournal::Capacity);
+                                     unreadable, span, GpuWorkJournal::Capacity);
+                    }
+                    if (foreign_cmdbuf > 0) {
+                        LOG_CRITICAL(Render_Vulkan,
+                                     "    ⚠ {} journal entries in this sequence interval belong to "
+                                     "another command buffer and were excluded",
+                                     foreign_cmdbuf);
                     }
                     if (readable == 0) {
                         LOG_CRITICAL(Render_Vulkan, "    (no entries of this range are still in the "
