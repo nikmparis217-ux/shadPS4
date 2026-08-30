@@ -132,6 +132,13 @@ struct ObtainProf {
     std::atomic<u64> span_bytes{0};
     std::atomic<u64> span_empty{0};
     std::atomic<u64> span_rp_breaks{0};
+    // Run 209: cpu 150-830 ms, rec 4-12 ms - recording acquitted. Two suspects left inside
+    // cpu: the staging memcpy (CopySparseMemory; the stream path prices the same machinery
+    // at ~0.5 ms/MB, so ~40-65 ms for this window's 60-130 MB) and the tracker's
+    // UpdateProtection (VirtualQueryEx + VirtualProtectEx per Protect on Windows). This
+    // carves the memcpy out of cpu; [protprof] (GtProtProf in page_manager.h) prices the
+    // syscalls. tracker share = cpu - memcpy - protprof.span; run 210 names the component.
+    std::atomic<u64> span_memcpy_ns{0};
 };
 ObtainProf g_obtprof;
 
@@ -155,12 +162,19 @@ void MaybeFlushObtainProf() {
              g_obtprof.markgpu_ns.exchange(0) / 1e6, g_obtprof.texel_calls.exchange(0),
              g_obtprof.fromimg_ns.exchange(0) / 1e6);
     LOG_INFO(Render_Vulkan,
-             "[spanprof] {} written calls | cpu {:.1f}ms rec {:.1f}ms | {} copies {} KiB, {} "
-             "empty spans, {} rp-breaks",
+             "[spanprof] {} written calls | cpu {:.1f}ms (memcpy {:.1f}ms) rec {:.1f}ms | {} "
+             "copies {} KiB, {} empty spans, {} rp-breaks",
              g_obtprof.walked_written.exchange(0), g_obtprof.span_cpu_ns.exchange(0) / 1e6,
-             g_obtprof.span_rec_ns.exchange(0) / 1e6, g_obtprof.span_copies.exchange(0),
-             g_obtprof.span_bytes.exchange(0) >> 10, g_obtprof.span_empty.exchange(0),
-             g_obtprof.span_rp_breaks.exchange(0));
+             g_obtprof.span_memcpy_ns.exchange(0) / 1e6, g_obtprof.span_rec_ns.exchange(0) / 1e6,
+             g_obtprof.span_copies.exchange(0), g_obtprof.span_bytes.exchange(0) >> 10,
+             g_obtprof.span_empty.exchange(0), g_obtprof.span_rp_breaks.exchange(0));
+    LOG_INFO(Render_Vulkan,
+             "[protprof] span-walk: {} protects {:.1f}ms of watch {:.1f}ms | other: {} protects "
+             "{:.1f}ms of watch {:.1f}ms | claimed faults: {} wr {} rd",
+             GtProtProf::span_calls.exchange(0), GtProtProf::span_ns.exchange(0) / 1e6,
+             GtProtProf::watch_span_ns.exchange(0) / 1e6, GtProtProf::other_calls.exchange(0),
+             GtProtProf::other_ns.exchange(0) / 1e6, GtProtProf::watch_other_ns.exchange(0) / 1e6,
+             GtProtProf::faults_write.exchange(0), GtProtProf::faults_read.exchange(0));
 }
 
 /// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography
@@ -1209,6 +1223,10 @@ void BufferCache::SynchronizeBufferSpan(Buffer& buffer, VAddr device_addr, u32 s
     size_t total_size_bytes = 0;
     const VAddr buffer_start = buffer.CpuAddr();
     vk::Buffer src_buffer = VK_NULL_HANDLE;
+    // Attribute the Protect syscalls issued by UpdateProtection under this walk to the
+    // span-walk bucket of [protprof] (see GtProtProf in page_manager.h). thread_local, so
+    // the fault handler's unprotects on other threads keep landing in "other".
+    GtProtProf::in_span_walk = true;
     memory_tracker->ForEachUploadRange(
         device_addr, size, is_written,
         [&](u64 device_addr_out, u64 range_size) {
@@ -1235,7 +1253,15 @@ void BufferCache::SynchronizeBufferSpan(Buffer& buffer, VAddr device_addr, u32 s
             copies.emplace_back(total_size_bytes, begin - buffer_start, clamped_size);
             total_size_bytes += clamped_size;
         },
-        [&] { src_buffer = UploadCopies(buffer, copies, total_size_bytes); });
+        [&] {
+            const auto tm0 = prof ? ProfClock::now() : ProfClock::time_point{};
+            src_buffer = UploadCopies(buffer, copies, total_size_bytes);
+            if (prof) {
+                g_obtprof.span_memcpy_ns.fetch_add(u64((ProfClock::now() - tm0).count()),
+                                                   std::memory_order_relaxed);
+            }
+        });
+    GtProtProf::in_span_walk = false;
 
     const auto prof_t1 = prof ? ProfClock::now() : ProfClock::time_point{};
     if (prof) {

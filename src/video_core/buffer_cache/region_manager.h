@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <chrono>
 #include "common/div_ceil.h"
 #include "common/logging/log.h"
 #include "core/emulator_settings.h"
@@ -180,6 +181,16 @@ private:
             readable = ~gpu;
         } else {
             writeable = cpu;
+        }
+        // GT_FRAME_PROF: time the whole watcher update (IsMapped + range locks + page loop +
+        // the Protect syscalls) so [protprof] can split machinery from syscalls - run 210.
+        if (GtProtProf::Enabled()) {
+            const auto t0 = std::chrono::steady_clock::now();
+            tracker->UpdatePageWatchersForRegion<track, is_read>(cpu_addr, mask);
+            const u64 ns = static_cast<u64>((std::chrono::steady_clock::now() - t0).count());
+            (GtProtProf::in_span_walk ? GtProtProf::watch_span_ns : GtProtProf::watch_other_ns)
+                .fetch_add(ns, std::memory_order_relaxed);
+            return;
         }
         tracker->UpdatePageWatchersForRegion<track, is_read>(cpu_addr, mask);
     }

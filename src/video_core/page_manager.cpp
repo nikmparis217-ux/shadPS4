@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <atomic>
+#include <chrono>
+#include <cstdlib>
 #include <boost/container/small_vector.hpp>
 #include "common/alignment.h"
 #include "common/assert.h"
@@ -40,6 +42,11 @@ namespace VideoCore {
 
 constexpr size_t PM_PAGE_SIZE = 4_KB;
 constexpr size_t PM_PAGE_BITS = 12;
+
+/// See GtProtProf in page_manager.h - same env gate as the buffer cache's [obtprof].
+static bool GtProtProfEnabled() {
+    return GtProtProf::Enabled();
+}
 
 struct PageManager::Impl {
     struct PageState {
@@ -208,6 +215,22 @@ struct PageManager::Impl {
         auto& impl = memory->GetAddressSpace();
         ASSERT_MSG(perms != Core::MemoryPermission::Write,
                    "Attempted to protect region as write-only which is not a valid permission");
+        if (GtProtProfEnabled()) {
+            // steady_clock in the fault-handler path (ClaimOrphanedProtection) is fine: QPC is
+            // a userland read. Logging from there would not be - the flush lives in the buffer
+            // cache's GPU-thread [protprof], these only count.
+            const auto t0 = std::chrono::steady_clock::now();
+            impl.Protect(address, size, perms);
+            const u64 ns = static_cast<u64>((std::chrono::steady_clock::now() - t0).count());
+            if (GtProtProf::in_span_walk) {
+                GtProtProf::span_calls.fetch_add(1, std::memory_order_relaxed);
+                GtProtProf::span_ns.fetch_add(ns, std::memory_order_relaxed);
+            } else {
+                GtProtProf::other_calls.fetch_add(1, std::memory_order_relaxed);
+                GtProtProf::other_ns.fetch_add(ns, std::memory_order_relaxed);
+            }
+            return;
+        }
         impl.Protect(address, size, perms);
     }
 
@@ -217,6 +240,10 @@ struct PageManager::Impl {
         const bool claimed =
             is_write ? rasterizer->InvalidateMemory(addr, 8) : rasterizer->ReadMemory(addr, 8);
         if (claimed) {
+            if (GtProtProfEnabled()) {
+                (is_write ? GtProtProf::faults_write : GtProtProf::faults_read)
+                    .fetch_add(1, std::memory_order_relaxed);
+            }
             return true;
         }
         // The rasterizer refused the fault because the address is not GPU-mapped - but if WE
