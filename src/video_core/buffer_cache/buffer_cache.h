@@ -4,6 +4,7 @@
 #pragma once
 
 #include <functional>
+#include <mutex>
 #include <boost/container/small_vector.hpp>
 #include "common/lru_cache.h"
 #include "common/slot_vector.h"
@@ -174,6 +175,18 @@ public:
     /// Synchronizes all buffers neede for DMA.
     void SynchronizeDmaBuffers();
 
+    /// GT_DMA_DIRTY_LOG (run 198): the per-draw DMA coherence pass used to walk EVERY mapped
+    /// range and visit EVERY cached buffer, per draw that uses DMA. That is O(buffers) of pure
+    /// no-op tracker scanning once the scene is resident (~3,000 buffers on GT7's Music Rally)
+    /// and it grows as the scene loads - measured as the 12->3 FPS decay with the CPU at 11-12
+    /// cores while the GPU idles at 21%. Every transition INTO the CPU-dirty state already goes
+    /// through this class (InvalidateMemory, ReadMemory's write-back, the GC's guest spill,
+    /// CreateBuffer whose fresh tracker regions are born all-dirty), so those sites append to
+    /// this log and the DMA pass consumes ONLY what changed since the last one. Returns true
+    /// when the incremental path ran; false when disabled or on the first call (the caller's
+    /// full walk right after IS the seed). Same uploads, orders of magnitude fewer scans.
+    bool ConsumeDmaDirtyLog();
+
     /// Runs the garbage collector.
     void RunGarbageCollector();
 
@@ -278,6 +291,17 @@ private:
     RangeSet gpu_modified_ranges;
     SplitRangeMap<BufferId> buffer_ranges;
     PageTable page_table;
+
+    /// Appends a range that just became (or may have become) CPU-dirty to the DMA dirty log.
+    /// MUST be called AFTER the tracker state change it describes: the consumer swaps the log
+    /// and then synchronizes, so an entry must never be visible before its dirt is.
+    void LogDmaDirty(VAddr device_addr, u64 size);
+
+    /// GT_DMA_DIRTY_LOG state. Producers run on guest threads (page-fault handler) and the GPU
+    /// thread; the consumer runs on the GPU thread. The mutex guards only the RangeSet.
+    std::mutex dma_dirty_mutex;
+    RangeSet dma_dirty_log;
+    bool dma_dirty_seeded = false;
 };
 
 } // namespace VideoCore

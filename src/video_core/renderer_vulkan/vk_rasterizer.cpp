@@ -1077,9 +1077,17 @@ bool Rasterizer::BindResources(const Pipeline* pipeline) {
 
     if (uses_dma) {
         // We only use fault buffer for DMA right now.
-        Common::RecursiveSharedLock lock{mapped_ranges_mutex};
-        for (auto& range : mapped_ranges) {
-            buffer_cache.SynchronizeBuffersInRange(range.lower(), range.upper() - range.lower());
+        // GT_DMA_DIRTY_LOG (run 198): the full walk below visits EVERY cached buffer per DMA
+        // draw - O(buffers) of no-op tracker scans that grew into the measured 12->3 FPS decay
+        // (CPU 11-12 cores, GPU 21%). When the dirty log is armed, ConsumeDmaDirtyLog() syncs
+        // only the ranges that became CPU-dirty since the last DMA draw; the first call
+        // returns false so this walk runs once as the seed.
+        if (!buffer_cache.ConsumeDmaDirtyLog()) {
+            Common::RecursiveSharedLock lock{mapped_ranges_mutex};
+            for (auto& range : mapped_ranges) {
+                buffer_cache.SynchronizeBuffersInRange(range.lower(),
+                                                       range.upper() - range.lower());
+            }
         }
         fault_process_pending = true;
     }

@@ -131,6 +131,8 @@ void BufferCache::InvalidateMemory(VAddr device_addr, u64 size) {
     }
     memory_tracker->InvalidateRegion(
         device_addr, size, [this, device_addr, size] { ReadMemory(device_addr, size, true); });
+    // AFTER the tracker change (see LogDmaDirty's contract).
+    LogDmaDirty(device_addr, size);
 }
 
 void BufferCache::ReadMemory(VAddr device_addr, u64 size, bool is_write) {
@@ -148,6 +150,7 @@ void BufferCache::ReadMemory(VAddr device_addr, u64 size, bool is_write) {
         DownloadBufferMemory<false>(buffer, window_start, window_end - window_start);
         if (is_write) {
             memory_tracker->MarkRegionAsCpuModified(device_addr, size);
+            LogDmaDirty(device_addr, size);
         }
     });
 }
@@ -875,6 +878,11 @@ BufferId BufferCache::CreateBuffer(VAddr device_addr, u32 wanted_size) {
         JoinOverlap(new_buffer_id, overlap_id, !overlap.has_stream_leap);
     }
     Register(new_buffer_id);
+    // A fresh buffer's tracker regions are born all-CPU-dirty (RegionManager's ctor does
+    // cpu.Fill()) with no MarkRegionAsCpuModified call anywhere - the full DMA walk used to
+    // pick that initial upload up by visiting every buffer. The dirty log must hear about it
+    // too, or a fault-created buffer ships zeros to the next DMA dispatch.
+    LogDmaDirty(overlap.begin, size);
     return new_buffer_id;
 }
 
@@ -1119,6 +1127,63 @@ void BufferCache::SynchronizeBuffersInRange(VAddr device_addr, u64 size) {
     });
 }
 
+namespace {
+/// GT_DMA_DIRTY_LOG: default OFF preserves upstream behaviour (the full mapped-range walk on
+/// every DMA draw). The launcher opts in.
+bool DmaDirtyLogEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_DMA_DIRTY_LOG");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+} // namespace
+
+void BufferCache::LogDmaDirty(VAddr device_addr, u64 size) {
+    if (!DmaDirtyLogEnabled() || size == 0) {
+        return;
+    }
+    std::scoped_lock lk{dma_dirty_mutex};
+    dma_dirty_log.Add(device_addr, size);
+}
+
+bool BufferCache::ConsumeDmaDirtyLog() {
+    if (!DmaDirtyLogEnabled()) {
+        return false;
+    }
+    RangeSet local;
+    {
+        std::scoped_lock lk{dma_dirty_mutex};
+        if (!dma_dirty_seeded) {
+            // The caller's full walk right after this return IS the seed. Entries logged
+            // before it are covered by that walk; entries logged DURING it survive here and
+            // are re-synchronized on the next consumption, which is a harmless no-op.
+            dma_dirty_seeded = true;
+            dma_dirty_log.Clear();
+            LOG_WARNING(Render_Vulkan,
+                        "[dmasync] incremental DMA dirty log armed - this draw seeds with the "
+                        "one full mapped-range walk, every later DMA draw consumes only what "
+                        "became CPU-dirty since the previous one");
+            return false;
+        }
+        std::swap(local.m_ranges_set, dma_dirty_log.m_ranges_set);
+    }
+    u32 ranges = 0;
+    u64 bytes = 0;
+    local.ForEach([&](VAddr start, VAddr end) {
+        ++ranges;
+        bytes += end - start;
+        SynchronizeBuffersInRange(start, end - start);
+    });
+    static std::atomic<u32> dmasync_logs{0};
+    const u32 n = dmasync_logs.fetch_add(1, std::memory_order_relaxed);
+    if ((ranges != 0 && n < 16) || (n & 4095u) == 0) {
+        LOG_INFO(Render_Vulkan, "[dmasync] consumed {} dirty range(s), {} KiB (call {})", ranges,
+                 bytes >> 10, n);
+    }
+    return true;
+}
+
 void BufferCache::WriteDataBuffer(Buffer& buffer, VAddr address, const void* value, u32 num_bytes) {
     vk::BufferCopy copy = {
         .srcOffset = 0,
@@ -1240,6 +1305,7 @@ void BufferCache::RunGarbageCollector() {
         // InvalidateMemory(buffer.CpuAddr(), buffer.SizeBytes());
         DownloadBufferMemory<true>(buffer, buffer.CpuAddr(), buffer.SizeBytes());
         memory_tracker->MarkRegionAsCpuModified(buffer.CpuAddr(), buffer.SizeBytes());
+        LogDmaDirty(buffer.CpuAddr(), buffer.SizeBytes());
         DeleteBuffer(buffer_id);
     };
     lru_cache.ForEachItemBelow(gc_tick - ticks_to_destroy, clean_up);

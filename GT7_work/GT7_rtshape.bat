@@ -26,6 +26,11 @@ REM the lighter queue-pacing replacement is implemented.
 set GT_SPLIT_DISPATCH=1
 set GT_18256C0_GUARD=1
 set GT_18256C0_LOOP_MAX=1024
+REM Run 198: with the cache warm and the watches off, FPS still decayed 10-3 with the CPU at
+REM 11-12 cores and the GPU at 21 percent. The cost is the per-DMA-draw full walk of every
+REM cached buffer. The dirty log syncs only what became CPU-dirty since the last DMA draw.
+REM Set 0 to restore the upstream full walk for an A/B.
+set GT_DMA_DIRTY_LOG=1
 REM The shader/VA watches already answered their questions and produced thousands of log lines
 REM during the old split=1 performance run. Disable them for an honest FPS/audio measurement.
 set GT_CB_TRACE=
