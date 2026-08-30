@@ -1437,3 +1437,77 @@ RenderDoc captures + 1 from run 180. All four analyzed (out7/run181/):
 3. renderdoc_enabled is still true in config - turn it off for an honest FPS run once
    the visuals are settled. Parked: the pre-existing device-lost family; the all-zeros
    0x100ee50000 producer; the 1x1 R8 zero.
+
+# ACT 13 (29-30 Aug, runs 183-198): THE 018256C0 HANG DIES, THE CACHE LOADER LIED, AND THE FPS DECAY HAS A MECHANISM
+
+## The cs_0x018256c0 arc (runs 187-197) - fixed, with two refuted theories on the record
+Device-fault dumps repeatedly isolated a deterministic GPU timeout to this 8x8 light-volume
+shader. What survived: **GT_18256C0_GUARD** (vk_rasterizer.cpp) clamps the two signed flatbuf
+record counts at [52]/[53] to their V# capacities, on the transient flatbuf copy only. Runs
+193-197: 17/17 dispatches clean, no clamp ever fired with real data.
+- REFUTED 1: "the two scalars live at flatbuf [66]/[67]". After GT_DYNRC_WINDOW those slots are
+  dynamic-window PAYLOAD - writing them actively corrupted the table and produced the giant
+  black/grey triangles (runs 189/190). The real scalars are at **f2114/f2115** and the CPU
+  walker captures them valid (block 86-165, extent 32).
+- REFUTED 2: "the reads must become GPU-time BDA reads" (the stale-descriptor theory). The BDA
+  override made the dispatch HANG (runs 191/192); the experiment was removed entirely, not
+  disabled. Static SRT reads of f2114/f2115 are correct.
+
+## The crash journal was off by one command buffer (fixed, 45bd4e36)
+The per-submit walk used [prev_end, seq_end), which named the PREVIOUS cmdbuf's final entry and
+omitted this one's. Run 197's "cs_0x935c6eac hung" verdict was this artifact - the GPU
+checkpoint showed that buffer completed; the innocent shader nearly got a stub. Now the walk is
+(prev_end, seq_end], every payload's cmdbuf handle is verified (a global journal interleaves
+schedulers), and unreadable vs foreign entries are reported separately. ⚠ A present/flip
+scheduler's census is a COPY of draw work - never read it as independent evidence (the dump
+says so inline now).
+
+## The shader cache rejected its own entries (fixed, 84143d09)
+"Cached permutation ... conflicts ... skipping preload", hundreds per boot: the loader saw the
+same specialization stored under a different HISTORICAL index and threw the whole pipeline away.
+70 of 73 "conflicts" were byte-identical SPIR-V (same SHA-256). Restore by the exact stored
+slot: **684 recompiles/boot -> 40, 1,236 pipelines preload.** The 1-second black-checkerboard
+delay survived a genuinely warm run (0 compiles), which acquitted compilation and convicted...
+
+## ...the BDA fault system: first-read-zero is the checkerboard AND the red map
+A DMA shader's first read of an unregistered page returns zeros; ProcessFaultBuffer's readback
+lands a tick later; FindBuffer creates the buffer; the NEXT consumer sees data. Repeating
+consumers (the settings checkerboards) recover in ~1 s; **one-shot producers (the track MAP)
+run exactly once, on zeros, and stay red forever.** Run 198: 2,026 fault registrations. The
+latency scales with frame time, so the perf fix below shrinks it; the one-shot loss needs
+pre-registration or replay and is NOT yet fixed.
+
+## GT_SPLIT_DISPATCH law, amended by run 198
+N=64 and N=8 both leave enough parse-to-execute lag for the NVIDIA watchdog (TDR in nvlddmkm,
+crash follows the batch boundary, not a shader - runs 196/197). N=1 passed the same wall - but
+⚠ run 198 device-lost EVEN AT N=1, ~7 minutes in, during the CPU-saturation phase: the hung
+tick was on the PRESENT scheduler with ordinary scene work in flight. With frames at 300+ ms
+and the CPU starved, present itself can starve past the watchdog. The lighter queue-pacing
+replacement is still the right next move if TDR persists after the perf fix.
+
+## RUN 198'S HEADLINE: the FPS decay has a mechanism, and it is ours (fixed, e2fec48f)
+Warm cache, watches off, split=1: FPS still decayed 10->3 as the scene loaded, CPU pinned at
+11-12 cores, GPU at 21%/210 MHz. The cost: **every draw whose pipeline uses DMA walked every
+mapped range and visited every cached buffer** (vk_rasterizer BindResources' uses_dma block) -
+a no-op tracker scan of ~3,000 buffers, per DMA draw, growing with scene residency. Upstream
+main has the identical block; there is no newer upstream solution to adopt.
+**GT_DMA_DIRTY_LOG=1** (default off, rtshape.bat opts in): every transition INTO CPU-dirty
+already flows through BufferCache (InvalidateMemory, ReadMemory write-back, GC spill,
+CreateBuffer - whose fresh tracker regions are BORN all-dirty via RegionManager's cpu.Fill(),
+with no Mark call anywhere), so those four sites append to a RangeSet and the DMA pass consumes
+only what changed since the last one. First DMA draw full-walks as the seed. Producers mark the
+tracker BEFORE logging so a consumed entry can never race ahead of its own dirt.
+- ⚠ Also measured in run 198's graveyard: **4,023 buffers freed by the GC** against 2,026
+  fault-created ones - the buffer population CHURNS. Every GC spill + refault is a full
+  re-upload cycle. If perf is still poor after the dirty log, this churn is the next suspect
+  (raise GC thresholds or pin fault-created buffers).
+
+## RUN 199 (pre-declared, before the run)
+GT7_rtshape.bat now sets GT_DMA_DIRTY_LOG=1. Predictions: [dmasync] "armed" appears once, the
+consumption lines report small range counts; the 12->3 decay flattens (the per-draw cost no
+longer grows with residency); audio stutter eases (same CPU); the checkerboard delay SHRINKS
+with frame time but does not vanish; the red map is UNCHANGED (one-shot, needs replay); wash
+and pulse UNCHANGED (separate roots, Act 12). If the decay persists with [dmasync] consuming
+near-zero ranges, the remaining cost is elsewhere (measure again - do not guess); if TDR hits
+at split=1 again, implement queue pacing next. A/B switch: GT_DMA_DIRTY_LOG=0 restores the full
+walk in the same binary.
