@@ -112,6 +112,13 @@ struct ObtainProf {
     std::atomic<u64> markgpu_ns{0};
     std::atomic<u64> texel_calls{0};
     std::atomic<u64> fromimg_ns{0};
+    // Run 207 closed the accounting: gate 9-42 ms, markgpu ~2 ms, fromimg ~1 ms (the memo
+    // works), yet sync still reads 310-600 ms - ALL of it inside the ~2k walked calls, i.e.
+    // ~200 us each. That is the arithmetic of a big is_written window: 256 MiB = 64 regions
+    // x 2 passes x ~1.5 us of lock+bitset dance, paid to upload the one 64 KiB span that is
+    // actually dirty. The fix walks ONLY the mirror's dirty spans; these time it.
+    std::atomic<u64> walk_spans{0};
+    std::atomic<u64> walked_ns{0};
 };
 ObtainProf g_obtprof;
 
@@ -124,13 +131,14 @@ void MaybeFlushObtainProf() {
     window_start = now;
     LOG_INFO(Render_Vulkan,
              "[obtprof] stream: {} calls {} KiB, gpumod {:.1f}ms copy {:.1f}ms | cached: {} "
-             "calls, sync {:.1f}ms | skip: {} read {} written, {} walked | gate {:.1f}ms "
-             "markgpu {:.1f}ms | texel: {} calls fromimg {:.1f}ms",
+             "calls, sync {:.1f}ms | skip: {} read {} written, {} walked ({} spans, {:.1f}ms) | "
+             "gate {:.1f}ms markgpu {:.1f}ms | texel: {} calls fromimg {:.1f}ms",
              g_obtprof.stream_calls.exchange(0), g_obtprof.stream_bytes.exchange(0) >> 10,
              g_obtprof.gpumod_ns.exchange(0) / 1e6, g_obtprof.stream_ns.exchange(0) / 1e6,
              g_obtprof.cached_calls.exchange(0), g_obtprof.sync_ns.exchange(0) / 1e6,
              g_obtprof.skip_read.exchange(0), g_obtprof.skip_written.exchange(0),
-             g_obtprof.walked.exchange(0), g_obtprof.gate_ns.exchange(0) / 1e6,
+             g_obtprof.walked.exchange(0), g_obtprof.walk_spans.exchange(0),
+             g_obtprof.walked_ns.exchange(0) / 1e6, g_obtprof.gate_ns.exchange(0) / 1e6,
              g_obtprof.markgpu_ns.exchange(0) / 1e6, g_obtprof.texel_calls.exchange(0),
              g_obtprof.fromimg_ns.exchange(0) / 1e6);
 }
@@ -1076,9 +1084,7 @@ void BufferCache::ChangeRegister(BufferId buffer_id) {
 
 bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size, bool is_written,
                                     bool is_texel_buffer) {
-    boost::container::small_vector<vk::BufferCopy, 4> copies;
-    size_t total_size_bytes = 0;
-    VAddr buffer_start = buffer.CpuAddr();
+    const VAddr buffer_start = buffer.CpuAddr();
     const VAddr buffer_end = buffer_start + buffer.SizeBytes();
     // Clamp the sync window to the VkBuffer that will receive the copies. A tail-clamped
     // bind (256 MB window) over a smaller cache buffer used to hand ForEachUploadRange a
@@ -1112,12 +1118,18 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
         const bool prof = DmaProfEnabled();
         using Clock = std::chrono::steady_clock;
         const auto t0 = prof ? Clock::now() : Clock::time_point{};
-        bool clean = false;
+        // Run 207: asking only "is ANYTHING dirty in the window?" left a big is_written window
+        // walking all of its regions to upload one 64 KiB span - the answer for a 256 MiB
+        // window is almost always yes. Collect the actual dirty spans instead (ForEachInRange
+        // clamps them to the window) and walk exactly those: by the mirror-superset invariant
+        // no tracker-dirty page in the window can lie outside them.
+        boost::container::small_vector<std::pair<VAddr, u32>, 4> dirty_spans;
         {
             std::scoped_lock lk{dma_dirty_mutex};
-            if (!bind_dirty_ranges.Intersects(device_addr, size)) {
-                clean = true;
-            } else {
+            bind_dirty_ranges.ForEachInRange(device_addr, size, [&](VAddr r0, VAddr r1) {
+                dirty_spans.emplace_back(r0, static_cast<u32>(r1 - r0));
+            });
+            if (!dirty_spans.empty()) {
                 bind_dirty_ranges.Subtract(device_addr, size);
             }
         }
@@ -1125,28 +1137,51 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
             g_obtprof.gate_ns.fetch_add(u64((Clock::now() - t0).count()),
                                         std::memory_order_relaxed);
         }
-        if (clean) {
+        if (dirty_spans.empty()) {
             if (prof) {
                 auto& counter = is_written ? g_obtprof.skip_written : g_obtprof.skip_read;
                 counter.fetch_add(1, std::memory_order_relaxed);
             }
-            if (is_written) {
-                const auto t1 = prof ? Clock::now() : Clock::time_point{};
-                memory_tracker->MarkRegionAsGpuModified(device_addr, size);
-                if (prof) {
-                    g_obtprof.markgpu_ns.fetch_add(u64((Clock::now() - t1).count()),
-                                                   std::memory_order_relaxed);
-                }
+        } else {
+            const auto t1 = prof ? Clock::now() : Clock::time_point{};
+            for (const auto& [span_addr, span_size] : dirty_spans) {
+                SynchronizeBufferSpan(buffer, span_addr, span_size, is_written);
             }
-            if (is_texel_buffer && !is_written) {
-                return SynchronizeBufferFromImage(buffer, device_addr, size);
+            if (prof) {
+                g_obtprof.walked.fetch_add(1, std::memory_order_relaxed);
+                g_obtprof.walk_spans.fetch_add(dirty_spans.size(), std::memory_order_relaxed);
+                g_obtprof.walked_ns.fetch_add(u64((Clock::now() - t1).count()),
+                                              std::memory_order_relaxed);
             }
-            return false;
         }
-        if (prof) {
-            g_obtprof.walked.fetch_add(1, std::memory_order_relaxed);
+        // The GPU write covers the WHOLE window whatever was uploaded - identical to the
+        // second ForEachUploadRange pass of the ungated path (which also marks the full
+        // query range), done with the cheap SetRange-only method.
+        if (is_written) {
+            const auto t2 = prof ? Clock::now() : Clock::time_point{};
+            memory_tracker->MarkRegionAsGpuModified(device_addr, size);
+            if (prof) {
+                g_obtprof.markgpu_ns.fetch_add(u64((Clock::now() - t2).count()),
+                                               std::memory_order_relaxed);
+            }
         }
+        if (is_texel_buffer && !is_written) {
+            return SynchronizeBufferFromImage(buffer, device_addr, size);
+        }
+        return false;
     }
+    SynchronizeBufferSpan(buffer, device_addr, size, is_written);
+    if (is_texel_buffer && !is_written) {
+        return SynchronizeBufferFromImage(buffer, device_addr, size);
+    }
+    return false;
+}
+
+void BufferCache::SynchronizeBufferSpan(Buffer& buffer, VAddr device_addr, u32 size,
+                                        bool is_written) {
+    boost::container::small_vector<vk::BufferCopy, 4> copies;
+    size_t total_size_bytes = 0;
+    const VAddr buffer_start = buffer.CpuAddr();
     vk::Buffer src_buffer = VK_NULL_HANDLE;
     memory_tracker->ForEachUploadRange(
         device_addr, size, is_written,
@@ -1212,10 +1247,6 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
         });
         TouchBuffer(buffer);
     }
-    if (is_texel_buffer && !is_written) {
-        return SynchronizeBufferFromImage(buffer, device_addr, size);
-    }
-    return false;
 }
 
 vk::Buffer BufferCache::UploadCopies(Buffer& buffer, std::span<vk::BufferCopy> copies,

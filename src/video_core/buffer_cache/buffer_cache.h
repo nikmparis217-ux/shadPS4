@@ -228,6 +228,12 @@ private:
     bool SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size, bool is_written,
                            bool is_texel_buffer);
 
+    /// The upload core of SynchronizeBuffer (tracker walk + staging + barriers), over one
+    /// span. GT_BIND_SKIP calls it once per mirror-reported dirty span so a 256 MiB written
+    /// window no longer walks 64 regions to upload 64 KiB; the ungated path calls it once
+    /// with the whole window, which is byte-identical to the old body.
+    void SynchronizeBufferSpan(Buffer& buffer, VAddr device_addr, u32 size, bool is_written);
+
     vk::Buffer UploadCopies(Buffer& buffer, std::span<vk::BufferCopy> copies,
                             size_t total_size_bytes);
 
