@@ -220,6 +220,12 @@ void MaybeFlushObtainProf() {
              GtProtProf::other_ns.exchange(0) / 1e6, GtProtProf::watch_other_ns.exchange(0) / 1e6,
              GtProtProf::faults_write.exchange(0), GtProtProf::faults_read.exchange(0),
              GtProtProf::wide_marks.exchange(0), GtProtProf::wide_bytes.exchange(0) >> 10);
+    if (GtHotPin::Enabled()) {
+        LOG_INFO(Render_Vulkan, "[pinprof] {} pages pinned this window | {} page-marks kept "
+                                "dirty by pins | {} decay sweeps",
+                 GtHotPin::pins_added.exchange(0), GtHotPin::kept_pages.exchange(0),
+                 GtHotPin::decay_sweeps.load(std::memory_order_relaxed));
+    }
     GtFaultHist::Flush();
 }
 
@@ -774,10 +780,40 @@ void BufferCache::InvalidateMemory(VAddr device_addr, u64 size) {
     if (!IsRegionRegistered(device_addr, size)) {
         return;
     }
+    // size <= 8 is the guest write-fault path (Rasterizer::InvalidateMemory's own gate);
+    // DMA/library invalidations pass real sizes and must not feed the hot-pin detector.
     memory_tracker->InvalidateRegion(
-        device_addr, size, [this, device_addr, size] { ReadMemory(device_addr, size, true); });
+        device_addr, size, size <= 8,
+        [this, device_addr, size] { ReadMemory(device_addr, size, true); });
     // AFTER the tracker change (see LogDmaDirty's contract).
     LogDmaDirty(device_addr, size);
+}
+
+void BufferCache::MaybeDecayHotPins() {
+    if (!VideoCore::GtHotPin::Enabled()) {
+        return;
+    }
+    // Called from ObtainBuffer (GPU thread, ~10^5/window): a counter keeps the clock read off
+    // the common path, the clock keeps the sweep on wall time. GT_HOT_PIN_DECAY seconds per
+    // sweep (default 6); every 3rd sweep also drops the pins themselves - a still-hot page
+    // re-earns its pin in milliseconds, a cooled one stops re-uploading.
+    static std::atomic<u32> calls{0};
+    if ((calls.fetch_add(1, std::memory_order_relaxed) & 4095) != 0) {
+        return;
+    }
+    static const u64 decay_ns = [] {
+        const char* v = std::getenv("GT_HOT_PIN_DECAY");
+        const unsigned long secs = v ? std::strtoul(v, nullptr, 10) : 0;
+        return u64(secs != 0 ? secs : 6) * 1'000'000'000ULL;
+    }();
+    using Clock = std::chrono::steady_clock;
+    static Clock::time_point last_sweep = Clock::now();
+    if (Clock::now() - last_sweep < std::chrono::nanoseconds(decay_ns)) {
+        return;
+    }
+    last_sweep = Clock::now();
+    const u64 sweep = GtHotPin::decay_sweeps.fetch_add(1, std::memory_order_relaxed) + 1;
+    memory_tracker->DecayHotPins((sweep % 3) == 0);
 }
 
 namespace {
@@ -1385,6 +1421,7 @@ void BufferCache::CopyBuffer(VAddr dst, VAddr src, u32 num_bytes, bool dst_gds, 
 
 std::pair<Buffer*, u32> BufferCache::ObtainBuffer(VAddr device_addr, u32 size, bool is_written,
                                                   bool is_texel_buffer, BufferId buffer_id) {
+    MaybeDecayHotPins();
     const bool prof = DmaProfEnabled();
     using Clock = std::chrono::steady_clock;
     const auto t0 = prof ? Clock::now() : Clock::time_point{};
@@ -1773,7 +1810,14 @@ bool BufferCache::SynchronizeBuffer(Buffer& buffer, VAddr device_addr, u32 size,
     // IsRegionGpuModified and buffer-GC downloads all read those bits - done cheaply via
     // MarkRegionAsGpuModified, no mask copies), and the image->buffer refresh a texel-buffer
     // bind runs (GPU-side data, not gated by CPU dirtiness).
-    if (BindSkipEnabled()) {
+    // GT_HOT_PIN bypass: a pinned page never faults again, so no producer ever re-logs it
+    // into the gate's dirty mirror - the gate would then skip syncs while the CPU keeps
+    // writing the unprotected pages, and the GPU would read stale bytes forever. A window
+    // holding any pinned page takes the ungated walk below, which is exactly the per-bind
+    // re-upload a pin means.
+    const bool window_pinned = VideoCore::GtHotPin::Enabled() && BindSkipEnabled() &&
+                               memory_tracker->IsRegionPinned(device_addr, size);
+    if (BindSkipEnabled() && !window_pinned) {
         const bool prof = DmaProfEnabled();
         using Clock = std::chrono::steady_clock;
         const auto t0 = prof ? Clock::now() : Clock::time_point{};

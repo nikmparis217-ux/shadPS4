@@ -43,6 +43,10 @@ public:
 
     void SetCpuAddress(VAddr new_cpu_addr) {
         cpu_addr = new_cpu_addr;
+        // A manager can be handed out for a fresh region; hot-pin state from a previous
+        // tenancy would pin the wrong pages of the new one.
+        pinned.Clear();
+        fault_seen.Clear();
     }
 
     VAddr GetCpuAddr() const {
@@ -126,6 +130,23 @@ public:
         if constexpr (clear) {
             bits.UnsetRange(start_page, end_page);
             if constexpr (type == Type::CPU) {
+                // GT_HOT_PIN: a pinned page stays CPU-dirty forever (it re-uploads on every
+                // bind - the harvest above already reported it) and, because cpu and writeable
+                // then both stay 1, UpdateProtection below has nothing to re-protect: no
+                // syscall, and the guest write that would have faulted next frame does not.
+                if (GtHotPin::Enabled()) {
+                    RegionBits keep(pinned, start_page, end_page);
+                    if (keep.Any()) {
+                        bits |= keep;
+                        if (GtProtProf::Enabled()) {
+                            size_t kept = 0;
+                            for (const auto& [s, e] : keep) {
+                                kept += e - s;
+                            }
+                            GtHotPin::kept_pages.fetch_add(kept, std::memory_order_relaxed);
+                        }
+                    }
+                }
                 UpdateProtection<true, false>();
             } else if (EmulatorSettings.GetReadbacksMode() != GpuReadbacksMode::Disabled) {
                 UpdateProtection<false, true>();
@@ -135,6 +156,77 @@ public:
         for (const auto& [start, end] : mask) {
             func(cpu_addr + start * TRACKER_BYTES_PER_PAGE, (end - start) * TRACKER_BYTES_PER_PAGE);
         }
+    }
+
+    /**
+     * GT_HOT_PIN (run 221): the guest-write-fault flavor of ChangeRegionState<CPU, true>. A
+     * page faulting AGAIN while fault_seen still remembers its previous fault is caught in the
+     * write -> upload -> re-protect -> fault cycle (runs 218/220: the same 1 MiB arenas faulted
+     * thousands of times per window) and gets pinned. GPU-modified pages are never pinned - a
+     * pin means "upload this on every bind", and that must never clobber GPU-written data the
+     * tracker knows about. Caller must hold the region lock.
+     */
+    void MarkCpuDirtyFromFault(u64 dirty_addr, u64 size) {
+        RENDERER_TRACE;
+        const size_t offset = dirty_addr - cpu_addr;
+        const size_t start_page = SanitizeAddress(offset) / TRACKER_BYTES_PER_PAGE;
+        const size_t end_page =
+            Common::DivCeil(SanitizeAddress(offset + size), TRACKER_BYTES_PER_PAGE);
+        if (start_page >= NUM_PAGES_PER_REGION || end_page <= start_page) {
+            return;
+        }
+        RegionBits mask;
+        mask.SetRange(start_page, end_page);
+        if (GtHotPin::Enabled()) {
+            RegionBits repeat = mask;
+            repeat &= fault_seen;
+            repeat &= ~gpu;
+            repeat &= ~pinned;
+            if (repeat.Any()) {
+                pinned |= repeat;
+                if (GtProtProf::Enabled()) {
+                    size_t added = 0;
+                    for (const auto& [s, e] : repeat) {
+                        added += e - s;
+                    }
+                    GtHotPin::pins_added.fetch_add(added, std::memory_order_relaxed);
+                }
+            }
+            fault_seen |= mask;
+        }
+        cpu |= mask;
+        UpdateProtection<false, false>();
+    }
+
+    /**
+     * GT_HOT_PIN: periodic decay, called on every sweep. fault_seen always resets (so "hot"
+     * means two faults within one sweep interval, not two faults ever); the pins themselves
+     * drop only when drop_pins is set (every third sweep) - a still-hot page re-earns its pin
+     * within milliseconds at the cost of one fault, a cooled page stops re-uploading forever.
+     * Caller must hold the region lock.
+     */
+    void DecayHotPins(bool drop_pins) {
+        fault_seen.Clear();
+        if (drop_pins) {
+            pinned.Clear();
+        }
+    }
+
+    /**
+     * GT_HOT_PIN: does any page of the range hold a pin? The GT_BIND_SKIP gate must not skip
+     * a window with pins: pinned pages never fault again, so no producer re-logs them into the
+     * gate's dirty mirror, and skipping would leave the GPU reading stale bytes while the CPU
+     * keeps writing the unprotected pages. Caller must hold the region lock.
+     */
+    [[nodiscard]] bool IsRegionPinned(u64 offset, u64 size) noexcept {
+        const size_t start_page = SanitizeAddress(offset) / TRACKER_BYTES_PER_PAGE;
+        const size_t end_page =
+            Common::DivCeil(SanitizeAddress(offset + size), TRACKER_BYTES_PER_PAGE);
+        if (start_page >= NUM_PAGES_PER_REGION || end_page <= start_page) {
+            return false;
+        }
+        RegionBits test(pinned, start_page, end_page);
+        return test.Any();
     }
 
     /**
@@ -259,6 +351,9 @@ private:
     RegionBits gpu;
     RegionBits writeable;
     RegionBits readable;
+    // GT_HOT_PIN state - see MarkCpuDirtyFromFault / DecayHotPins.
+    RegionBits pinned;
+    RegionBits fault_seen;
 };
 
 } // namespace VideoCore

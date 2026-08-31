@@ -63,6 +63,29 @@ void Record(VAddr addr, bool is_write);
 void Flush();
 } // namespace GtFaultHist
 
+/// GT_HOT_PIN (run 221): run 218/220 measured the same 1 MiB arenas taking thousands of write
+/// faults per 2 s window - up to 20,337 on one range, 80x its 256 pages - i.e. the cycle
+/// guest write -> upload -> re-protect -> fault, repeated. A page that faults AGAIN while its
+/// previous fault is still remembered (fault_seen, decayed every sweep) is "hot": it gets
+/// PINNED - it stays CPU-dirty through the upload walk and is never re-protected, so it
+/// uploads on every bind (today's snapshot semantics, unchanged) and never faults again.
+/// Unlike GT_FAULT_WIDE this marks ONLY pages the CPU genuinely wrote (each pin is earned by
+/// two real faults), so the stale-upload poison class of runs 211-213 cannot occur. Pins
+/// decay periodically so a page that merely got written twice does not upload forever.
+namespace GtHotPin {
+inline std::atomic<u64> pins_added{0};     // pages newly pinned this window
+inline std::atomic<u64> kept_pages{0};     // page-marks kept dirty by pins in upload walks
+inline std::atomic<u64> decay_sweeps{0};   // sweeps performed (every 3rd drops the pins too)
+
+inline bool Enabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_HOT_PIN");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+} // namespace GtHotPin
+
 class PageManager {
     // PAGE_SIZE and PAGE_BITS conflicts with machine/param.h definitions on freebsd!
     // Use the same page size as the tracker.

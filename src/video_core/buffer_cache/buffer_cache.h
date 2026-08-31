@@ -311,6 +311,10 @@ private:
     void ApplyBdaGuestUnmap(VAddr device_addr, u64 size);
     void RestoreBdaFallback(VAddr device_addr, u64 size);
 
+    /// GT_HOT_PIN (run 221): periodic decay of the hot-pin state - see
+    /// RegionManager::MarkCpuDirtyFromFault. Cheap counter+clock gate, real work per sweep.
+    void MaybeDecayHotPins();
+
     void TouchBuffer(const Buffer& buffer);
 
     void DeleteBuffer(BufferId buffer_id);

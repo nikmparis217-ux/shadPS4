@@ -105,10 +105,13 @@ public:
                             });
     }
 
-    /// Removes all protection from a page and ensures GPU data has been flushed if requested
-    void InvalidateRegion(VAddr cpu_addr, u64 size, auto&& on_flush) noexcept {
+    /// Removes all protection from a page and ensures GPU data has been flushed if requested.
+    /// from_fault distinguishes a guest write fault from a DMA/library invalidation: only real
+    /// faults feed the GT_HOT_PIN repeat detector (see RegionManager::MarkCpuDirtyFromFault).
+    void InvalidateRegion(VAddr cpu_addr, u64 size, bool from_fault, auto&& on_flush) noexcept {
         IteratePages<false>(
-            cpu_addr, size, [&on_flush](RegionManager* manager, u64 offset, size_t size) {
+            cpu_addr, size,
+            [&on_flush, from_fault](RegionManager* manager, u64 offset, size_t size) {
                 const bool should_flush = [&] {
                     // Perform both the GPU modification check and CPU state change with the lock
                     // in case we are racing with GPU thread trying to mark the page as GPU
@@ -119,13 +122,39 @@ public:
                         manager->template IsRegionModified<Type::GPU>(offset, size)) {
                         return true;
                     }
-                    manager->template ChangeRegionState<Type::CPU, true>(
-                        manager->GetCpuAddr() + offset, size);
+                    if (from_fault && GtHotPin::Enabled()) {
+                        manager->MarkCpuDirtyFromFault(manager->GetCpuAddr() + offset, size);
+                    } else {
+                        manager->template ChangeRegionState<Type::CPU, true>(
+                            manager->GetCpuAddr() + offset, size);
+                    }
                     return false;
                 }();
                 if (should_flush) {
                     on_flush();
                 }
+            });
+    }
+
+    /// GT_HOT_PIN: one decay sweep over every region (see RegionManager::DecayHotPins). Walks
+    /// the whole manager pool - free managers included, harmlessly - a few thousand spinlock
+    /// hops once per sweep interval.
+    void DecayHotPins(bool drop_pins) {
+        for (auto& pool : manager_pool) {
+            for (auto& manager : pool) {
+                std::scoped_lock lk{manager.lock};
+                manager.DecayHotPins(drop_pins);
+            }
+        }
+    }
+
+    /// GT_HOT_PIN: true when any page in the range is pinned (see RegionManager::IsRegionPinned
+    /// for why the BIND_SKIP gate needs this).
+    bool IsRegionPinned(VAddr query_cpu_addr, u64 query_size) noexcept {
+        return IteratePages<false>(
+            query_cpu_addr, query_size, [](RegionManager* manager, u64 offset, size_t size) {
+                std::scoped_lock lk{manager->lock};
+                return manager->IsRegionPinned(offset, size);
             });
     }
 
