@@ -54,6 +54,18 @@ bool GtBdaImportEnabled() {
     return enabled;
 }
 
+/// GT_DIRECT_IMPORT (run 220): use the already imported coherent guest backing directly for
+/// GPU-read-only buffers. This is deliberately narrower than GT_BDA_IMPORT: formatted buffers,
+/// cached ranges, GPU-modified ranges, image aliases, fragmented physical mappings and ranges
+/// crossing an import chunk all retain the normal copy-and-track path.
+bool GtDirectImportEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_DIRECT_IMPORT");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+
 /// GT_BIND_SKIP (run 205): [obtprof] convicted the CACHED half of ObtainBuffer - ~30,000
 /// SynchronizeBuffer calls per 2 s window costing 230-660 ms, ~13 us each, almost all of them
 /// finding NOTHING dirty. The cost is ForEachUploadRange's per-region dance (spin lock, bitset
@@ -154,6 +166,16 @@ struct ObtainProf {
     // carves the memcpy out of cpu; [protprof] (GtProtProf in page_manager.h) prices the
     // syscalls. tracker share = cpu - memcpy - protprof.span; run 210 names the component.
     std::atomic<u64> span_memcpy_ns{0};
+    // Run 220: direct coherent backing avoids the upload/protect/fault loop for buffers that
+    // are provably GPU-read-only. Count every candidate and why it retained the cached path.
+    std::atomic<u64> direct_queries{0};
+    std::atomic<u64> direct_hits{0};
+    std::atomic<u64> direct_bytes{0};
+    std::atomic<u64> direct_query_ns{0};
+    std::atomic<u64> direct_cached{0};
+    std::atomic<u64> direct_gpu{0};
+    std::atomic<u64> direct_image{0};
+    std::atomic<u64> direct_backing{0};
 };
 ObtainProf g_obtprof;
 
@@ -183,6 +205,13 @@ void MaybeFlushObtainProf() {
              g_obtprof.span_memcpy_ns.exchange(0) / 1e6, g_obtprof.span_rec_ns.exchange(0) / 1e6,
              g_obtprof.span_copies.exchange(0), g_obtprof.span_bytes.exchange(0) >> 10,
              g_obtprof.span_empty.exchange(0), g_obtprof.span_rp_breaks.exchange(0));
+    LOG_INFO(Render_Vulkan,
+             "[directimport] {} queries: {} hits {} KiB in {:.1f}ms | rejected: {} cached, "
+             "{} GPU-modified, {} image-alias, {} backing",
+             g_obtprof.direct_queries.exchange(0), g_obtprof.direct_hits.exchange(0),
+             g_obtprof.direct_bytes.exchange(0) >> 10, g_obtprof.direct_query_ns.exchange(0) / 1e6,
+             g_obtprof.direct_cached.exchange(0), g_obtprof.direct_gpu.exchange(0),
+             g_obtprof.direct_image.exchange(0), g_obtprof.direct_backing.exchange(0));
     LOG_INFO(Render_Vulkan,
              "[protprof] span-walk: {} protects {:.1f}ms of watch {:.1f}ms | other: {} protects "
              "{:.1f}ms of watch {:.1f}ms | claimed faults: {} wr {} rd | wide: {} marks {} KiB",
@@ -269,6 +298,11 @@ BufferCache::BufferCache(const Vulkan::Instance& instance_, Vulkan::Scheduler& s
     if (GtBdaImportEnabled() && InitializeBdaBacking()) {
         bda_import_enabled = true;
         MapGuestMemory(0, CACHING_NUMPAGES * CACHING_PAGESIZE);
+        if (GtDirectImportEnabled()) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[directimport] ACTIVE: coherent imported backing may serve strictly "
+                         "read-only, non-image, uncached buffers");
+        }
     }
 
     std::memset(gds_buffer.mapped_data.data(), 0, DataShareBufferSize);
@@ -438,7 +472,9 @@ bool BufferCache::InitializeBdaBacking() {
         }
 
         imported_backing_chunks.push_back(
-            {buffer, allocation, device_addr, physical_addr, chunk_size});
+            {buffer, allocation, device_addr, physical_addr, chunk_size, {}});
+        imported_backing_chunks.back().direct_view =
+            std::make_unique<Buffer>(instance, scheduler, buffer, device_addr, chunk_size);
         Vulkan::SetObjectName(device, buffer, "Imported Guest Backing {:#x}:{:#x}", physical_addr,
                               chunk_size);
         LOG_INFO(Render_Vulkan,
@@ -458,6 +494,8 @@ void BufferCache::DestroyBdaBacking() {
     const auto device = instance.GetDevice();
     for (auto chunk = imported_backing_chunks.rbegin();
          chunk != imported_backing_chunks.rend(); ++chunk) {
+        // The view borrows the raw handle, so it must disappear before the owner below.
+        chunk->direct_view.reset();
         if (chunk->buffer) {
             device.destroyBuffer(chunk->buffer);
         }
@@ -477,6 +515,77 @@ vk::DeviceAddress BufferCache::ImportedBdaAddress(PAddr physical_addr) const {
         }
     }
     return 0;
+}
+
+std::pair<Buffer*, u32> BufferCache::TryGetDirectImportedReadBuffer(VAddr virtual_addr, u32 size) {
+    if (!bda_import_enabled || !GtDirectImportEnabled() || size == 0 || virtual_addr == 0 ||
+        virtual_addr > std::numeric_limits<VAddr>::max() - size) {
+        return {};
+    }
+
+    using Clock = std::chrono::steady_clock;
+    const auto start = Clock::now();
+    g_obtprof.direct_queries.fetch_add(1, std::memory_order_relaxed);
+    const auto finish = [&] {
+        g_obtprof.direct_query_ns.fetch_add(u64((Clock::now() - start).count()),
+                                            std::memory_order_relaxed);
+    };
+
+    // A cached allocation can contain newer GPU-side bytes than guest RAM. It always wins.
+    if (buffer_ranges.Intersects(virtual_addr, size)) {
+        g_obtprof.direct_cached.fetch_add(1, std::memory_order_relaxed);
+        finish();
+        return {};
+    }
+    if (IsRegionGpuModified(virtual_addr, size) ||
+        gpu_modified_ranges.Intersects(virtual_addr, size)) {
+        g_obtprof.direct_gpu.fetch_add(1, std::memory_order_relaxed);
+        finish();
+        return {};
+    }
+
+    // Unformatted buffers can still alias an image allocation. Never bypass the texture
+    // cache in that case, even when the buffer tracker itself has no registered range.
+    bool overlaps_image = false;
+    texture_cache.ForEachImageInRegion(virtual_addr, size, [&](ImageId, Image&) {
+        overlaps_image = true;
+        return true;
+    });
+    if (overlaps_image) {
+        g_obtprof.direct_image.fetch_add(1, std::memory_order_relaxed);
+        finish();
+        return {};
+    }
+
+    const auto segments = memory->GetPhysicalBackingSegments(virtual_addr, size);
+    if (segments.size() != 1 || segments[0].virtual_addr != virtual_addr ||
+        segments[0].size != size ||
+        segments[0].physical_addr > std::numeric_limits<PAddr>::max() - size) {
+        g_obtprof.direct_backing.fetch_add(1, std::memory_order_relaxed);
+        finish();
+        return {};
+    }
+
+    const PAddr physical_addr = segments[0].physical_addr;
+    const PAddr physical_end = physical_addr + size;
+    for (auto& chunk : imported_backing_chunks) {
+        if (physical_addr < chunk.physical_addr ||
+            physical_end > chunk.physical_addr + chunk.size || !chunk.direct_view) {
+            continue;
+        }
+        const u64 offset = physical_addr - chunk.physical_addr;
+        if (offset > std::numeric_limits<u32>::max()) {
+            break;
+        }
+        g_obtprof.direct_hits.fetch_add(1, std::memory_order_relaxed);
+        g_obtprof.direct_bytes.fetch_add(size, std::memory_order_relaxed);
+        finish();
+        return {chunk.direct_view.get(), static_cast<u32>(offset)};
+    }
+
+    g_obtprof.direct_backing.fetch_add(1, std::memory_order_relaxed);
+    finish();
+    return {};
 }
 
 u64 BufferCache::WriteBdaFallbackSegment(VAddr virtual_addr, PAddr physical_addr, u64 size) {
@@ -1297,6 +1406,16 @@ std::pair<Buffer*, u32> BufferCache::ObtainBuffer(VAddr device_addr, u32 size, b
                 MaybeFlushObtainProf();
             }
             return {&stream_buffer, offset};
+        }
+    }
+    // A valid caller-supplied ID is an explicit cached-buffer dependency and must retain
+    // precedence. Otherwise, let large plain read buffers use coherent imported guest memory.
+    if (!is_written && !is_texel_buffer && IsBufferInvalid(buffer_id)) {
+        if (auto direct = TryGetDirectImportedReadBuffer(device_addr, size); direct.first) {
+            if (prof) {
+                MaybeFlushObtainProf();
+            }
+            return direct;
         }
     }
     if (IsBufferInvalid(buffer_id)) {

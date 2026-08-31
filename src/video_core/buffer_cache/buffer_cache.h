@@ -286,6 +286,7 @@ private:
         vk::DeviceAddress device_addr{};
         PAddr physical_addr{};
         u64 size{};
+        std::unique_ptr<Buffer> direct_view;
     };
 
     struct BdaBackingSegment {
@@ -304,6 +305,8 @@ private:
     bool InitializeBdaBacking();
     void DestroyBdaBacking();
     [[nodiscard]] vk::DeviceAddress ImportedBdaAddress(PAddr physical_addr) const;
+    [[nodiscard]] std::pair<Buffer*, u32> TryGetDirectImportedReadBuffer(VAddr virtual_addr,
+                                                                         u32 size);
     [[nodiscard]] u64 WriteBdaFallbackSegment(VAddr virtual_addr, PAddr physical_addr, u64 size);
     void ApplyBdaGuestUnmap(VAddr device_addr, u64 size);
     void RestoreBdaFallback(VAddr device_addr, u64 size);

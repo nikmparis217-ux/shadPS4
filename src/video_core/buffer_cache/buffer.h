@@ -42,6 +42,8 @@ constexpr vk::BufferUsageFlags AllFlags =
 
 struct UniqueBuffer {
     explicit UniqueBuffer(vk::Device device, VmaAllocator allocator);
+    UniqueBuffer(vk::Device device, vk::Buffer borrowed_buffer,
+                 vk::DeviceAddress borrowed_bda_addr);
     ~UniqueBuffer();
 
     UniqueBuffer(const UniqueBuffer&) = delete;
@@ -51,7 +53,8 @@ struct UniqueBuffer {
         : allocator{std::exchange(other.allocator, VK_NULL_HANDLE)},
           allocation{std::exchange(other.allocation, VK_NULL_HANDLE)},
           buffer{std::exchange(other.buffer, VK_NULL_HANDLE)},
-          bda_addr{std::exchange(other.bda_addr, 0)} {}
+          bda_addr{std::exchange(other.bda_addr, 0)},
+          owns_buffer{std::exchange(other.owns_buffer, false)} {}
     UniqueBuffer& operator=(UniqueBuffer&& other) {
         buffer = std::exchange(other.buffer, VK_NULL_HANDLE);
         allocator = std::exchange(other.allocator, VK_NULL_HANDLE);
@@ -59,6 +62,7 @@ struct UniqueBuffer {
         // Without this, the moved-from wrapper kept the BDA and its destructor would
         // unregister the range while the moved-to buffer was still alive.
         bda_addr = std::exchange(other.bda_addr, 0);
+        owns_buffer = std::exchange(other.owns_buffer, false);
         return *this;
     }
 
@@ -74,6 +78,7 @@ struct UniqueBuffer {
     VmaAllocation allocation;
     vk::Buffer buffer{};
     vk::DeviceAddress bda_addr = 0;
+    bool owns_buffer = true;
 };
 
 class Buffer {
@@ -81,6 +86,10 @@ public:
     explicit Buffer(const Vulkan::Instance& instance, Vulkan::Scheduler& scheduler,
                     MemoryUsage usage, VAddr cpu_addr_, vk::BufferUsageFlags flags,
                     u64 size_bytes_);
+
+    /// Non-owning view over a Vulkan buffer whose storage is imported and owned elsewhere.
+    Buffer(const Vulkan::Instance& instance, Vulkan::Scheduler& scheduler,
+           vk::Buffer borrowed_buffer, vk::DeviceAddress borrowed_bda_addr, u64 size_bytes_);
 
     Buffer& operator=(const Buffer&) = delete;
     Buffer(const Buffer&) = delete;

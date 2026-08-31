@@ -140,8 +140,13 @@ std::string_view BufferTypeName(MemoryUsage type) {
 UniqueBuffer::UniqueBuffer(vk::Device device_, VmaAllocator allocator_)
     : device{device_}, allocator{allocator_} {}
 
+UniqueBuffer::UniqueBuffer(vk::Device device_, vk::Buffer borrowed_buffer,
+                           vk::DeviceAddress borrowed_bda_addr)
+    : device{device_}, allocator{VK_NULL_HANDLE}, allocation{VK_NULL_HANDLE},
+      buffer{borrowed_buffer}, bda_addr{borrowed_bda_addr}, owns_buffer{false} {}
+
 UniqueBuffer::~UniqueBuffer() {
-    if (buffer) {
+    if (buffer && owns_buffer) {
         // The registry entry must die with the OWNER of the VkBuffer (this covers the
         // cache's deferred deletions too); the registration itself happens in Buffer's
         // constructor, which is the first place both the BDA and the guest range exist.
@@ -154,6 +159,7 @@ UniqueBuffer::~UniqueBuffer() {
 
 void UniqueBuffer::Create(const vk::BufferCreateInfo& buffer_ci, MemoryUsage usage,
                           VmaAllocationInfo* out_alloc_info) {
+    owns_buffer = true;
     const bool with_bda = bool(buffer_ci.usage & vk::BufferUsageFlagBits::eShaderDeviceAddress);
     const VmaAllocationCreateFlags bda_flag =
         with_bda ? VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT : 0;
@@ -257,6 +263,19 @@ Buffer::Buffer(const Vulkan::Instance& instance_, Vulkan::Scheduler& scheduler_,
         const u64 fill_bytes = std::min<u64>(size_bytes & ~u64{3}, 0xFFFFFFFCull);
         Fill(0, static_cast<u32>(fill_bytes), 0);
     }
+}
+
+Buffer::Buffer(const Vulkan::Instance& instance_, Vulkan::Scheduler& scheduler_,
+               vk::Buffer borrowed_buffer, vk::DeviceAddress borrowed_bda_addr, u64 size_bytes_)
+    : size_bytes{size_bytes_}, instance{&instance_}, scheduler{&scheduler_},
+      usage{MemoryUsage::Stream},
+      buffer{instance->GetDevice(), borrowed_buffer, borrowed_bda_addr} {
+    // The imported allocation is HOST_COHERENT and guest CPU writes reach it directly. Queue
+    // submission performs the host-to-device domain operation; this initial state also makes
+    // the first descriptor use emit a conservative host-write -> GPU-read dependency.
+    is_coherent = true;
+    access_mask = vk::AccessFlagBits2::eHostWrite;
+    stage = vk::PipelineStageFlagBits2::eHost;
 }
 
 void Buffer::Fill(u64 offset, u32 num_bytes, u32 value) {
