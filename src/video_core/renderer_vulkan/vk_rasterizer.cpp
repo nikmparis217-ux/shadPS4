@@ -158,6 +158,19 @@ struct GtFrameProf {
     double split_ms = 0;
     double bufscan_ms = 0;
     double bufemit_ms = 0;
+    // Run 223 acquitted journal (4-15 ms) and vkcmd (10-20 ms) and proved bufscan+bufemit is
+    // all of bindbuf - but bindtex's body (100-530 ms, findimg/findtex both small) and the
+    // dispatch body beyond split (300-500 ms) stayed unsplit. These finish the map: the three
+    // BindTextures phases (pass 1 sharp+guards+ImageDesc+FindImage, pass 2 rebind+FindTexture+
+    // Transit, the sampler loop's GetSampler), EndRendering per dispatch (render-pass churn),
+    // the vkCmdPushDescriptorSet (descpush, shared by draws and dispatches like bindbuf), and
+    // ExecuteShaderHLE.
+    double imgscan_ms = 0;
+    double imgemit_ms = 0;
+    double imgsamp_ms = 0;
+    double endrender_ms = 0;
+    double descpush_ms = 0;
+    double hle_ms = 0;
 
     void Flush() {
         if (!enabled) {
@@ -190,12 +203,14 @@ struct GtFrameProf {
                  "bufgc {:.0f} deaths {:.0f} | bindbuf: {} binds clamp {:.0f} findbuf {:.0f} "
                  "obtain {:.0f} flatcopy {:.0f} | bindtex: {} binds findimg {:.0f} findtex "
                  "{:.0f} | body: filter {:.0f} journal {:.0f} vkcmd {:.0f} split {:.0f} | "
-                 "bufpass: scan {:.0f} emit {:.0f}",
+                 "bufpass: scan {:.0f} emit {:.0f} | imgpass: scan {:.0f} emit {:.0f} samp "
+                 "{:.0f} | disp2: endr {:.0f} descpush {:.0f} hle {:.0f}",
                  std::chrono::duration<double>(now - process_start).count(), win_s, busy_ms,
                  draws, dispatches, submits, draw_ms, pipe_ms, bindbuf_ms, bindtex_ms, state_ms,
                  vtx_ms, dispatch_ms, dma_ms, fault_ms, texgc_ms, bufgc_ms, deaths_ms, buf_binds,
                  clamp_ms, findbuf_ms, obtain_ms, flatcopy_ms, img_binds, findimg_ms, findtex_ms,
-                 filter_ms, journal_ms, vkcmd_ms, split_ms, bufscan_ms, bufemit_ms);
+                 filter_ms, journal_ms, vkcmd_ms, split_ms, bufscan_ms, bufemit_ms, imgscan_ms,
+                 imgemit_ms, imgsamp_ms, endrender_ms, descpush_ms, hle_ms);
         window_start = now;
         draws = dispatches = submits = 0;
         draw_ms = pipe_ms = bindbuf_ms = bindtex_ms = state_ms = vtx_ms = 0;
@@ -205,6 +220,7 @@ struct GtFrameProf {
         img_binds = 0;
         findimg_ms = findtex_ms = 0;
         filter_ms = journal_ms = vkcmd_ms = split_ms = bufscan_ms = bufemit_ms = 0;
+        imgscan_ms = imgemit_ms = imgsamp_ms = endrender_ms = descpush_ms = hle_ms = 0;
     }
     double last_thread_busy_ms = 0;
 };
@@ -695,8 +711,11 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
     }
 
     {
-        GtProfScope gt_prof{&g_fprof.state_ms};
+        GtProfScope gt_prof{&g_fprof.descpush_ms};
         pipeline->BindResources(set_writes, buffer_barriers, push_data);
+    }
+    {
+        GtProfScope gt_prof{&g_fprof.state_ms};
         UpdateDynamicState(pipeline, is_indexed);
         scheduler.BeginRendering(state);
     }
@@ -1077,8 +1096,11 @@ void Rasterizer::DispatchDirect() {
     }
 
     const auto& cs = pipeline->GetStage(Shader::LogicalStage::Compute);
-    if (ExecuteShaderHLE(cs, liverpool->regs, cs_program, *this)) {
-        return;
+    {
+        GtProfScope gt_prof_hle{&g_fprof.hle_ms};
+        if (ExecuteShaderHLE(cs, liverpool->regs, cs_program, *this)) {
+            return;
+        }
     }
 
     SyncWindowedImageTables(cs, cs_program.dim_x, cs_program.dim_y, cs_program.dim_z);
@@ -1109,8 +1131,14 @@ void Rasterizer::DispatchDirect() {
         return;
     }
 
-    scheduler.EndRendering();
-    pipeline->BindResources(set_writes, buffer_barriers, push_data);
+    {
+        GtProfScope gt_prof_er{&g_fprof.endrender_ms};
+        scheduler.EndRendering();
+    }
+    {
+        GtProfScope gt_prof_dp{&g_fprof.descpush_ms};
+        pipeline->BindResources(set_writes, buffer_barriers, push_data);
+    }
 
     const auto cmdbuf = scheduler.CommandBuffer();
     {
@@ -1238,8 +1266,14 @@ void Rasterizer::DispatchIndirect(VAddr address, u32 offset, u32 size) {
         buffer_barriers.emplace_back(*barrier);
     }
 
-    scheduler.EndRendering();
-    pipeline->BindResources(set_writes, buffer_barriers, push_data);
+    {
+        GtProfScope gt_prof_er{&g_fprof.endrender_ms};
+        scheduler.EndRendering();
+    }
+    {
+        GtProfScope gt_prof_dp{&g_fprof.descpush_ms};
+        pipeline->BindResources(set_writes, buffer_barriers, push_data);
+    }
 
     const auto cmdbuf = scheduler.CommandBuffer();
     cmdbuf.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline->Handle());
@@ -2223,6 +2257,9 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
         return layers <= 2048 && (w * h * d * layers) <= (u64{1} << 28);
     };
 
+    // imgscan/imgemit/imgsamp accumulate by hand like BindBuffers' bufscan/bufemit - see there.
+    const auto gt_imgscan_t0 =
+        g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
     for (const auto& image_desc : stage.images) {
         if (g_fprof.enabled) {
             ++g_fprof.img_binds;
@@ -2516,7 +2553,15 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
         image_descriptor_array_sizes.push_back(num_bindings);
     }
 
+    if (g_fprof.enabled) {
+        g_fprof.imgscan_ms +=
+            std::chrono::duration<double, std::milli>(GtFrameProf::Clock::now() - gt_imgscan_t0)
+                .count();
+    }
+
     // Second pass to re-bind images that were updated after binding
+    const auto gt_imgemit_t0 =
+        g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
     for (auto& [image_id, desc] : image_bindings) {
         bool is_storage = desc.type == VideoCore::TextureCache::BindingType::Storage;
         if (!image_id) {
@@ -2590,6 +2635,11 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                                      image.backing->state.layout);
         }
     }
+    if (g_fprof.enabled) {
+        g_fprof.imgemit_ms +=
+            std::chrono::duration<double, std::milli>(GtFrameProf::Clock::now() - gt_imgemit_t0)
+                .count();
+    }
 
     u32 image_info_idx = first_image_idx;
     u32 image_binding_idx = 0;
@@ -2620,6 +2670,8 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
         binding.unified += array_size;
     }
 
+    const auto gt_imgsamp_t0 =
+        g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
     for (const auto& sampler : stage.samplers) {
         auto ssharp = sampler.GetSharp(stage);
         if (sampler.disable_aniso) {
@@ -2637,6 +2689,11 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
         set_write.descriptorCount = 1;
         set_write.descriptorType = vk::DescriptorType::eSampler;
         set_write.pImageInfo = &image_infos.back();
+    }
+    if (g_fprof.enabled) {
+        g_fprof.imgsamp_ms +=
+            std::chrono::duration<double, std::milli>(GtFrameProf::Clock::now() - gt_imgsamp_t0)
+                .count();
     }
 }
 
