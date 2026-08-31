@@ -171,6 +171,15 @@ struct GtFrameProf {
     double endrender_ms = 0;
     double descpush_ms = 0;
     double hle_ms = 0;
+    // Run 224 closed the map and the verdict is a DISTRIBUTED tax: no single slice dominates,
+    // the bill is ~2 us x 100-160k buffer + 60-130k texture binds per window. The only fix
+    // family that attacks the SUM is a bind memo (skip the whole per-bind machinery when the
+    // bindings repeat) - and whether it can win is an empirical fact about GT7's bind stream,
+    // not a design choice. These count binds whose sharp BYTES are identical to the previous
+    // bind at the same (shader, slot): the memo's best-case hit rate, measured before anything
+    // is built on it. Direct-mapped table, collisions undercount - a floor, not a ceiling.
+    u64 buf_redun = 0;
+    u64 tex_redun = 0;
 
     void Flush() {
         if (!enabled) {
@@ -204,13 +213,13 @@ struct GtFrameProf {
                  "obtain {:.0f} flatcopy {:.0f} | bindtex: {} binds findimg {:.0f} findtex "
                  "{:.0f} | body: filter {:.0f} journal {:.0f} vkcmd {:.0f} split {:.0f} | "
                  "bufpass: scan {:.0f} emit {:.0f} | imgpass: scan {:.0f} emit {:.0f} samp "
-                 "{:.0f} | disp2: endr {:.0f} descpush {:.0f} hle {:.0f}",
+                 "{:.0f} | disp2: endr {:.0f} descpush {:.0f} hle {:.0f} | redun: buf {} tex {}",
                  std::chrono::duration<double>(now - process_start).count(), win_s, busy_ms,
                  draws, dispatches, submits, draw_ms, pipe_ms, bindbuf_ms, bindtex_ms, state_ms,
                  vtx_ms, dispatch_ms, dma_ms, fault_ms, texgc_ms, bufgc_ms, deaths_ms, buf_binds,
                  clamp_ms, findbuf_ms, obtain_ms, flatcopy_ms, img_binds, findimg_ms, findtex_ms,
                  filter_ms, journal_ms, vkcmd_ms, split_ms, bufscan_ms, bufemit_ms, imgscan_ms,
-                 imgemit_ms, imgsamp_ms, endrender_ms, descpush_ms, hle_ms);
+                 imgemit_ms, imgsamp_ms, endrender_ms, descpush_ms, hle_ms, buf_redun, tex_redun);
         window_start = now;
         draws = dispatches = submits = 0;
         draw_ms = pipe_ms = bindbuf_ms = bindtex_ms = state_ms = vtx_ms = 0;
@@ -221,10 +230,33 @@ struct GtFrameProf {
         findimg_ms = findtex_ms = 0;
         filter_ms = journal_ms = vkcmd_ms = split_ms = bufscan_ms = bufemit_ms = 0;
         imgscan_ms = imgemit_ms = imgsamp_ms = endrender_ms = descpush_ms = hle_ms = 0;
+        buf_redun = tex_redun = 0;
     }
     double last_thread_busy_ms = 0;
 };
 GtFrameProf g_fprof;
+
+// The redundancy probe's memory: the last sharp bytes seen at each (shader, slot). 4096
+// direct-mapped entries, 32 bytes each (a T# is 32, a V# is 16 and compares its prefix);
+// a collision replaces the entry and undercounts. GPU thread only, like g_fprof.
+struct GtRedunTable {
+    struct Entry {
+        u64 key = 0;
+        std::array<u64, 4> bytes{};
+    };
+    std::array<Entry, 4096> entries{};
+    bool CheckAndStore(u64 key, const void* sharp, size_t n) {
+        Entry& e = entries[key & (entries.size() - 1)];
+        std::array<u64, 4> b{};
+        std::memcpy(b.data(), sharp, std::min(n, sizeof(b)));
+        const bool same = e.key == key && e.bytes == b;
+        e.key = key;
+        e.bytes = b;
+        return same;
+    }
+};
+GtRedunTable g_redun_buf;
+GtRedunTable g_redun_tex;
 
 // RAII accumulator for one category; two clock reads when armed, one branch when not.
 struct GtProfScope {
@@ -1632,11 +1664,17 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
     // in blocks would re-indent them wholesale for the sake of a profiler.
     const auto gt_scan_t0 =
         g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
+    u32 gt_slot = 0;
     for (const auto& desc : stage.buffers) {
+        const auto vsharp = desc.GetSharp(stage);
         if (g_fprof.enabled) {
             ++g_fprof.buf_binds;
+            if (g_redun_buf.CheckAndStore(stage.pgm_hash ^ (u64(gt_slot) << 48), &vsharp,
+                                          sizeof(vsharp))) {
+                ++g_fprof.buf_redun;
+            }
         }
-        const auto vsharp = desc.GetSharp(stage);
+        ++gt_slot;
         if (!desc.IsSpecial() && vsharp.base_address != 0 && vsharp.GetSize() > 0) {
             // A V# whose base sits below the guest floor (or within a page of the top of the
             // 40-bit guest space) is torn, full stop - no legitimate guest data lives there;
@@ -2260,11 +2298,17 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
     // imgscan/imgemit/imgsamp accumulate by hand like BindBuffers' bufscan/bufemit - see there.
     const auto gt_imgscan_t0 =
         g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
+    u32 gt_img_slot = 0;
     for (const auto& image_desc : stage.images) {
+        const auto tsharp = image_desc.GetSharp(stage);
         if (g_fprof.enabled) {
             ++g_fprof.img_binds;
+            if (g_redun_tex.CheckAndStore(stage.pgm_hash ^ (u64(gt_img_slot) << 48) ^ 1,
+                                          &tsharp, sizeof(tsharp))) {
+                ++g_fprof.tex_redun;
+            }
         }
-        const auto tsharp = image_desc.GetSharp(stage);
+        ++gt_img_slot;
         // The set layout was built from the BAKED count (run 116); every path below must emit
         // exactly this many descriptors or the write lands past the layout's array.
         const u32 num_bindings = image_desc.NumBindingsBaked(stage);

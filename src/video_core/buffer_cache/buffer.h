@@ -193,6 +193,13 @@ public:
     /// Ensures that reserved bytes of memory are available to the GPU.
     void Commit();
 
+    /// How many times the ring cursor has wrapped back to 0. Within one wrap epoch the cursor
+    /// only moves forward, so an offset handed out earlier in the SAME epoch still holds its
+    /// bytes - the invariant GT_STREAM_MEMO's reuse of past Copy offsets stands on.
+    u64 WrapCount() const noexcept {
+        return wrap_count;
+    }
+
     /// Maps and commits a memory region with user provided data
     u64 Copy(auto src, size_t size, size_t alignment = 0) {
         const auto [data, offset] = Map(size, alignment);
@@ -222,6 +229,7 @@ private:
 private:
     u64 offset{};
     u64 mapped_size{};
+    u64 wrap_count{};
     std::vector<Watch> current_watches;
     std::size_t current_watch_cursor{};
     std::optional<size_t> invalidation_mark;

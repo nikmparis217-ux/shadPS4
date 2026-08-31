@@ -10,6 +10,7 @@
 #include <cstring>
 #include <limits>
 #include <mutex>
+#include <unordered_map>
 #include <boost/container/static_vector.hpp>
 #include "common/alignment.h"
 #include "common/debug.h"
@@ -85,6 +86,50 @@ bool BindSkipEnabled() {
     }();
     return enabled && DmaDirtyLogEnabled();
 }
+
+/// GT_STREAM_MEMO (run 225): ObtainBuffer's read-only <=16K branch re-copied the SAME guest
+/// range into the stream ring on EVERY bind - run 224 measured 34-66k such copies moving
+/// 95-220 MB per 2 s window (31-90 ms of CopySparseMemory alone) for bind streams where the
+/// same cbuffers rebind draw after draw. Memo: (addr,size) -> the offset the LAST Copy of
+/// that exact range returned, valid only while BOTH hold:
+///   - the scheduler tick is unchanged (no submit in between). One tick == one command
+///     buffer, so the GPU has not consumed anything yet and a well-formed engine does not
+///     rewrite constants it has in flight - rewriting them would be a CPU/GPU race on real
+///     hardware too. The tick bump on every submit retires the whole memo for free.
+///   - the stream ring has not wrapped (same wrap epoch => the cursor only moved forward =>
+///     the bytes at the stored offset are intact).
+/// The IsRegionGpuModified guard stays UPSTREAM of the lookup, so a range the GPU wrote
+/// (BDA stores, copy shaders) never comes out of the memo - it takes the cached path exactly
+/// as before. The remaining door, stated honestly: a CPU rewrite of an UNTRACKED read-only
+/// range between two binds of the SAME submit is undetectable (no buffer -> no page watch)
+/// and serves the first bind's snapshot. That is one frame at most, env-gated, and the same
+/// race would be visible on hardware. All callers run on the GpuCommandProcessor thread
+/// (BindBuffers/BindVertexBuffers/HLE/fault paths), so the map is lock-free by invariant.
+bool StreamMemoEnabled() {
+    static const bool enabled = [] {
+        const char* v = std::getenv("GT_STREAM_MEMO");
+        return v && std::atoi(v) != 0;
+    }();
+    return enabled;
+}
+
+struct StreamMemo {
+    struct Entry {
+        u64 offset;
+        u64 tick;
+        u64 wrap;
+    };
+    std::unordered_map<u64, Entry> map;
+    u64 hits = 0;
+    u64 misses = 0;
+    u64 purges = 0;
+    u64 bytes_saved = 0;
+    static u64 Key(VAddr addr, u32 size) {
+        // Guest VAs fit 40 bits (BindBuffers rejects anything above), size fits 15 (<=16K).
+        return u64(addr) | (u64(size) << 44);
+    }
+};
+StreamMemo g_smemo;
 
 /// GT_FRAME_PROF companion (run 201): the rasterizer's [fprof] measured the uses_dma block at
 /// 460-745 ms per 2 s window while the sampled consumptions read ZERO ranges - impossible for
@@ -225,6 +270,19 @@ void MaybeFlushObtainProf() {
                                 "dirty by pins | {} decay sweeps",
                  GtHotPin::pins_added.exchange(0), GtHotPin::kept_pages.exchange(0),
                  GtHotPin::decay_sweeps.load(std::memory_order_relaxed));
+    }
+    if (StreamMemoEnabled()) {
+        // Flushed from the GPU thread like everything above; the memo fields are plain u64
+        // under the same single-thread invariant as the map itself.
+        LOG_INFO(Render_Vulkan,
+                 "[smemo] {} hits {} copies ({}% hit) | {} KiB copy traffic saved | live {} "
+                 "ranges, {} purges",
+                 g_smemo.hits, g_smemo.misses,
+                 g_smemo.hits + g_smemo.misses
+                     ? (g_smemo.hits * 100) / (g_smemo.hits + g_smemo.misses)
+                     : 0,
+                 g_smemo.bytes_saved >> 10, g_smemo.map.size(), g_smemo.purges);
+        g_smemo.hits = g_smemo.misses = g_smemo.bytes_saved = g_smemo.purges = 0;
     }
     GtFaultHist::Flush();
 }
@@ -1433,6 +1491,46 @@ std::pair<Buffer*, u32> BufferCache::ObtainBuffer(VAddr device_addr, u32 size, b
             g_obtprof.gpumod_ns.fetch_add(u64((t1 - t0).count()), std::memory_order_relaxed);
         }
         if (!gpu_modified) {
+            // GT_STREAM_MEMO: reuse the offset of the identical Copy made earlier in this
+            // same submit + wrap epoch (see the struct's comment for the validity argument).
+            // The lookup sits AFTER the gpu_modified guard on purpose: GPU-written ranges
+            // never reach it, hit or miss.
+            if (StreamMemoEnabled()) {
+                const u64 key = StreamMemo::Key(device_addr, size);
+                const u64 tick = scheduler.CurrentTick();
+                const u64 wrap = stream_buffer.WrapCount();
+                if (const auto it = g_smemo.map.find(key);
+                    it != g_smemo.map.end() && it->second.tick == tick &&
+                    it->second.wrap == wrap) {
+                    ++g_smemo.hits;
+                    g_smemo.bytes_saved += size;
+                    if (prof) {
+                        MaybeFlushObtainProf();
+                    }
+                    return {&stream_buffer, it->second.offset};
+                }
+                const u64 offset =
+                    stream_buffer.Copy(device_addr, size, instance.UniformMinAlignment());
+                if (g_smemo.map.size() >= 65536) {
+                    // Unbounded address churn over a long session; a purge costs one miss
+                    // per live range and keeps the map honest.
+                    g_smemo.map.clear();
+                    ++g_smemo.purges;
+                }
+                // Copy itself may have wrapped the ring - store the POST-copy epoch, under
+                // which this offset is the valid one (all pre-wrap entries just died).
+                g_smemo.map[key] =
+                    StreamMemo::Entry{offset, tick, stream_buffer.WrapCount()};
+                ++g_smemo.misses;
+                if (prof) {
+                    g_obtprof.stream_calls.fetch_add(1, std::memory_order_relaxed);
+                    g_obtprof.stream_bytes.fetch_add(size, std::memory_order_relaxed);
+                    g_obtprof.stream_ns.fetch_add(u64((Clock::now() - t1).count()),
+                                                  std::memory_order_relaxed);
+                    MaybeFlushObtainProf();
+                }
+                return {&stream_buffer, offset};
+            }
             const u64 offset =
                 stream_buffer.Copy(device_addr, size, instance.UniformMinAlignment());
             if (prof) {
