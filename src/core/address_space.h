@@ -88,6 +88,11 @@ public:
     /// Protects requested region.
     void Protect(VAddr virtual_addr, u64 size, MemoryPermission perms);
 
+    /// Apply the temporary page permissions used by GPU cache tracking. On Windows these
+    /// operations can run concurrently for disjoint tracker ranges while map/unmap and guest
+    /// protection changes remain exclusive.
+    void ProtectGpuTracked(VAddr virtual_addr, u64 size, MemoryPermission perms);
+
     // Returns an interval set containing all usable regions.
     boost::icl::interval_set<VAddr> GetUsableRegions();
 

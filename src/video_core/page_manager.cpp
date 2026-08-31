@@ -335,7 +335,7 @@ struct PageManager::Impl {
             // a userland read. Logging from there would not be - the flush lives in the buffer
             // cache's GPU-thread [protprof], these only count.
             const auto t0 = std::chrono::steady_clock::now();
-            impl.Protect(address, size, perms);
+            impl.ProtectGpuTracked(address, size, perms);
             const u64 ns = static_cast<u64>((std::chrono::steady_clock::now() - t0).count());
             if (GtProtProf::in_span_walk) {
                 GtProtProf::span_calls.fetch_add(1, std::memory_order_relaxed);
@@ -346,7 +346,7 @@ struct PageManager::Impl {
             }
             return;
         }
-        impl.Protect(address, size, perms);
+        impl.ProtectGpuTracked(address, size, perms);
     }
 
     static bool GuestFaultSignalHandler(void* context, void* fault_address) {

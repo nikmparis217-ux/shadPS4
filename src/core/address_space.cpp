@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <atomic>
+#include <cstdlib>
 #include <map>
+#include <shared_mutex>
 #include "common/alignment.h"
 #include "common/arch.h"
 #include "common/assert.h"
@@ -509,8 +511,7 @@ struct AddressSpace::Impl {
         CoalesceFreeRegions(virtual_addr);
     }
 
-    void Protect(VAddr virtual_addr, u64 size, bool read, bool write, bool execute) {
-        std::scoped_lock lk{mutex};
+    void ProtectLocked(VAddr virtual_addr, u64 size, bool read, bool write, bool execute) {
         DWORD new_flags{};
 
         if (write && !read) {
@@ -623,6 +624,30 @@ struct AddressSpace::Impl {
         }
     }
 
+    void Protect(VAddr virtual_addr, u64 size, bool read, bool write, bool execute) {
+        std::scoped_lock lk{mutex};
+        ProtectLocked(virtual_addr, size, read, write, execute);
+    }
+
+    void ProtectGpuTracked(VAddr virtual_addr, u64 size, bool read, bool write, bool execute) {
+        static const bool parallel = [] {
+            const char* value = std::getenv("GT_FAST_PROTECT");
+            return value && std::atoi(value) != 0;
+        }();
+        if (!parallel) {
+            Protect(virtual_addr, size, read, write, execute);
+            return;
+        }
+
+        // PageManager already serializes overlapping tracker ranges. A shared address-space
+        // lock therefore lets independent guest threads change disjoint pages concurrently,
+        // while every map/unmap and guest mprotect operation still takes this mutex exclusively.
+        // This removes the global convoy measured in GT7 run 218 without changing watcher state,
+        // dirty granularity, readback semantics, or the VirtualProtect calls themselves.
+        std::shared_lock lk{mutex};
+        ProtectLocked(virtual_addr, size, read, write, execute);
+    }
+
     boost::icl::interval_set<VAddr> GetUsableRegions() {
         boost::icl::interval_set<VAddr> reserved_regions;
         for (auto region : regions) {
@@ -631,7 +656,7 @@ struct AddressSpace::Impl {
         return reserved_regions;
     }
 
-    std::mutex mutex;
+    std::shared_mutex mutex;
     HANDLE process{};
     HANDLE backing_handle{};
     u8* backing_base{};
@@ -910,6 +935,17 @@ void AddressSpace::Protect(VAddr virtual_addr, u64 size, MemoryPermission perms)
     const bool write = True(perms & MemoryPermission::Write);
     const bool execute = True(perms & MemoryPermission::Execute);
     return impl->Protect(virtual_addr, size, read, write, execute);
+}
+
+void AddressSpace::ProtectGpuTracked(VAddr virtual_addr, u64 size, MemoryPermission perms) {
+    const bool read = True(perms & MemoryPermission::Read);
+    const bool write = True(perms & MemoryPermission::Write);
+    const bool execute = True(perms & MemoryPermission::Execute);
+#ifdef _WIN32
+    return impl->ProtectGpuTracked(virtual_addr, size, read, write, execute);
+#else
+    return impl->Protect(virtual_addr, size, read, write, execute);
+#endif
 }
 
 boost::icl::interval_set<VAddr> AddressSpace::GetUsableRegions() {
