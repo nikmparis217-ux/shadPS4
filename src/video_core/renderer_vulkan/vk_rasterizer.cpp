@@ -143,6 +143,21 @@ struct GtFrameProf {
     u64 img_binds = 0;
     double findimg_ms = 0;
     double findtex_ms = 0;
+    // Run 222 named the gaps: at t=106s the draw bucket held 1178 ms while its stage buckets
+    // summed 869 ms, and the bindbuf loop hid ~100 ms beyond clamp/findbuf/obtain/flatcopy.
+    // These buckets name the remainder. journal = the GpuWork machinery on the hot paths
+    // (NoteDrawPixelWork + CollectShaderIdentity + RecordGpuWork - the last one records a
+    // setCheckpointNV driver call PER DRAW when diagnostic checkpoints are on, a crash-hunt
+    // legacy). vkcmd = bindPipeline + the vkCmdDraw/vkCmdDispatch recording itself. split =
+    // GT_SPLIT_DISPATCH's per-dispatch scheduler.Flush, i.e. a full vkQueueSubmit each.
+    // bufscan/bufemit = BindBuffers pass 1 (sharp walk + guards + FindBuffer) and pass 2
+    // (ObtainBuffer + descriptor assembly); their sum should be ~all of bindbuf.
+    double filter_ms = 0;
+    double journal_ms = 0;
+    double vkcmd_ms = 0;
+    double split_ms = 0;
+    double bufscan_ms = 0;
+    double bufemit_ms = 0;
 
     void Flush() {
         if (!enabled) {
@@ -174,11 +189,13 @@ struct GtFrameProf {
                  "{:.0f}) disp {:.0f}ms dma {:.0f}ms | submit: fault {:.0f} texgc {:.0f} "
                  "bufgc {:.0f} deaths {:.0f} | bindbuf: {} binds clamp {:.0f} findbuf {:.0f} "
                  "obtain {:.0f} flatcopy {:.0f} | bindtex: {} binds findimg {:.0f} findtex "
-                 "{:.0f}",
+                 "{:.0f} | body: filter {:.0f} journal {:.0f} vkcmd {:.0f} split {:.0f} | "
+                 "bufpass: scan {:.0f} emit {:.0f}",
                  std::chrono::duration<double>(now - process_start).count(), win_s, busy_ms,
                  draws, dispatches, submits, draw_ms, pipe_ms, bindbuf_ms, bindtex_ms, state_ms,
                  vtx_ms, dispatch_ms, dma_ms, fault_ms, texgc_ms, bufgc_ms, deaths_ms, buf_binds,
-                 clamp_ms, findbuf_ms, obtain_ms, flatcopy_ms, img_binds, findimg_ms, findtex_ms);
+                 clamp_ms, findbuf_ms, obtain_ms, flatcopy_ms, img_binds, findimg_ms, findtex_ms,
+                 filter_ms, journal_ms, vkcmd_ms, split_ms, bufscan_ms, bufemit_ms);
         window_start = now;
         draws = dispatches = submits = 0;
         draw_ms = pipe_ms = bindbuf_ms = bindtex_ms = state_ms = vtx_ms = 0;
@@ -187,6 +204,7 @@ struct GtFrameProf {
         clamp_ms = findbuf_ms = obtain_ms = flatcopy_ms = 0;
         img_binds = 0;
         findimg_ms = findtex_ms = 0;
+        filter_ms = journal_ms = vkcmd_ms = split_ms = bufscan_ms = bufemit_ms = 0;
     }
     double last_thread_busy_ms = 0;
 };
@@ -639,10 +657,12 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
         ++g_fprof.draws;
     }
 
-    scheduler.PopPendingOperations();
-
-    if (!FilterDraw()) {
-        return;
+    {
+        GtProfScope gt_prof_filter{&g_fprof.filter_ms};
+        scheduler.PopPendingOperations();
+        if (!FilterDraw()) {
+            return;
+        }
     }
 
     const auto& regs = liverpool->regs;
@@ -686,7 +706,10 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
     const auto [vertex_offset, instance_offset] = GetDrawOffsets(regs, vs_info, fetch_shader);
 
     const auto cmdbuf = scheduler.CommandBuffer();
-    cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->Handle());
+    {
+        GtProfScope gt_prof_vk{&g_fprof.vkcmd_ms};
+        cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->Handle());
+    }
 
     // Record only work that actually reaches the command buffer, so the journal's order is the
     // order the GPU was given - hence after every early-out above, not at function entry.
@@ -695,16 +718,22 @@ void Rasterizer::Draw(bool is_indexed, u32 index_offset) {
     work.cmdbuf = CmdBufValue(cmdbuf);
     work.count_a = regs.num_indices;
     work.count_b = regs.num_instances.NumInstances();
-    NoteDrawPixelWork(state, GpuWorkSatMul(work.count_a, work.count_b), work);
-    CollectShaderIdentity(pipeline, work);
-    instance.RecordGpuWork(work);
+    {
+        GtProfScope gt_prof_journal{&g_fprof.journal_ms};
+        NoteDrawPixelWork(state, GpuWorkSatMul(work.count_a, work.count_b), work);
+        CollectShaderIdentity(pipeline, work);
+        instance.RecordGpuWork(work);
+    }
 
-    if (is_indexed) {
-        cmdbuf.drawIndexed(regs.num_indices, regs.num_instances.NumInstances(), 0,
-                           s32(vertex_offset), instance_offset);
-    } else {
-        cmdbuf.draw(regs.num_indices, regs.num_instances.NumInstances(), vertex_offset,
-                    instance_offset);
+    {
+        GtProfScope gt_prof_vk{&g_fprof.vkcmd_ms};
+        if (is_indexed) {
+            cmdbuf.drawIndexed(regs.num_indices, regs.num_instances.NumInstances(), 0,
+                               s32(vertex_offset), instance_offset);
+        } else {
+            cmdbuf.draw(regs.num_indices, regs.num_instances.NumInstances(), vertex_offset,
+                        instance_offset);
+        }
     }
     DebugState.IncDrawCall();
 
@@ -1084,7 +1113,10 @@ void Rasterizer::DispatchDirect() {
     pipeline->BindResources(set_writes, buffer_barriers, push_data);
 
     const auto cmdbuf = scheduler.CommandBuffer();
-    cmdbuf.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline->Handle());
+    {
+        GtProfScope gt_prof_vk{&g_fprof.vkcmd_ms};
+        cmdbuf.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline->Handle());
+    }
 
     GpuWorkPayload work{};
     work.kind = GpuWorkKind::DispatchDirect;
@@ -1103,9 +1135,15 @@ void Rasterizer::DispatchDirect() {
                       work.threads_per_group[2]));
     work.primary_hash = cs.pgm_hash;
     work.primary_stage = static_cast<u8>(cs.stage);
-    instance.RecordGpuWork(work);
+    {
+        GtProfScope gt_prof_journal{&g_fprof.journal_ms};
+        instance.RecordGpuWork(work);
+    }
 
-    cmdbuf.dispatch(cs_program.dim_x, cs_program.dim_y, cs_program.dim_z);
+    {
+        GtProfScope gt_prof_vk{&g_fprof.vkcmd_ms};
+        cmdbuf.dispatch(cs_program.dim_x, cs_program.dim_y, cs_program.dim_z);
+    }
     DebugState.IncDispatch();
 
     ResetBindings();
@@ -1161,6 +1199,7 @@ void Rasterizer::DispatchDirect() {
         static int since_split = 0;
         if (++since_split >= split_every) {
             since_split = 0;
+            GtProfScope gt_prof_split{&g_fprof.split_ms};
             SubmitInfo info{};
             scheduler.Flush(info);
         }
@@ -1291,6 +1330,7 @@ void Rasterizer::DispatchIndirect(VAddr address, u32 offset, u32 size) {
         static int since_split = 0;
         if (++since_split >= split_every) {
             since_split = 0;
+            GtProfScope gt_prof_split{&g_fprof.split_ms};
             SubmitInfo info{};
             scheduler.Flush(info);
         }
@@ -1554,6 +1594,10 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
     GtProfScope gt_prof{&g_fprof.bindbuf_ms};
     buffer_bindings.clear();
 
+    // bufscan/bufemit accumulate by hand instead of a scope: wrapping the two 100+ line loops
+    // in blocks would re-indent them wholesale for the sake of a profiler.
+    const auto gt_scan_t0 =
+        g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
     for (const auto& desc : stage.buffers) {
         if (g_fprof.enabled) {
             ++g_fprof.buf_binds;
@@ -1683,6 +1727,11 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
             buffer_bindings.emplace_back(VideoCore::BufferId{}, vsharp, 0);
         }
     }
+    if (g_fprof.enabled) {
+        g_fprof.bufscan_ms +=
+            std::chrono::duration<double, std::milli>(GtFrameProf::Clock::now() - gt_scan_t0)
+                .count();
+    }
 
     // GT_FAULT_WIDE stage 2, the run-213 lesson: the heal must run BEFORE the second pass
     // records any upload. cs_018256c0's record buffers are bindings 0/1 and their ObtainBuffer
@@ -1707,6 +1756,8 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
     }
 
     // Second pass to re-bind buffers that were updated after binding
+    const auto gt_emit_t0 =
+        g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
     bool expo_logged = false;
     bool cbtrace_logged = false;
     for (u32 i = 0; i < buffer_bindings.size(); i++) {
@@ -2039,6 +2090,11 @@ void Rasterizer::BindBuffers(const Shader::Info& stage, Shader::Backend::Binding
             is_storage ? vk::DescriptorType::eStorageBuffer : vk::DescriptorType::eUniformBuffer;
         set_write.pBufferInfo = &buffer_infos.back();
         ++binding.buffer;
+    }
+    if (g_fprof.enabled) {
+        g_fprof.bufemit_ms +=
+            std::chrono::duration<double, std::milli>(GtFrameProf::Clock::now() - gt_emit_t0)
+                .count();
     }
 }
 
