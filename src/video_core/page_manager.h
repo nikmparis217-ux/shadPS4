@@ -54,6 +54,15 @@ inline bool Enabled() {
 }
 } // namespace GtProtProf
 
+/// GT_FAULT_HIST: signal-handler-safe write-fault census, grouped into 1 MiB guest ranges.
+/// Recording is lock-free and allocation-free; Flush runs on the GPU thread beside [protprof].
+/// This is deliberately diagnostic only: unlike GT_FAULT_WIDE it never changes page state.
+namespace GtFaultHist {
+bool Enabled();
+void Record(VAddr addr, bool is_write);
+void Flush();
+} // namespace GtFaultHist
+
 class PageManager {
     // PAGE_SIZE and PAGE_BITS conflicts with machine/param.h definitions on freebsd!
     // Use the same page size as the tracker.

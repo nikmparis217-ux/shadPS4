@@ -191,6 +191,7 @@ void MaybeFlushObtainProf() {
              GtProtProf::other_ns.exchange(0) / 1e6, GtProtProf::watch_other_ns.exchange(0) / 1e6,
              GtProtProf::faults_write.exchange(0), GtProtProf::faults_read.exchange(0),
              GtProtProf::wide_marks.exchange(0), GtProtProf::wide_bytes.exchange(0) >> 10);
+    GtFaultHist::Flush();
 }
 
 /// [bufcopy]/[bufsync]/[bufdl] (readback hunt, run 188): the exposure value's biography

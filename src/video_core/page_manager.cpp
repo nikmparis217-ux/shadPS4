@@ -1,9 +1,12 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
+#include <vector>
 #include <boost/container/small_vector.hpp>
 #include "common/alignment.h"
 #include "common/assert.h"
@@ -42,6 +45,118 @@ namespace VideoCore {
 
 constexpr size_t PM_PAGE_SIZE = 4_KB;
 constexpr size_t PM_PAGE_BITS = 12;
+
+namespace GtFaultHist {
+namespace {
+constexpr u32 RangeBits = 20;
+constexpr size_t BucketCount = 1 << 15;
+constexpr size_t BucketMask = BucketCount - 1;
+constexpr size_t MaxProbe = 32;
+
+struct FaultBucket {
+    std::atomic<u64> key{0};
+    std::atomic<u64> writes{0};
+    std::atomic<u64> reads{0};
+};
+
+struct FaultSnapshot {
+    VAddr addr;
+    u64 writes;
+    u64 reads;
+
+    u64 Total() const {
+        return writes + reads;
+    }
+};
+
+std::array<FaultBucket, BucketCount> fault_buckets{};
+std::atomic<u64> overflow_writes{0};
+std::atomic<u64> overflow_reads{0};
+
+size_t HashKey(u64 key) {
+    key ^= key >> 33;
+    key *= 0xff51afd7ed558ccdULL;
+    key ^= key >> 33;
+    return static_cast<size_t>(key) & BucketMask;
+}
+} // namespace
+
+bool Enabled() {
+    static const bool enabled = [] {
+        const char* value = std::getenv("GT_FAULT_HIST");
+        return value && std::atoi(value) != 0;
+    }();
+    return enabled;
+}
+
+void Record(VAddr addr, bool is_write) {
+    if (!Enabled()) {
+        return;
+    }
+    // Zero is the empty marker, so store the 1 MiB range index plus one.
+    const u64 key = (addr >> RangeBits) + 1;
+    size_t index = HashKey(key);
+    for (size_t probe = 0; probe < MaxProbe; ++probe, index = (index + 1) & BucketMask) {
+        auto& bucket = fault_buckets[index];
+        u64 observed = bucket.key.load(std::memory_order_relaxed);
+        if (observed == 0) {
+            u64 expected = 0;
+            if (bucket.key.compare_exchange_strong(expected, key, std::memory_order_relaxed)) {
+                observed = key;
+            } else {
+                observed = expected;
+            }
+        }
+        if (observed == key) {
+            (is_write ? bucket.writes : bucket.reads).fetch_add(1, std::memory_order_relaxed);
+            return;
+        }
+    }
+    (is_write ? overflow_writes : overflow_reads).fetch_add(1, std::memory_order_relaxed);
+}
+
+void Flush() {
+    if (!Enabled()) {
+        return;
+    }
+    std::vector<FaultSnapshot> active;
+    active.reserve(1024);
+    u64 total_writes = 0;
+    u64 total_reads = 0;
+    for (auto& bucket : fault_buckets) {
+        const u64 writes = bucket.writes.exchange(0, std::memory_order_relaxed);
+        const u64 reads = bucket.reads.exchange(0, std::memory_order_relaxed);
+        if (writes == 0 && reads == 0) {
+            continue;
+        }
+        const u64 key = bucket.key.load(std::memory_order_relaxed);
+        if (key == 0) {
+            continue;
+        }
+        total_writes += writes;
+        total_reads += reads;
+        active.push_back(FaultSnapshot{.addr = (key - 1) << RangeBits,
+                                       .writes = writes,
+                                       .reads = reads});
+    }
+    const u64 missed_writes = overflow_writes.exchange(0, std::memory_order_relaxed);
+    const u64 missed_reads = overflow_reads.exchange(0, std::memory_order_relaxed);
+    std::ranges::sort(active, [](const FaultSnapshot& lhs, const FaultSnapshot& rhs) {
+        return lhs.Total() > rhs.Total();
+    });
+    LOG_INFO(Render_Vulkan,
+             "[faulthist] {} faults ({} wr, {} rd) across {} active 1 MiB ranges; overflow {} "
+             "wr {} rd",
+             total_writes + total_reads, total_writes, total_reads, active.size(), missed_writes,
+             missed_reads);
+    const size_t shown = std::min<size_t>(10, active.size());
+    for (size_t i = 0; i < shown; ++i) {
+        const auto& item = active[i];
+        LOG_INFO(Render_Vulkan, "[faulthist] top {:02}: {:#x}-{:#x}: {} wr {} rd", i + 1,
+                 item.addr, item.addr + (u64{1} << RangeBits), item.writes, item.reads);
+    }
+}
+} // namespace GtFaultHist
 
 /// See GtProtProf in page_manager.h - same env gate as the buffer cache's [obtprof].
 static bool GtProtProfEnabled() {
@@ -240,6 +355,7 @@ struct PageManager::Impl {
         const bool claimed =
             is_write ? rasterizer->InvalidateMemory(addr, 8) : rasterizer->ReadMemory(addr, 8);
         if (claimed) {
+            GtFaultHist::Record(addr, is_write);
             if (GtProtProfEnabled()) {
                 (is_write ? GtProtProf::faults_write : GtProtProf::faults_read)
                     .fetch_add(1, std::memory_order_relaxed);
