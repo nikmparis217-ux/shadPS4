@@ -19,6 +19,7 @@
 
 #include <windows.h>
 
+#include <psapi.h>
 #include <tlhelp32.h>
 
 #include "common/thread.h"
@@ -42,7 +43,31 @@ std::string NarrowName(const wchar_t* w) {
     return out;
 }
 
-void CensusLoop() {
+// Where is this instruction pointer? Guest (PS4) code runs natively out of mapped memory that
+// belongs to no module, so "not in any image" = guest code; an image hit names the module (our
+// own exe, ntdll's wait paths, the driver...). This is what separates "the game's job workers
+// spin in their own code" from "our kernel-wait implementation is expensive" - opposite fixes.
+std::string ClassifyRip(u64 rip) {
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (!rip || !VirtualQuery(reinterpret_cast<LPCVOID>(rip), &mbi, sizeof(mbi))) {
+        return "?";
+    }
+    if (mbi.Type == MEM_IMAGE) {
+        wchar_t path[MAX_PATH];
+        if (GetMappedFileNameW(GetCurrentProcess(), reinterpret_cast<LPVOID>(rip), path,
+                               MAX_PATH)) {
+            std::wstring w(path);
+            const auto pos = w.find_last_of(L"\\/");
+            const auto base = NarrowName(w.c_str() + (pos == std::wstring::npos ? 0 : pos + 1));
+            return fmt::format("{}+{:x}", base,
+                               rip - reinterpret_cast<u64>(mbi.AllocationBase));
+        }
+        return "image";
+    }
+    return fmt::format("guest:{:x}", rip);
+}
+
+void CensusLoop(int level) {
     SetCurrentThreadName("GtThreadProf");
     const DWORD pid = GetCurrentProcessId();
     // tid -> (last kernel+user 100ns, name)
@@ -136,17 +161,64 @@ void CensusLoop() {
         const double proc_pct = (proc_delta_100ns / 10000.0) / wall_ms * 100.0;
         LOG_INFO(Core, "[tprof] win={:.1f}s proc={:.0f}% threads={} shown={:.0f}%{}",
                  wall_ms / 1000.0, proc_pct, rows.size(), shown, line);
+
+        // Level 2: sample the instruction pointer of the hottest GUEST threads (Job#N and the
+        // FFB poller - never our own GPU/audio threads, a mid-frame suspend there is a hitch)
+        // 3 times, 30 ms apart, and say WHERE each one runs. The suspend window itself is
+        // microseconds per sample.
+        if (level >= 2) {
+            std::string sline;
+            u32 sampled = 0;
+            for (const auto& r : rows) {
+                if (sampled >= 8) {
+                    break;
+                }
+                const bool is_job = r.name.rfind("Job#", 0) == 0;
+                const bool is_ffb = r.name.find("ffb") != std::string::npos;
+                if (!is_job && !is_ffb) {
+                    continue;
+                }
+                HANDLE h =
+                    OpenThread(THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME, FALSE, r.tid);
+                if (!h) {
+                    continue;
+                }
+                std::string wheres;
+                for (int s = 0; s < 3; ++s) {
+                    if (s) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(30));
+                    }
+                    if (SuspendThread(h) == DWORD(-1)) {
+                        break;
+                    }
+                    CONTEXT ctx{};
+                    ctx.ContextFlags = CONTEXT_CONTROL;
+                    u64 rip = 0;
+                    if (GetThreadContext(h, &ctx)) {
+                        rip = ctx.Rip;
+                    }
+                    ResumeThread(h);
+                    wheres += " " + ClassifyRip(rip);
+                }
+                CloseHandle(h);
+                sline += fmt::format(" | {} ({:.0f}%):{}", r.name, r.cpu_pct, wheres);
+                ++sampled;
+            }
+            LOG_INFO(Core, "[tprof2]{}", sline);
+        }
     }
 }
 
 } // namespace
 
 void StartGtThreadProf() {
-    if (std::getenv("GT_THREAD_PROF") == nullptr) {
+    const char* env = std::getenv("GT_THREAD_PROF");
+    if (env == nullptr) {
         return;
     }
-    std::thread(CensusLoop).detach();
-    LOG_WARNING(Core, "[tprof] thread census armed (GT_THREAD_PROF)");
+    const int level = std::atoi(env) >= 2 ? 2 : 1;
+    std::thread(CensusLoop, level).detach();
+    LOG_WARNING(Core, "[tprof] thread census armed (GT_THREAD_PROF level {})", level);
 }
 
 } // namespace Common
