@@ -12,10 +12,31 @@
 
 #include "video_core/host_shaders/tiling_comp.h"
 
+#include <algorithm>
+#include <atomic>
+#include <cstdlib>
+
 #include <magic_enum/magic_enum.hpp>
 #include <vk_mem_alloc.h>
 
 namespace VideoCore {
+
+// GT7 lane, run 233 finding: the cmdbuf that killed the device held ONE host detile of
+// 13,331,456 groups x 64 threads = 853 MILLION invocations (counts 1x1089) - a single
+// non-preemptible dispatch that takes long enough at low GPU clocks to trip the Windows 2 s
+// watchdog. Every "different live shader each crash" before it was the draw that happened to
+// sit nearby; the killer was this pass. GT_DETILE_CHUNK=<groups> splits any (de)tile dispatch
+// bigger than that into dispatchBase() chunks INSIDE the same command buffer: the texel ranges
+// are disjoint so no barrier is needed between chunks, nothing crosses a submit (so no
+// stream-buffer lifetime hazard), and the driver gets a preemption opportunity at every chunk
+// boundary instead of one indivisible monster. 0/unset = original single dispatch.
+static u32 DetileChunkGroups() {
+    static const u32 chunk = [] {
+        const char* v = std::getenv("GT_DETILE_CHUNK");
+        return v ? static_cast<u32>(std::strtoul(v, nullptr, 10)) : 0u;
+    }();
+    return chunk;
+}
 
 struct TilingInfo {
     u32 bank_swizzle;
@@ -177,7 +198,11 @@ vk::Pipeline TileManager::GetTilingPipeline(const ImageInfo& info, bool is_tiler
         .module = module,
         .pName = "main",
     };
+    // eDispatchBase so the chunked path may use dispatchBase(). The plain path then MUST also go
+    // through dispatchBase(0, ...) - vkCmdDispatch is invalid on a DISPATCH_BASE-flagged pipeline
+    // (VUID), and base 0 is spec-equivalent to a plain dispatch.
     const vk::ComputePipelineCreateInfo compute_pipeline_ci = {
+        .flags = vk::PipelineCreateFlagBits::eDispatchBase,
         .stage = shader_ci,
         .layout = *pl_layout,
     };
@@ -188,6 +213,39 @@ vk::Pipeline TileManager::GetTilingPipeline(const ImageInfo& info, bool is_tiler
     tiling_pipelines[pl_id] = std::move(pipeline);
     device.destroyShaderModule(module);
     return *tiling_pipelines[pl_id];
+}
+
+/// One place issues every tiling dispatch, chunked or not, so the journal and the TDR guard can
+/// never disagree between the two directions. `work` arrives fully described except for the
+/// per-chunk group count. Chunks index disjoint texel ranges, so no barrier separates them.
+static void DispatchTiling(const Vulkan::Instance& instance, vk::CommandBuffer cmdbuf, u32 dim_x,
+                           Vulkan::GpuWorkPayload work, const ImageInfo& info, const char* who) {
+    const u32 chunk = DetileChunkGroups();
+    const bool split = chunk != 0 && dim_x > chunk;
+    if (split) {
+        static std::atomic<u32> log_budget{0};
+        if (log_budget.fetch_add(1, std::memory_order_relaxed) < 64) {
+            LOG_WARNING(Render_Vulkan,
+                        "[detile] {}: {} groups split into {}-group chunks. The image: extent "
+                        "{}x{}x{} layers {} levels {} bpp {} guest_size {:#x} tile_mode {} "
+                        "volume {} addr {:#x}",
+                        who, dim_x, chunk, info.size.width, info.size.height, info.size.depth,
+                        info.resources.layers, info.resources.levels, info.num_bits,
+                        info.guest_size, u32(info.tile_mode), info.props.is_volume,
+                        info.guest_address);
+        }
+    }
+    u32 base = 0;
+    while (base < dim_x) {
+        const u32 n = split ? std::min(dim_x - base, chunk) : dim_x;
+        cmdbuf.dispatchBase(base, 0, 0, n, 1, 1);
+        work.groups[0] = n;
+        work.groups[1] = 1;
+        work.groups[2] = 1;
+        work.work_estimate = u64(n) * 64u;
+        instance.RecordGpuWork(work);
+        base += n;
+    }
 }
 
 TileManager::Result TileManager::DetileImage(vk::Buffer in_buffer, u32 in_offset,
@@ -266,28 +324,21 @@ TileManager::Result TileManager::DetileImage(vk::Buffer in_buffer, u32 in_offset
     cmdbuf.pushDescriptorSetKHR(vk::PipelineBindPoint::eCompute, *pl_layout, 0, set_writes);
 
     const auto dim_x = (info.guest_size / (info.num_bits / 8)) / 64;
-    cmdbuf.dispatch(dim_x, 1, 1);
 
-    // Record the pass so the device-fault census can NAME it. The journal was blind to every host
-    // pass, which is why an "all 69 guest shaders accounted for" census could still be missing the
-    // work that hung. count_a/count_b carry the two numbers that decide GetMipLevel's trip count.
-    {
-        Vulkan::GpuWorkPayload work{};
-        work.kind = Vulkan::GpuWorkKind::HostDetile;
-        work.primary_stage = 6; // cs - host passes have no guest pgm_hash, they are named by kind
-        work.cmdbuf = std::bit_cast<u64>(static_cast<VkCommandBuffer>(cmdbuf));
-        work.groups[0] = dim_x;
-        work.groups[1] = 1;
-        work.groups[2] = 1;
-        work.threads_per_group[0] = 64;
-        work.threads_per_group[1] = 1;
-        work.threads_per_group[2] = 1;
-        work.count_a = params.num_mips;
-        work.count_b = params.num_slices;
-        work.guest_addr = info.guest_address;
-        work.work_estimate = u64(dim_x) * 64u;
-        instance.RecordGpuWork(work);
-    }
+    // Journal payload (the device-fault census was blind to host passes - run 233's killer was
+    // exactly this dispatch). DispatchTiling records one entry per chunk so a fault dump shows
+    // which chunk hung. count_a/count_b decide GetMipLevel's trip count.
+    Vulkan::GpuWorkPayload work{};
+    work.kind = Vulkan::GpuWorkKind::HostDetile;
+    work.primary_stage = 6; // cs - host passes have no guest pgm_hash, they are named by kind
+    work.cmdbuf = std::bit_cast<u64>(static_cast<VkCommandBuffer>(cmdbuf));
+    work.threads_per_group[0] = 64;
+    work.threads_per_group[1] = 1;
+    work.threads_per_group[2] = 1;
+    work.count_a = params.num_mips;
+    work.count_b = params.num_slices;
+    work.guest_addr = info.guest_address;
+    DispatchTiling(instance, cmdbuf, static_cast<u32>(dim_x), work, info, "DetileImage");
     return {out_buffer, 0};
 }
 
@@ -372,27 +423,21 @@ void TileManager::TileImage(Image& in_image, std::span<vk::BufferImageCopy> buff
     cmdbuf.pushDescriptorSetKHR(vk::PipelineBindPoint::eCompute, *pl_layout, 0, set_writes);
 
     const auto dim_x = (info.guest_size / (info.num_bits / 8)) / 64;
-    cmdbuf.dispatch(dim_x, 1, 1);
 
-    // Same recording as the detiler: this is the other direction through the very same shader, so
-    // leaving it out would put half of tiling.comp's work back in the blind spot.
-    {
-        Vulkan::GpuWorkPayload work{};
-        work.kind = Vulkan::GpuWorkKind::HostTile;
-        work.primary_stage = 6; // cs
-        work.cmdbuf = std::bit_cast<u64>(static_cast<VkCommandBuffer>(cmdbuf));
-        work.groups[0] = dim_x;
-        work.groups[1] = 1;
-        work.groups[2] = 1;
-        work.threads_per_group[0] = 64;
-        work.threads_per_group[1] = 1;
-        work.threads_per_group[2] = 1;
-        work.count_a = params.num_mips;
-        work.count_b = params.num_slices;
-        work.guest_addr = info.guest_address;
-        work.work_estimate = u64(dim_x) * 64u;
-        instance.RecordGpuWork(work);
-    }
+    // Same journalling and the same TDR chunking as the detiler: this is the other direction
+    // through the very same shader, so leaving it out would put half of tiling.comp's work back
+    // in the blind spot.
+    Vulkan::GpuWorkPayload work{};
+    work.kind = Vulkan::GpuWorkKind::HostTile;
+    work.primary_stage = 6; // cs
+    work.cmdbuf = std::bit_cast<u64>(static_cast<VkCommandBuffer>(cmdbuf));
+    work.threads_per_group[0] = 64;
+    work.threads_per_group[1] = 1;
+    work.threads_per_group[2] = 1;
+    work.count_a = params.num_mips;
+    work.count_b = params.num_slices;
+    work.guest_addr = info.guest_address;
+    DispatchTiling(instance, cmdbuf, static_cast<u32>(dim_x), work, info, "TileImage");
 }
 
 } // namespace VideoCore

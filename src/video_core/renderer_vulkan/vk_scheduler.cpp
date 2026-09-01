@@ -240,7 +240,12 @@ void Scheduler::SubmitExecution(SubmitInfo& info) {
         if (done != stall_last_gpu_tick) {
             stall_last_gpu_tick = done;
             stall_last_progress = now;
-        } else if (cur - done > 256) {
+        } else if (cur - done > 16) {
+            // Was > 256, sized for the run 42-44 compile-storm era of ~10,000-submit pileups.
+            // Run 233 proved that gate structurally blind at today's rates: the race submits
+            // 15-20 packets/s (one submit per ~1400 draws), so a 2 s TDR piles up only ~30-40
+            // submits and the detector never fired while the device died. 16 outstanding
+            // submits plus 700 ms of zero progress is already deeply abnormal at any rate.
             static std::atomic<bool> stall_dumped{false};
             const auto frozen =
                 std::chrono::duration_cast<std::chrono::milliseconds>(now - stall_last_progress);
