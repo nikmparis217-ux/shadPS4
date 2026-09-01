@@ -2314,6 +2314,38 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
         return layers <= 2048 && (w * h * d * layers) <= (u64{1} << 28);
     };
 
+    // GT_IMG_MAXMB (run 246): run 245 died to a WriteInvalid 0x13000 bytes past the end of the
+    // 3.35 GB heap buffer, seconds after a T# claiming 256x256 x 1857 layers arrived. That T#
+    // PASSES sharp_extent_sane - 2^26.9 texels, 1857 <= 2048 layers - but its TILED guest
+    // footprint (ImageInfo::guest_size, which sees the pitch/slice padding the texel count
+    // cannot) is 0xbd840000 = 3.18 GB, ending EXACTLY at the heap buffer's end. Detile refused
+    // it (GT_DETILE_MAXMB) and the page tracker refused it ("torn descriptor registration"),
+    // but the Image object was still created, registered and synchronized - and the device
+    // faulted writing just past its end. The footprint test must run where the V# softclamp
+    // runs: at bind, BEFORE FindImage creates anything. A refused slot is null-bound (the emit
+    // pass already writes VK_NULL_HANDLE for a null image_id). 0/unset = off.
+    static const u64 img_max_bytes = [] {
+        const char* v = std::getenv("GT_IMG_MAXMB");
+        return v ? u64{std::strtoul(v, nullptr, 10)} << 20 : u64{0};
+    }();
+    const auto monster_footprint = [&](const auto& desc, u64 pgm_hash) {
+        if (img_max_bytes == 0 || desc.info.guest_size <= img_max_bytes) {
+            return false;
+        }
+        static std::atomic<u32> log_budget{0};
+        if (log_budget.fetch_add(1, std::memory_order_relaxed) < 32) {
+            LOG_CRITICAL(Render_Vulkan,
+                         "[softclamp] shader {:#x}: T# {:#x} tiled footprint {:#x} bytes "
+                         "({}x{}x{} layers {} levels {} tile_mode {}) exceeds GT_IMG_MAXMB - "
+                         "null-bound before the texture cache could create it",
+                         pgm_hash, desc.info.guest_address, desc.info.guest_size,
+                         desc.info.size.width, desc.info.size.height, desc.info.size.depth,
+                         desc.info.resources.layers, desc.info.resources.levels,
+                         u32(desc.info.tile_mode));
+        }
+        return true;
+    };
+
     // imgscan/imgemit/imgsamp accumulate by hand like BindBuffers' bufscan/bufemit - see there.
     const auto gt_imgscan_t0 =
         g_fprof.enabled ? GtFrameProf::Clock::now() : GtFrameProf::Clock::time_point{};
@@ -2419,6 +2451,9 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 GtWatchImageBind("imgwin", stage.pgm_hash, slot_sharp, image_desc.is_written);
                 auto& [image_id, desc] = image_bindings.emplace_back(
                     std::piecewise_construct, std::tuple{}, std::tuple{slot_sharp, image_desc});
+                if (monster_footprint(desc, stage.pgm_hash)) {
+                    continue; // image_id stays null; the emit pass writes VK_NULL_HANDLE
+                }
                 {
                     GtProfScope gt_prof_find{&g_fprof.findimg_ms};
                     image_id = texture_cache.FindImage(desc);
@@ -2582,6 +2617,9 @@ void Rasterizer::BindTextures(const Shader::Info& stage, Shader::Backend::Bindin
                 desc.view_info.range.extent.levels = 1;
             }
 
+            if (monster_footprint(desc, stage.pgm_hash)) {
+                continue; // image_id stays null; the emit pass writes VK_NULL_HANDLE
+            }
             {
                 GtProfScope gt_prof_find{&g_fprof.findimg_ms};
                 image_id = texture_cache.FindImage(desc);
