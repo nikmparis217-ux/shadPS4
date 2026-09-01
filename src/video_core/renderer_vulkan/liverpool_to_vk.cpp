@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <cstdlib>
+
 #include "common/assert.h"
 #include "common/number_utils.h"
 #include "video_core/amdgpu/pixel_format.h"
@@ -1153,7 +1155,35 @@ vk::ClearValue ColorBufferClearValue(const AmdGpu::ColorBuffer& color_buffer) {
         break;
     }
 
-    color.float32 = comp_swizzle.Apply(color.float32);
+    // CB_COLOR_CLEAR_WORD0/1 hold the RAW memory dwords of the cleared surface - the game
+    // packs the clear color through the surface format WITH comp_swap already applied. The
+    // per-format decode above extracts the channels POSITIONALLY (storage order), so only the
+    // format-layout remap (GCN slot order -> Vulkan channel order) may be applied on top;
+    // applying the full Swizzle() (which includes comp_swap) permutes the value a SECOND time.
+    // Proven by GT7's Music Rally track-preview panel: an 8_8_8_8 StandardReverse target is
+    // cleared with word 0x000000FF (= black, opaque, in reversed storage); the double swap
+    // stored raw (0,0,0,1), which the game's AlphaBlueGreenRed T# read back as SOLID RED.
+    // For Standard comp_swap RemapSwizzle(fmt, Identity) == Swizzle(), so nothing changes
+    // for the common case. Env-gated: GT_CLEAR_RAW=1 uses the corrected mapping; the WARNING
+    // below prints every clear where the two mappings disagree on the value, either way.
+    const auto layout_swizzle = AmdGpu::RemapSwizzle(format, AmdGpu::IdentityMapping);
+    if (comp_swizzle != layout_swizzle) {
+        const auto doubled = comp_swizzle.Apply(color.float32);
+        const auto raw = layout_swizzle.Apply(color.float32);
+        if (doubled != raw) {
+            static u32 clear_swap_log_budget = 0;
+            if (clear_swap_log_budget++ < 32) {
+                LOG_WARNING(Render_Vulkan,
+                            "[clear] comp_swap-sensitive clear color: fmt={} word0={:#x} "
+                            "doubled=({},{},{},{}) raw=({},{},{},{})",
+                            static_cast<u32>(format), c0, doubled[0], doubled[1], doubled[2],
+                            doubled[3], raw[0], raw[1], raw[2], raw[3]);
+            }
+        }
+    }
+    static const bool clear_raw = std::getenv("GT_CLEAR_RAW") != nullptr;
+    color.float32 = clear_raw ? layout_swizzle.Apply(color.float32)
+                              : comp_swizzle.Apply(color.float32);
     return {.color = color};
 }
 
