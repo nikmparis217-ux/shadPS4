@@ -819,6 +819,8 @@ set(COMMON src/common/logging/classes.h
            src/common/string_literal.h
            src/common/string_util.cpp
            src/common/string_util.h
+           src/common/gt_thread_prof.cpp
+           src/common/gt_thread_prof.h
            src/common/thread.cpp
            src/common/thread.h
            src/common/types.h

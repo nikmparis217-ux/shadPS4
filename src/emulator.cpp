@@ -13,6 +13,7 @@
 #include <hwinfo/hwinfo.h>
 
 #include "common/debug.h"
+#include "common/gt_thread_prof.h"
 #include "common/logging/log.h"
 #include "common/string_util.h"
 #include "common/thread.h"
@@ -556,6 +557,9 @@ void Emulator::Run(std::filesystem::path file, std::vector<std::string> args,
 
     // Load renderdoc module
     VideoCore::LoadRenderDoc();
+
+    // GT7 lane: per-thread CPU census (env-gated, GT_THREAD_PROF)
+    Common::StartGtThreadProf();
 
     // Initialize patcher
     if (!id.empty()) {
