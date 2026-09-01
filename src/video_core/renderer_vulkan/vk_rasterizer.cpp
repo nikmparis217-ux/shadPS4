@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <bit>
 #include <chrono>
+#include <atomic>
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
@@ -448,6 +449,24 @@ void Rasterizer::CpSync() {
 
 bool Rasterizer::FilterDraw() {
     const auto& regs = liverpool->regs;
+    // GT7 runs 231/235: DrawIndexed pipelines with a HULL shader (fs 0xfa80e08f + hs_0x3827418d
+    // and their neighbours - a run of tessellation draws) hang the GPU at main-game race entry:
+    // Top and Bottom checkpoints freeze on the same journal seq, no memory fault reported.
+    // GT_SKIP_TESS=1 drops every tessellation draw. Diagnostic first, mitigation second: if the
+    // main game stops dying the conviction is locked, and the frames show what these draws
+    // contribute (suspected: the track surface that currently renders as white wash anyway).
+    static const bool skip_tess = [] {
+        const char* v = std::getenv("GT_SKIP_TESS");
+        return v && v[0] == '1';
+    }();
+    if (skip_tess && regs.stage_enable.hs_en) {
+        static std::atomic<u32> tess_skip_count{0};
+        const u32 n = tess_skip_count.fetch_add(1, std::memory_order_relaxed) + 1;
+        if ((n & (n - 1)) == 0) { // log at powers of two so the rate is visible without spam
+            LOG_WARNING(Render_Vulkan, "[tess] skipped tessellation draw #{}", n);
+        }
+        return false;
+    }
     if (regs.color_control.mode == AmdGpu::ColorControl::OperationMode::EliminateFastClear) {
         // Clears the render target if FCE is launched before any draws
         EliminateFastClear();
