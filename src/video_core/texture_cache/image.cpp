@@ -269,6 +269,40 @@ ImageView& Image::FindView(const ImageViewInfo& view_info, bool ensure_guest_sam
 Image::Barriers Image::GetBarriers(vk::ImageLayout dst_layout, vk::AccessFlags2 dst_mask,
                                    vk::PipelineStageFlags2 dst_stage,
                                    std::optional<SubresourceRange> subres_range) {
+    // GT7 lane, run 240: a view built from a garbage T# can claim more mips/layers than the
+    // image owns (the garbage-descriptor family - same family as the 769-layer monster
+    // image). The subresource walk below indexes state storage sized by the IMAGE's own
+    // resources, so an oversized range was an ASSERT = process abort, mid-race. Clamp the
+    // request to what exists and log the discrepancy: barriers on the real subresources are
+    // correct, and the view's extra entries do not exist to need transitioning.
+    if (subres_range) {
+        const u32 max_levels = info.resources.levels;
+        const u32 max_layers = info.resources.layers;
+        auto& r = *subres_range;
+        const bool base_out = r.base.level >= max_levels || r.base.layer >= max_layers;
+        // Subtraction form: `base + extent` can wrap in u32 when the descriptor is garbage.
+        const bool extent_out = !base_out && (r.extent.levels > max_levels - r.base.level ||
+                                              r.extent.layers > max_layers - r.base.layer);
+        if (base_out || extent_out) {
+            static int log_budget = 32;
+            if (log_budget-- > 0) {
+                LOG_ERROR(Render_Vulkan,
+                          "[imgclamp] view range mip {}+{} layer {}+{} exceeds image "
+                          "mips {} layers {} ({}x{}x{} {}): {}",
+                          r.base.level, r.extent.levels, r.base.layer, r.extent.layers,
+                          max_levels, max_layers, info.size.width, info.size.height,
+                          info.size.depth, vk::to_string(info.pixel_format),
+                          base_out ? "transitioning the whole image instead"
+                                   : "clamping to the real subresources");
+            }
+            if (base_out) {
+                subres_range.reset();
+            } else {
+                r.extent.levels = std::min(r.extent.levels, max_levels - r.base.level);
+                r.extent.layers = std::min(r.extent.layers, max_layers - r.base.layer);
+            }
+        }
+    }
     auto& last_state = backing->state;
     auto& subresource_states = backing->subresource_states;
 
