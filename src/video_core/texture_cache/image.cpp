@@ -805,9 +805,30 @@ void Image::CopyRect(Image& src_image, vk::Extent3D extent) {
 }
 
 void Image::Resolve(Image& src_image, const VideoCore::SubresourceRange& mrt0_range,
-                    const VideoCore::SubresourceRange& mrt1_range) {
+                    const VideoCore::SubresourceRange& mrt1_range,
+                    std::optional<vk::ComponentMapping> comp_swap_fixup) {
     SetBackingSamples(1, false);
     scheduler->EndRendering();
+
+    // GNM's fixed-function resolve reads MRT0 through its own comp_swap and writes MRT1 through
+    // the DST's comp_swap. vkCmdResolveImage/copyImage are verbatim, so when the two swap modes
+    // differ the destination ends up one channel permutation short - GT7's Music Rally track
+    // preview sampled its (0,0,0,1) background back as (1,0,0,0) and drew the map panel SOLID
+    // RED. comp_swap_fixup carries dstSwap(srcSwapInverse(...)) as a source-view swizzle for the
+    // draw-based copy. That copy takes sample 0 of an MSAA source (no average) - acceptable for
+    // the UI panels this path exists for. Env-gated by the caller: GT_RESOLVE_SWAP=1.
+    if (comp_swap_fixup && mrt0_range.base.layer == 0 && mrt1_range.base.layer == 0) {
+        src_image.Transit(vk::ImageLayout::eShaderReadOnlyOptimal,
+                          vk::AccessFlagBits2::eShaderRead, mrt0_range);
+        Transit(vk::ImageLayout::eColorAttachmentOptimal,
+                vk::AccessFlagBits2::eColorAttachmentWrite, mrt1_range);
+        blit_helper->CopyBetweenMsImages(info.size.width, info.size.height, 1, info.pixel_format,
+                                         src_image.backing->num_samples > 1, src_image.GetImage(),
+                                         GetImage(), *comp_swap_fixup);
+        flags |= VideoCore::ImageFlagBits::GpuModified;
+        flags &= ~VideoCore::ImageFlagBits::Dirty;
+        return;
+    }
 
     src_image.Transit(vk::ImageLayout::eTransferSrcOptimal, vk::AccessFlagBits2::eTransferRead,
                       mrt0_range);

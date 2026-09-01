@@ -2875,10 +2875,43 @@ void Rasterizer::Resolve() {
     auto& mrt0_image = texture_cache.GetImage(texture_cache.FindImage(mrt0_desc, true));
     auto& mrt1_image = texture_cache.GetImage(texture_cache.FindImage(mrt1_desc, true));
 
+    // The real CB resolve reads MRT0 through its comp_swap and writes MRT1 through MRT1's own
+    // comp_swap; our verbatim vkCmdResolveImage drops that permutation when the two differ
+    // (run 226: GT7's Music Rally track-preview panel red - dst read back rotated one swap).
+    // GT_RESOLVE_SWAP=1 routes such resolves through a draw-based copy whose source view
+    // carries dstSwap(srcSwapInverse(...)).
+    std::optional<vk::ComponentMapping> comp_swap_fixup{};
+    const auto src_swz = liverpool->regs.color_buffers[0].Swizzle();
+    const auto dst_swz = liverpool->regs.color_buffers[1].Swizzle();
+    if (src_swz != dst_swz) {
+        static const bool fixup_enabled = std::getenv("GT_RESOLVE_SWAP") != nullptr;
+        static u32 swap_log_budget = 0;
+        if (swap_log_budget++ < 32) {
+            LOG_WARNING(Render_Vulkan,
+                        "[resolve] comp_swap differs: src={} dst={} (src fmt={} dst fmt={} at "
+                        "{:#x}) - {}",
+                        u32(liverpool->regs.color_buffers[0].info.comp_swap),
+                        u32(liverpool->regs.color_buffers[1].info.comp_swap),
+                        u32(liverpool->regs.color_buffers[0].info.format),
+                        u32(liverpool->regs.color_buffers[1].info.format),
+                        liverpool->regs.color_buffers[1].Address(),
+                        fixup_enabled ? "fixing" : "left verbatim (GT_RESOLVE_SWAP off)");
+        }
+        if (fixup_enabled) {
+            // Per output channel i pick the SRC-storage channel holding the logical component
+            // that DST-storage channel i wants: dst_mem[i] = logical[dstMap(i)] =
+            // src_mem[srcInverse(dstMap(i))].
+            const auto combined = dst_swz.Apply(src_swz.Inverse().array);
+            comp_swap_fixup =
+                Vulkan::LiverpoolToVK::ComponentMapping(AmdGpu::CompMapping{.array = combined});
+        }
+    }
+
     ScopeMarkerBegin(fmt::format("Resolve:MRT0={:#x}:MRT1={:#x}",
                                  liverpool->regs.color_buffers[0].Address(),
                                  liverpool->regs.color_buffers[1].Address()));
-    mrt1_image.Resolve(mrt0_image, mrt0_desc.view_info.range, mrt1_desc.view_info.range);
+    mrt1_image.Resolve(mrt0_image, mrt0_desc.view_info.range, mrt1_desc.view_info.range,
+                       comp_swap_fixup);
     ScopeMarkerEnd();
 }
 

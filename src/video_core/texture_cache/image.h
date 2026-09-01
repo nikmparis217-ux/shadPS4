@@ -138,7 +138,8 @@ struct Image {
     void CopyRect(Image& src_image, vk::Extent3D extent);
 
     void Resolve(Image& src_image, const VideoCore::SubresourceRange& mrt0_range,
-                 const VideoCore::SubresourceRange& mrt1_range);
+                 const VideoCore::SubresourceRange& mrt1_range,
+                 std::optional<vk::ComponentMapping> comp_swap_fixup = std::nullopt);
     void Clear(const vk::ClearValue& clear_value, const VideoCore::SubresourceRange& range);
 
     void SetBackingSamples(u32 num_samples, bool copy_backing = true);

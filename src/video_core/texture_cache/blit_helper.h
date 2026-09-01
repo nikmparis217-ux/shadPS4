@@ -30,8 +30,13 @@ public:
                                    vk::Format src_pixel_format, vk::Format dst_pixel_format,
                                    vk::Image source, vk::Image dest);
 
+    // src_mapping is applied on the SOURCE sampled view. The GNM resolve pass reads MRT0 through
+    // its own comp_swap and writes MRT1 through the DST's comp_swap - when the two differ, a
+    // verbatim copy/resolve leaves the destination one channel permutation short (GT7's Music
+    // Rally track-preview panel rendered SOLID RED that way: bg (0,0,0,1) read back as (1,0,0,0)).
     void CopyBetweenMsImages(u32 width, u32 height, u32 num_samples, vk::Format pixel_format,
-                             bool src_msaa, vk::Image source, vk::Image dest);
+                             bool src_msaa, vk::Image source, vk::Image dest,
+                             vk::ComponentMapping src_mapping = {});
 
 private:
     void CreateShaders();
