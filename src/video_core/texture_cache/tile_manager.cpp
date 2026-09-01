@@ -215,6 +215,39 @@ vk::Pipeline TileManager::GetTilingPipeline(const ImageInfo& info, bool is_tiler
     return *tiling_pipelines[pl_id];
 }
 
+// GT7 run 238b: a FIRST-EVER-SEEN "image" of 256x256 x 769 layers, guest_size 0x2cc42000
+// (750 MB - larger than any texture a PS4 game can carry; the biggest legit one observed in
+// GT7 is 105 MB) arrived for host detile during a race load and the device died with a
+// WriteInvalid on the last chunk. 769 layers and a guest_size that is not even divisible by
+// the layer count = a garbage-described image (the first-read-zeros/garbage descriptor
+// family). GT_DETILE_MAXMB=<n> refuses host tiling work above n MB: the texture comes back
+// garbled instead of the device dying. 0/unset = unlimited (previous behavior).
+static u32 DetileMaxBytes() {
+    static const u32 max_bytes = [] {
+        const char* v = std::getenv("GT_DETILE_MAXMB");
+        return v ? static_cast<u32>(std::strtoul(v, nullptr, 10)) * 1024u * 1024u : 0u;
+    }();
+    return max_bytes;
+}
+
+static bool RefuseMonsterImage(const ImageInfo& info, const char* who) {
+    const u32 max_bytes = DetileMaxBytes();
+    if (max_bytes == 0 || info.guest_size <= max_bytes) {
+        return false;
+    }
+    static std::atomic<u32> log_budget{0};
+    if (log_budget.fetch_add(1, std::memory_order_relaxed) < 32) {
+        LOG_ERROR(Render_Vulkan,
+                  "[detile] {} REFUSED: extent {}x{}x{} layers {} levels {} bpp {} guest_size "
+                  "{:#x} tile_mode {} addr {:#x} exceeds GT_DETILE_MAXMB - the texture stays "
+                  "tiled/garbled instead of the device dying",
+                  who, info.size.width, info.size.height, info.size.depth,
+                  info.resources.layers, info.resources.levels, info.num_bits, info.guest_size,
+                  u32(info.tile_mode), info.guest_address);
+    }
+    return true;
+}
+
 /// One place issues every tiling dispatch, chunked or not, so the journal and the TDR guard can
 /// never disagree between the two directions. `work` arrives fully described except for the
 /// per-chunk group count. Chunks index disjoint texel ranges, so no barrier separates them.
@@ -251,6 +284,9 @@ static void DispatchTiling(const Vulkan::Instance& instance, vk::CommandBuffer c
 TileManager::Result TileManager::DetileImage(vk::Buffer in_buffer, u32 in_offset,
                                              const ImageInfo& info) {
     if (!info.props.is_tiled) {
+        return {in_buffer, in_offset};
+    }
+    if (RefuseMonsterImage(info, "DetileImage")) {
         return {in_buffer, in_offset};
     }
 
@@ -345,7 +381,7 @@ TileManager::Result TileManager::DetileImage(vk::Buffer in_buffer, u32 in_offset
 void TileManager::TileImage(Image& in_image, std::span<vk::BufferImageCopy> buffer_copies,
                             vk::Buffer out_buffer, u32 out_offset, u32 copy_size) {
     const auto& info = in_image.info;
-    if (!info.props.is_tiled) {
+    if (!info.props.is_tiled || RefuseMonsterImage(info, "TileImage")) {
         for (auto& copy : buffer_copies) {
             copy.bufferOffset += out_offset;
         }
