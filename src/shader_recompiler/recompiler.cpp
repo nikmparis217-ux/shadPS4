@@ -103,6 +103,9 @@ IR::Program TranslateProgram(const std::span<const u32>& code, Pools& pools, Inf
     Shader::Optimization::IdentityRemovalPass(program.blocks);
     Shader::Optimization::DeadCodeEliminationPass(program);
     Shader::Optimization::ConstantPropagationPass(program.post_order_blocks);
+    // GT_LOOP_WRAP_GUARD: wrap-proof decrementing loop exits (the run-235 tessellation hang).
+    // After constant propagation so the exit constants and the -1 increments are folded.
+    Shader::Optimization::LoopWrapGuardPass(program);
     Shader::Optimization::LowerUserClipPlanes(program, runtime_info);
     Shader::Optimization::CollectShaderInfoPass(program, profile);
 
