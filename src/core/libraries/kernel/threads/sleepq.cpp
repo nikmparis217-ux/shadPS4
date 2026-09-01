@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <array>
+#include <cstdlib>
+#include <mutex>
 #include "common/spin_lock.h"
 #include "core/libraries/kernel/threads/pthread.h"
 #include "core/libraries/kernel/threads/sleepq.h"
@@ -14,25 +16,47 @@ static constexpr int HASHSIZE = (1 << HASHSHIFT);
     ((u32)((((uintptr_t)(wchan) >> 3) ^ ((uintptr_t)(wchan) >> (HASHSHIFT + 3))) & (HASHSIZE - 1)))
 #define SC_LOOKUP(wc) &sc_table[SC_HASH(wc)]
 
+// GT7 lane, run 230 finding: GT7 parks ~60 "Job#N" worker threads on a handful of condition
+// variables at a high wake rate. Every wait/wake round-trip takes the wchan's chain lock, and
+// all waiters of one condvar hash to the SAME chain - so a raw test_and_set spin with no
+// backoff burns a uniform ~15% of a core on EVERY worker (~10 cores total, menu and race
+// alike; measured by GT_THREAD_PROF=2 RIP sampling: the running samples sit in
+// Common::SpinLock::lock). GT_SLEEPQ_MUTEX=1 swaps the chain lock for std::mutex (SRWLOCK),
+// which parks contending threads instead of spinning. Lock/unlock here is always same-thread
+// (the wait loop is lock -> unlock -> Sleep -> lock), so the mutex ownership rule holds.
 struct SleepQueueChain {
     Common::SpinLock sc_lock;
+    std::mutex sc_mtx;
     SleepqList sc_queues;
     int sc_type;
 };
 
 static std::array<SleepQueueChain, HASHSIZE> sc_table{};
 
+static bool UseChainMutex() {
+    static const bool use_mutex = std::getenv("GT_SLEEPQ_MUTEX") != nullptr;
+    return use_mutex;
+}
+
 void SleepqLock(void* wchan) {
     if (g_curthread != nullptr) {
         g_curthread->locklevel.fetch_add(1, std::memory_order_acq_rel);
     }
     SleepQueueChain* sc = SC_LOOKUP(wchan);
-    sc->sc_lock.lock();
+    if (UseChainMutex()) {
+        sc->sc_mtx.lock();
+    } else {
+        sc->sc_lock.lock();
+    }
 }
 
 void SleepqUnlock(void* wchan) {
     SleepQueueChain* sc = SC_LOOKUP(wchan);
-    sc->sc_lock.unlock();
+    if (UseChainMutex()) {
+        sc->sc_mtx.unlock();
+    } else {
+        sc->sc_lock.unlock();
+    }
     if (g_curthread != nullptr) {
         const int previous = g_curthread->locklevel.fetch_sub(1, std::memory_order_acq_rel);
         ASSERT(previous > 0);
