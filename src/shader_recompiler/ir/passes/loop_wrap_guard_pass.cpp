@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: Copyright 2026 shadPS4 Emulator Project
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+#include <algorithm>
 #include <cstdlib>
+#include <string_view>
+
+#include <boost/container/small_vector.hpp>
 
 #include "common/logging/log.h"
 #include "shader_recompiler/ir/program.h"
@@ -44,31 +48,53 @@ static bool IsStepOf(const IR::Value& incoming, const IR::Inst* phi, u32 step_im
 }
 
 // A comparison is only a LOOP EXIT if its result feeds nothing but branch conditions -
-// ConditionRef, reached directly or through boolean plumbing (LogicalNot / LogicalAnd /
-// LogicalOr). The plumbing matters: hs_0x3827418d's real do-while exit is
-//     %489 = OpLogicalAnd(%206, INotEqual(1, counter_phi)) -> BranchConditional
-// and a gate that only accepted ConditionRef/LogicalNot silently refused to rewrite the very
-// shader this pass was built for (run 239: it compiled fresh at race load, got no rewrite,
-// the count arrived 0, and the 2^32 wrap hang came back). An in-body `i != x` used as a
-// VALUE (arithmetic, select, store) must still NOT be rewritten: `<` is not equivalent to
-// `!=` there even for perfectly valid data.
-static bool OnlyFeedsBranchConditions(const IR::Inst& inst, int depth = 0) {
-    if (!inst.HasUses() || depth > 4) {
-        return false;
-    }
-    for (const auto& [user, arg_index] : inst.Uses()) {
-        switch (user->GetOpcode()) {
-        case IR::Opcode::ConditionRef:
+// ConditionRef, reached through boolean plumbing (LogicalNot / LogicalAnd / LogicalOr) and
+// through boolean PHIS. Both plumbing kinds are measured facts of hs_0x3827418d's real
+// do-while exit (shaders/hs_3827418d.spvasm):
+//     %488 = OpINotEqual(1, counter_phi)
+//     %489 = OpLogicalAnd(%206, %488)      -> OpBranchConditional   (run 239's miss: the And)
+//     %206 = OpPhi(true, %489)             <- %489 ALSO feeds the "keep going" phi of the
+//                                             next iteration (run 241's miss: the Phi)
+// A gate that stopped at either link silently refused to rewrite the very shader this pass
+// was built for, twice - runs 239 and 241 both died on the same wrap hang with the guard
+// present. The phi is condition plumbing like the And: for every count a real console can
+// produce the rewritten compare computes identical values on every iteration, so the phi'd
+// copy is identical too. An in-body `i != x` used as a VALUE (arithmetic, select, store)
+// must still NOT be rewritten: `<` is not equivalent to `!=` there even for valid data.
+// Iterative worklist with a visited set - phi -> and -> phi is a real cycle here.
+static bool OnlyFeedsBranchConditions(IR::Inst& root, std::string_view* refused_by) {
+    boost::container::small_vector<IR::Inst*, 8> worklist{&root};
+    boost::container::small_vector<const IR::Inst*, 16> visited;
+    while (!worklist.empty()) {
+        IR::Inst* const inst = worklist.back();
+        worklist.pop_back();
+        if (std::ranges::find(visited, inst) != visited.end()) {
             continue;
-        case IR::Opcode::LogicalNot:
-        case IR::Opcode::LogicalAnd:
-        case IR::Opcode::LogicalOr:
-            if (!OnlyFeedsBranchConditions(*user, depth + 1)) {
+        }
+        visited.push_back(inst);
+        if (visited.size() > 64) {
+            *refused_by = "plumbing too large";
+            return false;
+        }
+        if (!inst->HasUses()) {
+            // A dead comparison decides nothing; leave it alone.
+            *refused_by = "no uses";
+            return false;
+        }
+        for (const auto& [user, arg_index] : inst->Uses()) {
+            switch (user->GetOpcode()) {
+            case IR::Opcode::ConditionRef:
+                continue;
+            case IR::Opcode::LogicalNot:
+            case IR::Opcode::LogicalAnd:
+            case IR::Opcode::LogicalOr:
+            case IR::Opcode::Phi:
+                worklist.push_back(user);
+                continue;
+            default:
+                *refused_by = IR::NameOf(user->GetOpcode());
                 return false;
             }
-            continue;
-        default:
-            return false;
         }
     }
     return true;
@@ -108,7 +134,18 @@ void LoopWrapGuardPass(IR::Program& program) {
             if (inst.GetOpcode() != IR::Opcode::INotEqual32) {
                 continue;
             }
-            if (!OnlyFeedsBranchConditions(inst)) {
+            std::string_view refused_by{};
+            if (!OnlyFeedsBranchConditions(inst, &refused_by)) {
+                // Near-miss forensics: a stepping-phi compare the gate refused is exactly the
+                // shape that cost runs 239 and 241 (the And link, then the Phi link). Name the
+                // refusing user so the NEXT mismatch is one log line instead of a blind run.
+                if (AsSteppingPhi(inst.Arg(0), 0xFFFFFFFFu) || AsSteppingPhi(inst.Arg(1), 0xFFFFFFFFu) ||
+                    AsSteppingPhi(inst.Arg(0), 1u) || AsSteppingPhi(inst.Arg(1), 1u)) {
+                    LOG_WARNING(Render_Recompiler,
+                                "[loopguard] shader {:#x}: stepping-phi INotEqual NOT rewritten - "
+                                "its result feeds '{}', not only branch conditions",
+                                program.info.pgm_hash, refused_by);
+                }
                 continue;
             }
             const IR::Value a = inst.Arg(0);
