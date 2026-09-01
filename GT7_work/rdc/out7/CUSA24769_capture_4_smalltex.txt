@@ -1,0 +1,894 @@
+capture CUSA24769_capture_4: 142 small/AE textures picked of 790 total
+
+ResourceId::102522 16x16x1 R16G16B16A16_FLOAT [Image 16x16x1 DisplayLinearAligned R16G16B16A16Sfloat 0xe40e4c0100:0x800 L:1 M:1 S:1]
+  min(0.0007925 0.0007215 0.007927 1) max(6.502e+04 6.502e+04 6.451e+04 1)
+  1 read(s), 1 write(s)
+    eid  17918 Barrier                ?
+    eid  17922 CS_RWResource          vkCmdDispatch()  <-- WRITE
+
+ResourceId::102517 16x16x1 R32_FLOAT [Image 16x16x1 DisplayLinearAligned R32Sfloat 0xe40e4cf800:0x400 L:1 M:1 S:1]
+  min(6.792e-05 0 0 1) max(1 0 0 1)
+  0 read(s), 1 write(s)
+    eid  17833 ColorTarget            vkCmdDraw()  <-- WRITE
+
+ResourceId::101398 16x16x1 R8G8B8A8_UNORM [Image 16x16x1 DisplayLinearAligned R8G8B8A8Unorm 0x1014dc4800:0x400 L:1 M:1 S:1]
+  min(1 1 1 1) max(1 1 1 1)
+  1 read(s), 0 write(s)
+    eid  18238 PS_Resource            vkCmdDraw()
+
+ResourceId::96973 16x16x1 R32_FLOAT [Image 16x16x1 Thin2DThin R32Sfloat 0x100a150000:0x8000 L:1 M:1 S:1]
+  min(6.792e-05 0 0 1) max(1 0 0 1)
+  3 read(s), 1 write(s)
+    eid  17815 Barrier                ?
+    eid  17824 ColorTarget            vkCmdDraw()  <-- WRITE
+    eid  17826 Barrier                ?
+    eid  17833 PS_Resource            vkCmdDraw()
+
+ResourceId::18847 16x1x1 R16_FLOAT [Image 16x1x1 DisplayLinearAligned R16Sfloat 0x10b19a1700:0x100 L:1 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  texels: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  1 read(s), 0 write(s)
+    eid     15 CS_Resource            vkCmdDispatch()
+
+ResourceId::21517 1x1x1 R8_UNORM [Image 1x1x1 DisplayLinearAligned R8Unorm 0x1000e33200:0x600 L:6 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  texels: 0.000
+  262 read(s), 0 write(s)
+    eid     15 CS_Resource            vkCmdDispatch()
+    eid   5640 PS_Resource            vkCmdDrawIndexed()
+    eid   5647 PS_Resource            vkCmdDrawIndexed()
+    eid   5657 PS_Resource            vkCmdDrawIndexed()
+    eid   5667 PS_Resource            vkCmdDrawIndexed()
+    eid   5674 PS_Resource            vkCmdDrawIndexed()
+    ... 256 more usage(s) elided
+
+ResourceId::39825 1x1x1 R8_UNORM [Image 1x1x1 Thick1DThick R8Unorm 0x1000e33200:0x2000 L:1 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  texels: 0.000
+  126 read(s), 0 write(s)
+    eid  11898 PS_Resource            vkCmdDrawIndexed()
+    eid  11898 PS_Resource            vkCmdDrawIndexed()
+    eid  11905 PS_Resource            vkCmdDrawIndexed()
+    eid  11905 PS_Resource            vkCmdDrawIndexed()
+    eid  11912 PS_Resource            vkCmdDrawIndexed()
+    eid  11912 PS_Resource            vkCmdDrawIndexed()
+    ... 120 more usage(s) elided
+
+ResourceId::144370 30x16x1 R11G11B10_FLOAT [Image 30x16x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x40000 L:1 M:1 S:1]
+  min(0 0 0 1) max(4352 4352 3712 1)
+  6 read(s), 4 write(s)
+    eid  18125 Barrier                ?
+    eid  18125 Discard                ?  <-- WRITE
+    eid  18126 Clear                  vkCmdClearColorImage()  <-- WRITE
+    eid  18131 Barrier                ?
+    eid  18132 CopyDst                vkCmdCopyBufferToImage()  <-- WRITE
+    eid  18134 Barrier                ?
+    eid  18144 ColorTarget            vkCmdDraw()  <-- WRITE
+    ... 3 more usage(s) elided
+
+ResourceId::40268 30x16x1 R11G11B10_FLOAT [Image 30x16x1 Thin2DThin B10G11R11UfloatPack32 0x100a2f0000:0x40000 L:1 M:1 S:1]
+  min(0 0 0 1) max(4288 4288 3648 1)
+  5 read(s), 2 write(s)
+    eid  18150 Barrier                ?
+    eid  18151 CopyDst                vkCmdCopyBufferToImage()  <-- WRITE
+    eid  18153 Barrier                ?
+    eid  18154 Barrier                ?
+    eid  18161 ColorTarget            vkCmdDraw()  <-- WRITE
+    eid  18163 Barrier                ?
+    ... 1 more usage(s) elided
+
+ResourceId::40272 30x16x1 R11G11B10_FLOAT [Image 30x16x1 Thin2DThin B10G11R11UfloatPack32 0x100a8f8000:0x8000 L:1 M:1 S:1]
+  min(1.328 1.328 1.188 1) max(3168 3168 2752 1)
+  3 read(s), 1 write(s)
+    eid  18164 Barrier                ?
+    eid  18171 ColorTarget            vkCmdDraw()  <-- WRITE
+    eid  18175 Barrier                ?
+    eid  18192 PS_Resource            vkCmdDraw()
+
+ResourceId::9695 32x32x1 R11G11B10_FLOAT [Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100a090000:0x12000 L:18 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  118 read(s), 1 write(s)
+    eid    312 PS_Resource            vkCmdDrawIndexed()
+    eid    322 PS_Resource            vkCmdDrawIndexed()
+    eid    329 PS_Resource            vkCmdDrawIndexed()
+    eid    336 PS_Resource            vkCmdDrawIndexed()
+    eid    343 PS_Resource            vkCmdDrawIndexed()
+    eid    350 PS_Resource            vkCmdDrawIndexed()
+    eid   9169 ColorTarget            vkCmdDraw()  <-- WRITE
+    ... 112 more usage(s) elided
+
+ResourceId::40348 32x32x1 R11G11B10_FLOAT [Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x10987b2700:0xc000 L:12 M:1 S:1]
+  min(0 0 0 1) max(2 2 2 1)
+  1 read(s), 0 write(s)
+    eid  18266 VS_Resource            vkCmdDraw()
+
+ResourceId::101409 32x32x1 R11G11B10_FLOAT [Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x109bc15500:0x1e000 L:30 M:1 S:1]
+  min(0 0 0 1) max(2.219 2.219 2.188 1)
+  1 read(s), 0 write(s)
+    eid  18275 VS_Resource            vkCmdDraw()
+
+ResourceId::21634 32x32x1 R11G11B10_FLOAT [Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x10a961c100:0x56a000 L:1386 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  4 read(s), 0 write(s)
+    eid  16303 PS_Resource            vkCmdDrawIndexed()
+    eid  16311 PS_Resource            vkCmdDrawIndexed()
+    eid  16630 PS_Resource            vkCmdDrawIndexed()
+    eid  16637 PS_Resource            vkCmdDrawIndexed()
+
+ResourceId::26111 32x32x1 R11G11B10_FLOAT [Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x10af189400:0x33c000 L:828 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  417 read(s), 0 write(s)
+    eid  11109 PS_Resource            vkCmdDrawIndexed()
+    eid  11116 PS_Resource            vkCmdDrawIndexed()
+    eid  11123 PS_Resource            vkCmdDrawIndexed()
+    eid  11130 PS_Resource            vkCmdDrawIndexed()
+    eid  11137 PS_Resource            vkCmdDrawIndexed()
+    eid  11144 PS_Resource            vkCmdDrawIndexed()
+    ... 411 more usage(s) elided
+
+ResourceId::40478 32x32x1 R8G8B8A8_UNORM [Image 32x32x1 Thin1DThin R8G8B8A8Unorm 0x10b2a24000:0x1000 L:1 M:1 S:1]
+  min(0.4784 0.4784 0.9961 1) max(0.5137 0.5176 0.9961 1)
+  0 read(s), 1 write(s)
+    eid     66 ColorTarget            vkCmdDraw()  <-- WRITE
+
+ResourceId::40212 480x270x1 R11G11B10_FLOAT [Image 480x270x1 Thin2DThin B10G11R11UfloatPack32 0x100a770000:0xa0000 L:1 M:1 S:1]
+  min(0 0 0 1) max(1.037e+04 1.037e+04 1.024e+04 1)
+  4 read(s), 1 write(s)
+    eid  17928 Barrier                ?
+    eid  17932 CS_RWResource          vkCmdDispatch()  <-- WRITE
+    eid  17938 Barrier                ?
+    eid  17969 PS_Resource            vkCmdDraw()
+    eid  18228 PS_Resource            vkCmdDraw()
+
+ResourceId::36854 4x4x1 R16G16B16A16_FLOAT [Image 4x4x1 Thin1DThin R16G16B16A16Sfloat 0x101e32a700:0x200 L:1 M:1 S:1]
+  min(0 0 0 0) max(0 0 0 0)
+  texels: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+  15 read(s), 1 write(s)
+    eid     87 Barrier                ?
+    eid    234 CS_RWResource          vkCmdDispatch()  <-- WRITE
+    eid   9918 Barrier                ?
+    eid   9939 VS_Resource            vkCmdDrawIndexed()
+    eid   9949 VS_Resource            vkCmdDrawIndexed()
+    eid   9959 VS_Resource            vkCmdDrawIndexed()
+    ... 10 more usage(s) elided
+
+ResourceId::36855 4x4x1 R16G16B16A16_FLOAT [Image 4x4x1 Thin1DThin R16G16B16A16Sfloat 0x101e32a900:0x200 L:1 M:1 S:1]
+  min(0 0 -0 0) max(0 0 0 0)
+  texels: (0 0 0 0) (0 0 -0 0) (0 0 -0 0) (0 0 -0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+  15 read(s), 1 write(s)
+    eid     88 Barrier                ?
+    eid    234 CS_RWResource          vkCmdDispatch()  <-- WRITE
+    eid   9917 Barrier                ?
+    eid   9939 VS_Resource            vkCmdDrawIndexed()
+    eid   9949 VS_Resource            vkCmdDrawIndexed()
+    eid   9959 VS_Resource            vkCmdDrawIndexed()
+    ... 10 more usage(s) elided
+
+ResourceId::144406 56x58x1 R16G16B16A16_FLOAT [Image 56x58x1 Thin2DThin R16G16B16A16Sfloat 0x100a0b0000:0x100000 L:1 M:1 S:1]
+  min(0 0 0 0) max(0 0 0 0)
+  7 read(s), 3 write(s)
+    eid  19802 Barrier                ?
+    eid  19802 Discard                ?  <-- WRITE
+    eid  19803 Clear                  vkCmdClearColorImage()  <-- WRITE
+    eid  19807 Barrier                ?
+    eid  19808 CopyDst                vkCmdCopyBufferToImage()  <-- WRITE
+    eid  19810 Barrier                ?
+    ... 4 more usage(s) elided
+
+ResourceId::144375 60x32x1 R11G11B10_FLOAT [Image 60x32x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x8000 L:1 M:1 S:1]
+  min(1.703 1.703 1.5 1) max(3136 3136 2688 1)
+  6 read(s), 4 write(s)
+    eid  18173 Barrier                ?
+    eid  18173 Discard                ?  <-- WRITE
+    eid  18174 Clear                  vkCmdClearColorImage()  <-- WRITE
+    eid  18179 Barrier                ?
+    eid  18180 CopyDst                vkCmdCopyBufferToImage()  <-- WRITE
+    eid  18182 Barrier                ?
+    eid  18192 ColorTarget            vkCmdDraw()  <-- WRITE
+    ... 3 more usage(s) elided
+
+ResourceId::144365 60x33x1 R11G11B10_FLOAT [Image 60x33x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x40000 L:1 M:1 S:1]
+  min(0 0 0 1) max(6912 6912 6144 1)
+  6 read(s), 4 write(s)
+    eid  18077 Barrier                ?
+    eid  18077 Discard                ?  <-- WRITE
+    eid  18078 Clear                  vkCmdClearColorImage()  <-- WRITE
+    eid  18083 Barrier                ?
+    eid  18084 CopyDst                vkCmdCopyBufferToImage()  <-- WRITE
+    eid  18086 Barrier                ?
+    eid  18096 ColorTarget            vkCmdDraw()  <-- WRITE
+    ... 3 more usage(s) elided
+
+ResourceId::40256 60x33x1 R11G11B10_FLOAT [Image 60x33x1 Thin2DThin B10G11R11UfloatPack32 0x100a2f0000:0x40000 L:1 M:1 S:1]
+  min(0 0 0 1) max(6912 6912 6016 1)
+  5 read(s), 2 write(s)
+    eid  18102 Barrier                ?
+    eid  18103 CopyDst                vkCmdCopyBufferToImage()  <-- WRITE
+    eid  18105 Barrier                ?
+    eid  18106 Barrier                ?
+    eid  18113 ColorTarget            vkCmdDraw()  <-- WRITE
+    eid  18115 Barrier                ?
+    ... 1 more usage(s) elided
+
+ResourceId::40260 60x33x1 R11G11B10_FLOAT [Image 60x33x1 Thin2DThin B10G11R11UfloatPack32 0x100a8f0000:0x8000 L:1 M:1 S:1]
+  min(0 0 0 1) max(6848 6848 5888 1)
+  4 read(s), 1 write(s)
+    eid  18116 Barrier                ?
+    eid  18123 ColorTarget            vkCmdDraw()  <-- WRITE
+    eid  18127 Barrier                ?
+    eid  18144 PS_Resource            vkCmdDraw()
+    eid  18203 PS_Resource            vkCmdDraw()
+
+ResourceId::102614 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec041d3300:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18890 PS_Resource            vkCmdDraw()
+
+ResourceId::102616 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec041d3700:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18896 PS_Resource            vkCmdDraw()
+
+ResourceId::102608 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec041d6700:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18872 PS_Resource            vkCmdDraw()
+
+ResourceId::97091 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04250600:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20329 PS_Resource            vkCmdDraw()
+
+ResourceId::102759 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec0426e400:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19657 PS_Resource            vkCmdDraw()
+
+ResourceId::123309 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04285d00:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20547 PS_Resource            vkCmdDraw()
+
+ResourceId::123311 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04286100:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  20553 PS_Resource            vkCmdDraw()
+    eid  20571 PS_Resource            vkCmdDraw()
+    eid  20939 PS_Resource            vkCmdDraw()
+
+ResourceId::123317 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04286f00:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20577 PS_Resource            vkCmdDraw()
+
+ResourceId::123319 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04287300:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  20583 PS_Resource            vkCmdDraw()
+    eid  20740 PS_Resource            vkCmdDraw()
+    eid  20915 PS_Resource            vkCmdDraw()
+
+ResourceId::123324 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04287c00:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20752 PS_Resource            vkCmdDraw()
+
+ResourceId::123333 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04289000:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20951 PS_Resource            vkCmdDraw()
+
+ResourceId::123338 64x16x1 R8_UNORM [Image 64x16x1 DisplayLinearAligned R8Unorm 0xec04289900:0x400 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  21108 PS_Resource            vkCmdDraw()
+
+ResourceId::102610 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041d7300:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18878 PS_Resource            vkCmdDraw()
+
+ResourceId::102612 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041d7d00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18884 PS_Resource            vkCmdDraw()
+
+ResourceId::54690 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041f5000:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19113 PS_Resource            vkCmdDraw()
+
+ResourceId::54779 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041f5500:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19149 PS_Resource            vkCmdDraw()
+
+ResourceId::54696 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041f5a00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  4 read(s), 0 write(s)
+    eid  19155 PS_Resource            vkCmdDraw()
+    eid  19161 PS_Resource            vkCmdDraw()
+    eid  19179 PS_Resource            vkCmdDraw()
+    eid  19203 PS_Resource            vkCmdDraw()
+
+ResourceId::54777 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041f5f00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19131 PS_Resource            vkCmdDraw()
+
+ResourceId::54775 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041f6b00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  19095 PS_Resource            vkCmdDraw()
+    eid  19101 PS_Resource            vkCmdDraw()
+
+ResourceId::54700 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec041f9300:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19173 PS_Resource            vkCmdDraw()
+
+ResourceId::97045 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424ac00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  19845 PS_Resource            vkCmdDraw()
+    eid  20037 PS_Resource            vkCmdDraw()
+
+ResourceId::97049 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424b700:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19857 PS_Resource            vkCmdDraw()
+    eid  20043 PS_Resource            vkCmdDraw()
+    eid  20232 PS_Resource            vkCmdDraw()
+
+ResourceId::97056 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424c800:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19875 PS_Resource            vkCmdDraw()
+    eid  20061 PS_Resource            vkCmdDraw()
+    eid  20250 PS_Resource            vkCmdDraw()
+
+ResourceId::97058 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424cd00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19881 PS_Resource            vkCmdDraw()
+    eid  20067 PS_Resource            vkCmdDraw()
+    eid  20256 PS_Resource            vkCmdDraw()
+
+ResourceId::97075 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424de00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20269 PS_Resource            vkCmdDraw()
+
+ResourceId::97077 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424e300:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  20275 PS_Resource            vkCmdDraw()
+    eid  20299 PS_Resource            vkCmdDraw()
+
+ResourceId::97079 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424e800:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20281 PS_Resource            vkCmdDraw()
+
+ResourceId::97081 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424ed00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20287 PS_Resource            vkCmdDraw()
+
+ResourceId::97083 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424f200:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  20293 PS_Resource            vkCmdDraw()
+    eid  20317 PS_Resource            vkCmdDraw()
+
+ResourceId::97085 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424f700:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20305 PS_Resource            vkCmdDraw()
+
+ResourceId::97087 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0424fc00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20311 PS_Resource            vkCmdDraw()
+
+ResourceId::97089 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04250100:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20323 PS_Resource            vkCmdDraw()
+
+ResourceId::102660 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0425d800:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  19251 PS_Resource            vkCmdDraw()
+    eid  19323 PS_Resource            vkCmdDraw()
+
+ResourceId::102664 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0425e300:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19263 PS_Resource            vkCmdDraw()
+    eid  19305 PS_Resource            vkCmdDraw()
+    eid  19395 PS_Resource            vkCmdDraw()
+
+ResourceId::102674 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04260000:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19311 PS_Resource            vkCmdDraw()
+    eid  19353 PS_Resource            vkCmdDraw()
+    eid  19389 PS_Resource            vkCmdDraw()
+
+ResourceId::102676 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04260500:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19317 PS_Resource            vkCmdDraw()
+
+ResourceId::102678 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04260a00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19329 PS_Resource            vkCmdDraw()
+
+ResourceId::102680 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04260f00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19341 PS_Resource            vkCmdDraw()
+    eid  19359 PS_Resource            vkCmdDraw()
+    eid  19401 PS_Resource            vkCmdDraw()
+
+ResourceId::102684 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04261a00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19371 PS_Resource            vkCmdDraw()
+
+ResourceId::102686 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04261f00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19377 PS_Resource            vkCmdDraw()
+
+ResourceId::102761 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0426e800:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19663 PS_Resource            vkCmdDraw()
+
+ResourceId::102763 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec0426ed00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19669 PS_Resource            vkCmdDraw()
+
+ResourceId::123313 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04286500:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  5 read(s), 0 write(s)
+    eid  20559 PS_Resource            vkCmdDraw()
+    eid  20746 PS_Resource            vkCmdDraw()
+    eid  20921 PS_Resource            vkCmdDraw()
+    eid  20927 PS_Resource            vkCmdDraw()
+    eid  21120 PS_Resource            vkCmdDraw()
+
+ResourceId::123315 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04286a00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  20565 PS_Resource            vkCmdDraw()
+    eid  20933 PS_Resource            vkCmdDraw()
+    eid  21114 PS_Resource            vkCmdDraw()
+
+ResourceId::123322 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04287700:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20734 PS_Resource            vkCmdDraw()
+
+ResourceId::123326 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04288000:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20758 PS_Resource            vkCmdDraw()
+
+ResourceId::123331 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04288b00:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20945 PS_Resource            vkCmdDraw()
+
+ResourceId::123336 64x20x1 R8_UNORM [Image 64x20x1 DisplayLinearAligned R8Unorm 0xec04289400:0x500 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  21102 PS_Resource            vkCmdDraw()
+
+ResourceId::102646 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec041f4400:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19191 PS_Resource            vkCmdDraw()
+
+ResourceId::54781 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec041f4a00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19143 PS_Resource            vkCmdDraw()
+
+ResourceId::54694 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec041f7600:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19197 PS_Resource            vkCmdDraw()
+
+ResourceId::54698 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec041f8d00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19167 PS_Resource            vkCmdDraw()
+
+ResourceId::54702 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04212600:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19107 PS_Resource            vkCmdDraw()
+
+ResourceId::60076 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0421e000:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19227 PS_Resource            vkCmdDraw()
+
+ResourceId::97041 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0424a400:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  19833 PS_Resource            vkCmdDraw()
+    eid  20019 PS_Resource            vkCmdDraw()
+
+ResourceId::97047 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0424b100:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19851 PS_Resource            vkCmdDraw()
+
+ResourceId::97051 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0424bc00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19863 PS_Resource            vkCmdDraw()
+    eid  20049 PS_Resource            vkCmdDraw()
+    eid  20238 PS_Resource            vkCmdDraw()
+
+ResourceId::97053 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0424c200:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19869 PS_Resource            vkCmdDraw()
+    eid  20055 PS_Resource            vkCmdDraw()
+    eid  20244 PS_Resource            vkCmdDraw()
+
+ResourceId::97065 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0424d200:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  20031 PS_Resource            vkCmdDraw()
+    eid  20208 PS_Resource            vkCmdDraw()
+
+ResourceId::97073 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0424d800:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  20220 PS_Resource            vkCmdDraw()
+    eid  20226 PS_Resource            vkCmdDraw()
+
+ResourceId::102551 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04250c00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18292 PS_Resource            vkCmdDraw()
+
+ResourceId::102553 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04251200:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18298 PS_Resource            vkCmdDraw()
+
+ResourceId::102555 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04251800:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18304 PS_Resource            vkCmdDraw()
+
+ResourceId::102557 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04251e00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18310 PS_Resource            vkCmdDraw()
+
+ResourceId::102559 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04252400:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18316 PS_Resource            vkCmdDraw()
+
+ResourceId::102561 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04252a00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18322 PS_Resource            vkCmdDraw()
+
+ResourceId::102563 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04253000:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18328 PS_Resource            vkCmdDraw()
+
+ResourceId::102565 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04253600:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18334 PS_Resource            vkCmdDraw()
+
+ResourceId::102567 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04253c00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18340 PS_Resource            vkCmdDraw()
+
+ResourceId::102604 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04259200:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  18848 PS_Resource            vkCmdDraw()
+    eid  18860 PS_Resource            vkCmdDraw()
+
+ResourceId::102636 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04259a00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19089 PS_Resource            vkCmdDraw()
+
+ResourceId::102638 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425a000:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19119 PS_Resource            vkCmdDraw()
+
+ResourceId::102640 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425a600:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19125 PS_Resource            vkCmdDraw()
+
+ResourceId::102642 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425ac00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19137 PS_Resource            vkCmdDraw()
+
+ResourceId::102650 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425b900:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19215 PS_Resource            vkCmdDraw()
+
+ResourceId::102652 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425bf00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19221 PS_Resource            vkCmdDraw()
+
+ResourceId::102656 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425cc00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(0.9882 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19239 PS_Resource            vkCmdDraw()
+
+ResourceId::102658 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425d200:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19245 PS_Resource            vkCmdDraw()
+
+ResourceId::102662 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425dd00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19257 PS_Resource            vkCmdDraw()
+
+ResourceId::102666 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425e800:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  19269 PS_Resource            vkCmdDraw()
+    eid  19293 PS_Resource            vkCmdDraw()
+
+ResourceId::102668 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425ee00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19275 PS_Resource            vkCmdDraw()
+
+ResourceId::102670 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425f400:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19281 PS_Resource            vkCmdDraw()
+    eid  19299 PS_Resource            vkCmdDraw()
+    eid  19365 PS_Resource            vkCmdDraw()
+
+ResourceId::102672 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec0425fa00:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  19287 PS_Resource            vkCmdDraw()
+    eid  19335 PS_Resource            vkCmdDraw()
+
+ResourceId::102682 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04261400:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19347 PS_Resource            vkCmdDraw()
+
+ResourceId::102688 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04262400:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19383 PS_Resource            vkCmdDraw()
+
+ResourceId::119788 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04285100:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18866 PS_Resource            vkCmdDraw()
+
+ResourceId::123307 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04285700:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20541 PS_Resource            vkCmdDraw()
+
+ResourceId::123329 64x24x1 R8_UNORM [Image 64x24x1 DisplayLinearAligned R8Unorm 0xec04288500:0x600 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  20909 PS_Resource            vkCmdDraw()
+
+ResourceId::102644 64x28x1 R8_UNORM [Image 64x28x1 DisplayLinearAligned R8Unorm 0xec0425b200:0x700 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19185 PS_Resource            vkCmdDraw()
+
+ResourceId::102654 64x28x1 R8_UNORM [Image 64x28x1 DisplayLinearAligned R8Unorm 0xec0425c500:0x700 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19233 PS_Resource            vkCmdDraw()
+
+ResourceId::102747 64x36x1 R8_UNORM [Image 64x36x1 DisplayLinearAligned R8Unorm 0xec0426aa00:0x900 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19620 PS_Resource            vkCmdDraw()
+
+ResourceId::102749 64x36x1 R8_UNORM [Image 64x36x1 DisplayLinearAligned R8Unorm 0xec0426b300:0x900 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19626 PS_Resource            vkCmdDraw()
+
+ResourceId::102751 64x36x1 R8_UNORM [Image 64x36x1 DisplayLinearAligned R8Unorm 0xec0426bc00:0x900 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19632 PS_Resource            vkCmdDraw()
+
+ResourceId::102753 64x36x1 R8_UNORM [Image 64x36x1 DisplayLinearAligned R8Unorm 0xec0426c500:0x900 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19638 PS_Resource            vkCmdDraw()
+
+ResourceId::103439 64x36x1 R8_UNORM [Image 64x36x1 DisplayLinearAligned R8Unorm 0xec0426f200:0x900 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19614 PS_Resource            vkCmdDraw()
+
+ResourceId::115724 64x44x1 R8_UNORM [Image 64x44x1 DisplayLinearAligned R8Unorm 0xec0427fe00:0xb00 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19651 PS_Resource            vkCmdDraw()
+
+ResourceId::116550 64x44x1 R8_UNORM [Image 64x44x1 DisplayLinearAligned R8Unorm 0xec04281f00:0xb00 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19645 PS_Resource            vkCmdDraw()
+
+ResourceId::102726 64x56x1 R8_UNORM [Image 64x56x1 DisplayLinearAligned R8Unorm 0xec04264800:0xe00 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  19504 PS_Resource            vkCmdDraw()
+    eid  19516 PS_Resource            vkCmdDraw()
+
+ResourceId::36909 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x1002800000:0x1800000 L:1536 M:1 S:1]
+  min(0.04834 0.04834 0.04785 1) max(2.312 2.312 2.312 1)
+  1104 read(s), 0 write(s)
+    eid    312 PS_Resource            vkCmdDrawIndexed()
+    eid    322 PS_Resource            vkCmdDrawIndexed()
+    eid    329 PS_Resource            vkCmdDrawIndexed()
+    eid    336 PS_Resource            vkCmdDrawIndexed()
+    eid    343 PS_Resource            vkCmdDrawIndexed()
+    eid    350 PS_Resource            vkCmdDrawIndexed()
+    ... 1098 more usage(s) elided
+
+ResourceId::121366 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x103176da00:0x30000 L:12 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  16 read(s), 0 write(s)
+    eid  12902 PS_Resource            vkCmdDrawIndexed()
+    eid  12936 PS_Resource            vkCmdDrawIndexed()
+    eid  12943 PS_Resource            vkCmdDrawIndexed()
+    eid  13180 PS_Resource            vkCmdDrawIndexed()
+    eid  13187 PS_Resource            vkCmdDrawIndexed()
+    eid  13194 PS_Resource            vkCmdDrawIndexed()
+    ... 10 more usage(s) elided
+
+ResourceId::120695 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x1032478b00:0x48000 L:18 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  20 read(s), 0 write(s)
+    eid  12001 PS_Resource            vkCmdDrawIndexed()
+    eid  12015 PS_Resource            vkCmdDrawIndexed()
+    eid  12040 PS_Resource            vkCmdDrawIndexed()
+    eid  12099 PS_Resource            vkCmdDrawIndexed()
+    eid  12106 PS_Resource            vkCmdDrawIndexed()
+    eid  12211 PS_Resource            vkCmdDrawIndexed()
+    ... 14 more usage(s) elided
+
+ResourceId::120059 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10334ba900:0x30000 L:12 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  21 read(s), 0 write(s)
+    eid  11116 PS_Resource            vkCmdDrawIndexed()
+    eid  11123 PS_Resource            vkCmdDrawIndexed()
+    eid  11130 PS_Resource            vkCmdDrawIndexed()
+    eid  11137 PS_Resource            vkCmdDrawIndexed()
+    eid  11154 PS_Resource            vkCmdDrawIndexed()
+    eid  11164 PS_Resource            vkCmdDrawIndexed()
+    ... 15 more usage(s) elided
+
+ResourceId::100713 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x1034869400:0x30000 L:12 M:1 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  16 read(s), 0 write(s)
+    eid  10881 PS_Resource            vkCmdDrawIndexed()
+    eid  10888 PS_Resource            vkCmdDrawIndexed()
+    eid  10895 PS_Resource            vkCmdDrawIndexed()
+    eid  10929 PS_Resource            vkCmdDrawIndexed()
+    eid  10936 PS_Resource            vkCmdDrawIndexed()
+    eid  10943 PS_Resource            vkCmdDrawIndexed()
+    ... 10 more usage(s) elided
+
+ResourceId::21612 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10a6a1c100:0x2c00000 L:2048 M:7 S:1]
+  min(0 0 0 1) max(0 0 0 1)
+  380 read(s), 0 write(s)
+    eid   3876 PS_Resource            vkCmdDrawIndexed()
+    eid   3886 PS_Resource            vkCmdDrawIndexed()
+    eid   3896 PS_Resource            vkCmdDrawIndexed()
+    eid   3903 PS_Resource            vkCmdDrawIndexed()
+    eid   3910 PS_Resource            vkCmdDrawIndexed()
+    eid   3917 PS_Resource            vkCmdDrawIndexed()
+    ... 374 more usage(s) elided
+
+ResourceId::18837 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10b16cdf00:0x18000 L:6 M:1 S:1]
+  min(0.02271 0.03052 0.04492 1) max(0.4141 0.4922 0.5938 1)
+  1 read(s), 0 write(s)
+    eid     15 CS_Resource            vkCmdDispatch()
+
+ResourceId::18842 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10b16e5f00:0x18000 L:6 M:1 S:1]
+  min(0.01782 0.02515 0.04102 1) max(0.3828 0.4609 0.5625 1)
+  1 read(s), 0 write(s)
+    eid     15 CS_Resource            vkCmdDispatch()
+
+ResourceId::18833 64x64x1 R11G11B10_FLOAT [Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10b182ff00:0x4000 L:1 M:1 S:1]
+  min(0.0376 0.01184 0.0002823 1) max(0.9922 0.9922 0.9844 1)
+  1 read(s), 0 write(s)
+    eid     15 CS_Resource            vkCmdDispatch()
+
+ResourceId::41917 64x64x1 R8G8B8A8_UNORM [Image 64x64x1 Thin1DThin R8G8B8A8Unorm 0x1000f21800:0x4000 L:1 M:1 S:1]
+  min(0 0 0 0) max(1 1 1 1)
+  1 read(s), 0 write(s)
+    eid   5629 PS_Resource            vkCmdDrawIndexed()
+
+ResourceId::40475 64x64x1 R8G8B8A8_UNORM [Image 64x64x1 Thin1DThin R8G8B8A8Unorm 0x10b2a20000:0x4000 L:1 M:1 S:1]
+  min(0.4784 0.4784 0.9961 1) max(0.5255 0.5216 0.9961 1)
+  0 read(s), 1 write(s)
+    eid     56 ColorTarget            vkCmdDraw()  <-- WRITE
+
+ResourceId::9749 64x64x64 R16G16B16A16_FLOAT [Image 64x64x64 Thick1DThick R16G16B16A16Sfloat 0x101e400000:0x200000 L:1 M:1 S:1]
+  min(1 0 0 0) max(1 9.024e-05 1 1)
+  1 read(s), 0 write(s)
+    eid  18286 PS_Resource            vkCmdDraw()
+
+ResourceId::102648 64x8x1 R8_UNORM [Image 64x8x1 DisplayLinearAligned R8Unorm 0xec041fa900:0x200 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  19209 PS_Resource            vkCmdDraw()
+
+ResourceId::97043 64x8x1 R8_UNORM [Image 64x8x1 DisplayLinearAligned R8Unorm 0xec0424aa00:0x200 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19839 PS_Resource            vkCmdDraw()
+    eid  20025 PS_Resource            vkCmdDraw()
+    eid  20214 PS_Resource            vkCmdDraw()
+
+ResourceId::97093 64x8x1 R8_UNORM [Image 64x8x1 DisplayLinearAligned R8Unorm 0xec04250a00:0x200 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  2 read(s), 0 write(s)
+    eid  20335 PS_Resource            vkCmdDraw()
+    eid  20341 PS_Resource            vkCmdDraw()
+
+ResourceId::102606 64x8x1 R8_UNORM [Image 64x8x1 DisplayLinearAligned R8Unorm 0xec04259800:0x200 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  1 read(s), 0 write(s)
+    eid  18854 PS_Resource            vkCmdDraw()
+
+ResourceId::102690 64x8x1 R8_UNORM [Image 64x8x1 DisplayLinearAligned R8Unorm 0xec04262a00:0x200 L:1 M:1 S:1]
+  min(0 0 0 1) max(1 0 0 1)
+  3 read(s), 0 write(s)
+    eid  19407 PS_Resource            vkCmdDraw()
+    eid  19413 PS_Resource            vkCmdDraw()
+    eid  19419 PS_Resource            vkCmdDraw()
+
+ResourceId::40062 8x2x1 R8G8B8A8_UNORM [Image 8x2x1 DisplayLinearAligned R8G8B8A8Unorm 0x1014dffd00:0x100 L:1 M:1 S:1]
+  min(0.3765 0.3765 0.502 0.502) max(0.502 0.502 0.6275 0.6275)
+  1 read(s), 0 write(s)
+    eid  17526 PS_Resource            vkCmdDraw()
+
+ResourceId::40066 8x2x1 R8G8B8A8_UNORM [Image 8x2x1 DisplayLinearAligned R8G8B8A8Unorm 0x101dacbc00:0x100 L:1 M:1 S:1]
+  min(0.01176 0.01176 0.01176 0.01176) max(0.702 0.702 0.702 0.702)
+  1 read(s), 0 write(s)
+    eid  17526 PS_Resource            vkCmdDraw()
+
+ResourceId::40063 8x2x1 R8G8B8A8_UNORM [Image 8x2x1 DisplayLinearAligned R8G8B8A8Unorm 0x101dacbd00:0x100 L:1 M:1 S:1]
+  min(0.3765 0.502 0.3765 0.502) max(0.502 0.6275 0.502 0.6275)
+  1 read(s), 0 write(s)
+    eid  17526 PS_Resource            vkCmdDraw()

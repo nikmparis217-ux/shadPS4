@@ -1,0 +1,12 @@
+run at 13:23:52 undo=False domains=2
+read 0 line(s) from C:\WINDOWS\System32\drivers\etc\hosts
+writing 2 line(s); last: [127.0.0.1 portal.gt7.game.gran-turismo.com   # GT7-shadPS4 local redirect]
+write done, exists=True
+run at 13:49:22 undo=True domains=2
+read 2 line(s) from C:\WINDOWS\System32\drivers\etc\hosts
+writing 0 line(s); last: []
+write done, exists=True
+run at 20:31:17 undo=False domains=2
+read 0 line(s) from C:\WINDOWS\System32\drivers\etc\hosts
+writing 2 line(s); last: [127.0.0.1 portal.gt7.game.gran-turismo.com   # GT7-shadPS4 local redirect]
+write done, exists=True

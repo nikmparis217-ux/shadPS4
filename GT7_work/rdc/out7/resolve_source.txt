@@ -1,0 +1,10 @@
+
+=== eid 5886 vkCmdResolveImage() ===
+ACTION copySource=ResourceId::140659
+ACTION copyDestination=ResourceId::99288
+ACTION outputs=(ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::0
+ACTION flags=ActionFlags.Resolve
+COPY copySource ResourceId::140659 1024x256x1 R11G11B10_FLOAT [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+COPY copyDestination ResourceId::99288 1024x256x1 R11G11B10_FLOAT [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)

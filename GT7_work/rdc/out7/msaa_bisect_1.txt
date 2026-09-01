@@ -1,0 +1,183 @@
+
+=== eid 3838 ? ===
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(1000 1000 992 1)
+
+=== eid 3839 vkCmdClearColorImage() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::140659
+ACTION outputs=(ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::0
+ACTION flags=ActionFlags.ClearColor|Clear
+COPY copyDestination ResourceId::140659 1024x256x1 R11G11B10_FLOAT [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(0 0 0 1)
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(0 0 0 1)
+
+=== eid 3873 ? ===
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(0 0 0 1)
+
+=== eid 3874 vkCmdBeginRendering(C=Different load ops, D=Clear, S=Load) ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.BeginPass|PassBoundary
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(0 0 0 1)
+
+=== eid 3959 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4056 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4171 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4263 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4367 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4461 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4565 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4662 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4763 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4866 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 4984 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5091 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5182 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5280 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5371 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5472 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5566 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5686 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5816 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5940 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+WATCH id:140659 ResourceId::140659 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(64512 64512 64512 1)

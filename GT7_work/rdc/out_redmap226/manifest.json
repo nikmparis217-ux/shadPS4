@@ -1,0 +1,5811 @@
+[
+ {
+  "id": "ResourceId::170",
+  "name": "Swapchain Image 0",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "B8G8R8A8_UNORM",
+  "flags": "TextureCategory.SwapBuffer|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0 0 0 0)",
+  "png": "tex_ResourceId_170.png",
+  "usage": {}
+ },
+ {
+  "id": "ResourceId::171",
+  "name": "Swapchain Image 1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "B8G8R8A8_UNORM",
+  "flags": "TextureCategory.SwapBuffer|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0 0 0 0)",
+  "png": "tex_ResourceId_171.png",
+  "usage": {}
+ },
+ {
+  "id": "ResourceId::172",
+  "name": "Swapchain Image 2",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "B8G8R8A8_UNORM",
+  "flags": "TextureCategory.SwapBuffer|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1 1 1 1)",
+  "png": "tex_ResourceId_172.png",
+  "usage": {
+   "Barrier": [
+    43,
+    64,
+    20327,
+    20348
+   ],
+   "Discard": [
+    43,
+    20327
+   ],
+   "Clear": [
+    44,
+    20328
+   ],
+   "ColorTarget": [
+    53,
+    56,
+    59,
+    62,
+    20337,
+    20340,
+    20343,
+    20346
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::4735",
+  "name": "Frame image #1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "B8G8R8A8_UNORM",
+  "flags": "TextureCategory.ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1 1 1 1)",
+  "png": "tex_ResourceId_4735.png",
+  "usage": {
+   "Barrier": [
+    6,
+    16,
+    43
+   ],
+   "Discard": [
+    6
+   ],
+   "Clear": [
+    13
+   ],
+   "ColorTarget": [
+    14
+   ],
+   "PS_Resource": [
+    56
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::4747",
+  "name": "Frame image #2",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "B8G8R8A8_UNORM",
+  "flags": "TextureCategory.ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1 1 1 1)",
+  "png": "tex_ResourceId_4747.png",
+  "usage": {
+   "Barrier": [
+    20288,
+    20298,
+    20327
+   ],
+   "Discard": [
+    20288
+   ],
+   "Clear": [
+    20295
+   ],
+   "ColorTarget": [
+    20296
+   ],
+   "PS_Resource": [
+    20340
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::4883",
+  "name": "Image 1920x1080x1 Display2DThin A2B10G10R10UnormPack32 0x280800000:0x7f8000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R10G10B10A2_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1 1 1 1)",
+  "png": "tex_ResourceId_4883.png",
+  "usage": {
+   "Barrier": [
+    16120,
+    17080,
+    17129,
+    17321,
+    17358,
+    17560,
+    "..14 total..",
+    18208,
+    20289
+   ],
+   "ColorTarget": [
+    16127,
+    16134,
+    16140,
+    16145,
+    16150,
+    16155,
+    "..592 total..",
+    20262,
+    20269
+   ],
+   "PS_Resource": [
+    17088,
+    17329,
+    17568,
+    17792,
+    18031,
+    18179,
+    20296
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::4908",
+  "name": "Image 1920x1080x1 Display2DThin A2B10G10R10UnormPack32 0x281800000:0x7f8000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R10G10B10A2_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1 1 1 1)",
+  "png": "tex_ResourceId_4908.png",
+  "usage": {
+   "Barrier": [
+    7
+   ],
+   "PS_Resource": [
+    14
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::13702",
+  "name": "Image 256x256x1 Thin1DThin B10G11R11UfloatPack32 0x10095e0000:0xab0000 L:32 M:9 S:1",
+  "dims": "256x256x32 ms1 mips9",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0.242 0.246 0.273 1)",
+  "png": "tex_ResourceId_13702.png",
+  "usage": {
+   "CS_RWResource": [
+    11060,
+    11060,
+    11060,
+    11060,
+    11060,
+    11060,
+    "..81 total..",
+    11132,
+    11132
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::13724",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100a090000:0x12000 L:18 M:1 S:1",
+  "dims": "32x32x18 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0 0 0 1)",
+  "png": "tex_ResourceId_13724.png",
+  "usage": {
+   "Barrier": [
+    2252,
+    11138
+   ],
+   "VS_Resource": [
+    2264,
+    2274,
+    2284,
+    2294,
+    2304,
+    2314
+   ],
+   "CS_RWResource": [
+    11142,
+    11142,
+    11142,
+    11142,
+    11142,
+    11142,
+    11142,
+    11142,
+    11142
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::13728",
+  "name": "Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.45e+04 6.45e+04 6.45e+04 1)",
+  "png": "tex_ResourceId_13728.png",
+  "usage": {
+   "Barrier": [
+    11166,
+    15022,
+    15023,
+    15222,
+    15322
+   ],
+   "ColorTarget": [
+    11196,
+    11203,
+    11210,
+    11217,
+    11224,
+    11231,
+    "..325 total..",
+    15047,
+    15245
+   ],
+   "PS_Resource": [
+    15047,
+    15347
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::13740",
+  "name": "Image 1920x1080x1 Thin2DThin R16G16B16A16Sfloat 0x1007600000:0xff0000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R16G16B16A16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0434 0.000187 0.000141 0.000114) max(17.2 6.55e+04 6.55e+04 6.55e+04)",
+  "png": "tex_ResourceId_13740.png",
+  "usage": {
+   "Barrier": [
+    15323
+   ],
+   "PS_Resource": [
+    15347
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::13746",
+  "name": "Image 1920x1080x1 Thin2DThin R16G16B16A16Sfloat 0x10085f0000:0xff0000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R16G16B16A16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0434 0 0 0) max(3.3e+03 6.55e+04 6.55e+04 6.55e+04)",
+  "png": "tex_ResourceId_13746.png",
+  "usage": {
+   "Barrier": [
+    15324
+   ],
+   "ColorTarget": [
+    15347
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::13767",
+  "name": "Image 1920x1080x1 Thin2DThin R16G16B16A16Sfloat 0x100ee50000:0xff0000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R16G16B16A16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0 0 0 0)",
+  "png": "tex_ResourceId_13767.png",
+  "usage": {
+   "PS_Resource": [
+    16127
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::14079",
+  "name": "Image 1920x1080x1 Thin2DThin R16G16Sfloat 0x1006370000:0x7f8000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-3.44 -0.0697 0 1) max(0.0179 0.926 0 1)",
+  "png": "tex_ResourceId_14079.png",
+  "usage": {
+   "Barrier": [
+    11167,
+    15321
+   ],
+   "ColorTarget": [
+    11196,
+    11203,
+    11210,
+    11217,
+    11224,
+    11231,
+    "..303 total..",
+    14583,
+    14846
+   ],
+   "PS_Resource": [
+    15347,
+    15407,
+    15428,
+    15497
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::22644",
+  "name": "Image 256x256x1 Thin2DThin R8G8B8A8Unorm 0x10b29d0000:0x55000 L:1 M:4 S:1",
+  "dims": "256x256x1 ms1 mips4",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.475 0.475 0.996 1) max(0.525 0.522 0.996 1)",
+  "png": "tex_ResourceId_22644.png",
+  "usage": {
+   "Barrier": [
+    101,
+    126,
+    127,
+    151
+   ],
+   "CS_RWResource": [
+    105
+   ],
+   "ColorTarget": [
+    149
+   ],
+   "PS_Resource": [
+    149,
+    161,
+    171
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::23314",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10b182ff00:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0376 0.0118 0.000282 1) max(0.992 0.992 0.984 1)",
+  "png": "tex_ResourceId_23314.png",
+  "usage": {
+   "CS_Resource": [
+    120
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::23318",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10b16cdf00:0x18000 L:6 M:1 S:1",
+  "dims": "64x64x6 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0227 0.0305 0.0449 1) max(0.414 0.492 0.594 1)",
+  "png": "tex_ResourceId_23318.png",
+  "usage": {
+   "CS_Resource": [
+    120
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::23323",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10b16e5f00:0x18000 L:6 M:1 S:1",
+  "dims": "64x64x6 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0178 0.0251 0.041 1) max(0.383 0.461 0.562 1)",
+  "png": "tex_ResourceId_23323.png",
+  "usage": {
+   "CS_Resource": [
+    120
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::24401",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1072ac9f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 0.875 1)",
+  "png": "tex_ResourceId_24401.png",
+  "usage": {
+   "PS_Resource": [
+    3873,
+    3922,
+    6366,
+    6415
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::24493",
+  "name": "Image 128x256x1 Thin1DThin Bc7SrgbBlock 0x1089015f00:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00439 0.00439 0 0) max(0.586 0.586 0.586 1)",
+  "png": "tex_ResourceId_24493.png",
+  "usage": {
+   "PS_Resource": [
+    3957,
+    6499
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::24497",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1090418700:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00519 0.00519 0 0) max(0.723 0.695 0.664 1)",
+  "png": "tex_ResourceId_24497.png",
+  "usage": {
+   "PS_Resource": [
+    2937,
+    3929,
+    6422
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::24538",
+  "name": "Image 2048x512x1 Thin1DThin Bc7UnormBlock 0x1081317f00:0x157000 L:1 M:12 S:1",
+  "dims": "2048x512x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.255 0 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_24538.png",
+  "usage": {
+   "PS_Resource": [
+    2944,
+    2951,
+    2958,
+    3936,
+    3943,
+    3950,
+    "..15 total..",
+    6543,
+    6993
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::24549",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x10725b8700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 1 0.0314 1)",
+  "png": "tex_ResourceId_24549.png",
+  "usage": {
+   "PS_Resource": [
+    6464,
+    6471,
+    6478,
+    6485,
+    6492
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::24670",
+  "name": "Image 2048x512x1 Thin1DThin Bc7UnormBlock 0x1081069f00:0x157000 L:1 M:12 S:1",
+  "dims": "2048x512x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.224 0.161 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_24670.png",
+  "usage": {
+   "PS_Resource": [
+    1653,
+    1660,
+    1667,
+    1702,
+    1709,
+    1716,
+    "..29 total..",
+    7070,
+    7077
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::24745",
+  "name": "Image 1024x256x1 Thin1DThin Bc7UnormBlock 0x1074aa5700:0x57000 L:1 M:11 S:1",
+  "dims": "1024x256x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.255 0 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_24745.png",
+  "usage": {
+   "PS_Resource": [
+    7085
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25272",
+  "name": "Image 512x1024x1 Thin1DThin Bc7UnormBlock 0x10412f9200:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.306 0 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_25272.png",
+  "usage": {
+   "PS_Resource": [
+    4395,
+    7096,
+    11196
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25275",
+  "name": "Image 512x1024x1 Thin1DThin Bc7UnormBlock 0x10411a1200:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0314 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25275.png",
+  "usage": {
+   "PS_Resource": [
+    4395,
+    11196
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25288",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x10436c8200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.161 0 0.996) max(0.514 1 1 1)",
+  "png": "tex_ResourceId_25288.png",
+  "usage": {
+   "PS_Resource": [
+    4744,
+    7378,
+    11478
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25289",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1044983200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25289.png",
+  "usage": {
+   "PS_Resource": [
+    4716,
+    4744,
+    11450,
+    11478
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25294",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1041eb3200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.192 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_25294.png",
+  "usage": {
+   "PS_Resource": [
+    4751,
+    7385,
+    11490
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25295",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1044edd200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25295.png",
+  "usage": {
+   "PS_Resource": [
+    4751,
+    11490
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25300",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1044ad9a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.188 0 0.996) max(0.529 1 1 1)",
+  "png": "tex_ResourceId_25300.png",
+  "usage": {
+   "PS_Resource": [
+    4758,
+    7392,
+    11502
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25301",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1041aafa00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25301.png",
+  "usage": {
+   "PS_Resource": [
+    4723,
+    4758,
+    11457,
+    11502
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25306",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1045033a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 1 0.0314 1)",
+  "png": "tex_ResourceId_25306.png",
+  "usage": {
+   "PS_Resource": [
+    2012,
+    2019,
+    2026,
+    2033,
+    2040,
+    2047,
+    3397,
+    4618,
+    7280,
+    11380
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25307",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1043017a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.259 0 0.0784 0) max(1 1 0.953 1)",
+  "png": "tex_ResourceId_25307.png",
+  "usage": {
+   "PS_Resource": [
+    2012,
+    2019,
+    2026,
+    2033,
+    2040,
+    2047,
+    3397,
+    4618,
+    11380
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25312",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104381ea00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 1 0.0314 1)",
+  "png": "tex_ResourceId_25312.png",
+  "usage": {
+   "PS_Resource": [
+    1970,
+    1977,
+    1984,
+    1991,
+    1998,
+    2005
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25313",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1044c30200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.318 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25313.png",
+  "usage": {
+   "PS_Resource": [
+    1970,
+    1977,
+    1984,
+    1991,
+    1998,
+    2005
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25320",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042967200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.192 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_25320.png",
+  "usage": {
+   "PS_Resource": [
+    4716,
+    7350,
+    11450
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25323",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x10432c4a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.259 0 0.996) max(0.514 1 1 1)",
+  "png": "tex_ResourceId_25323.png",
+  "usage": {
+   "PS_Resource": [
+    4723,
+    7357,
+    11457
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25326",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x104109ea00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.549 1 1 1)",
+  "png": "tex_ResourceId_25326.png",
+  "usage": {
+   "PS_Resource": [
+    4730,
+    7364,
+    11464
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25327",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1041048200:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 0.984 1 1)",
+  "png": "tex_ResourceId_25327.png",
+  "usage": {
+   "PS_Resource": [
+    4730,
+    11464
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25334",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x10422b6a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.549 1 1 1)",
+  "png": "tex_ResourceId_25334.png",
+  "usage": {
+   "PS_Resource": [
+    4688,
+    7322,
+    11422
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25335",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x10426ba200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0941 0 0 0) max(0.843 1 1 1)",
+  "png": "tex_ResourceId_25335.png",
+  "usage": {
+   "PS_Resource": [
+    4688,
+    11422
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25340",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042d6aa00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.58 1 1 1)",
+  "png": "tex_ResourceId_25340.png",
+  "usage": {
+   "PS_Resource": [
+    4695,
+    7329,
+    11429
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25341",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042ec1200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.161 0 0 0) max(0.827 1 1 1)",
+  "png": "tex_ResourceId_25341.png",
+  "usage": {
+   "PS_Resource": [
+    4695,
+    11429
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25346",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1043975200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.549 1 1 1)",
+  "png": "tex_ResourceId_25346.png",
+  "usage": {
+   "PS_Resource": [
+    4702,
+    7336,
+    11436
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25347",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x10442d2a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.843 1 1 1)",
+  "png": "tex_ResourceId_25347.png",
+  "usage": {
+   "PS_Resource": [
+    4702,
+    11436
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25354",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x104603c200:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0941 0 0 0) max(0.62 1 1 1)",
+  "png": "tex_ResourceId_25354.png",
+  "usage": {
+   "PS_Resource": [
+    1802,
+    1809,
+    1816,
+    1823,
+    1830,
+    1837
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25355",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x1045ae5a00:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0314 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25355.png",
+  "usage": {
+   "PS_Resource": [
+    1802,
+    1809,
+    1816,
+    1823,
+    1830,
+    1837
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25381",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1043ecf200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 1 0.0314 1)",
+  "png": "tex_ResourceId_25381.png",
+  "usage": {
+   "PS_Resource": [
+    1928,
+    1935,
+    1942,
+    1949,
+    1956,
+    1963
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25382",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104518a200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.365 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25382.png",
+  "usage": {
+   "PS_Resource": [
+    1928,
+    1935,
+    1942,
+    1949,
+    1956,
+    1963
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25387",
+  "name": "Image 512x1024x1 Thin1DThin Bc7UnormBlock 0x104124d200:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.353 0 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_25387.png",
+  "usage": {
+   "PS_Resource": [
+    1844,
+    1851,
+    1858,
+    1865,
+    1872,
+    1879,
+    3346,
+    4404,
+    7103,
+    11203
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25388",
+  "name": "Image 512x1024x1 Thin1DThin Bc7UnormBlock 0x10410f5200:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25388.png",
+  "usage": {
+   "PS_Resource": [
+    1844,
+    1851,
+    1858,
+    1865,
+    1872,
+    1879,
+    3346,
+    4404,
+    11203
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25393",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042160200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.322 0 0 0.996) max(0.612 1 1 1)",
+  "png": "tex_ResourceId_25393.png",
+  "usage": {
+   "PS_Resource": [
+    1886,
+    1893,
+    1900,
+    1907,
+    1914,
+    1921,
+    4523
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25394",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1041802a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0941 0 0 0) max(0.984 1 1 1)",
+  "png": "tex_ResourceId_25394.png",
+  "usage": {
+   "PS_Resource": [
+    1886,
+    1893,
+    1900,
+    1907,
+    1914,
+    1921,
+    4523
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25401",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104482ca00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.71 0 0.996) max(0.549 1 1 1)",
+  "png": "tex_ResourceId_25401.png",
+  "usage": {
+   "PS_Resource": [
+    3362,
+    4418,
+    4446,
+    4474,
+    4502,
+    7117,
+    "..15 total..",
+    11301,
+    11329
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25402",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104240d200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.173 0 0 0) max(0.922 1 1 1)",
+  "png": "tex_ResourceId_25402.png",
+  "usage": {
+   "PS_Resource": [
+    3362,
+    4418,
+    4446,
+    4474,
+    4502,
+    11217,
+    11245,
+    11273,
+    11301,
+    11329
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25407",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042563a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.702 0 0.996) max(0.549 1 1 1)",
+  "png": "tex_ResourceId_25407.png",
+  "usage": {
+   "PS_Resource": [
+    3369,
+    4425,
+    4453,
+    4481,
+    4509,
+    7124,
+    "..15 total..",
+    11308,
+    11336
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25408",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042810a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.129 0 0 0) max(0.937 1 1 1)",
+  "png": "tex_ResourceId_25408.png",
+  "usage": {
+   "PS_Resource": [
+    3369,
+    4425,
+    4453,
+    4481,
+    4509,
+    11224,
+    11252,
+    11280,
+    11308,
+    11336
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25413",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042c14200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.635 0 0.996) max(0.549 1 1 1)",
+  "png": "tex_ResourceId_25413.png",
+  "usage": {
+   "PS_Resource": [
+    3376,
+    4432,
+    4460,
+    4488,
+    4516,
+    7131,
+    "..15 total..",
+    11315,
+    11343
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25414",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1044d86a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.161 0 0 0) max(0.922 1 1 1)",
+  "png": "tex_ResourceId_25414.png",
+  "usage": {
+   "PS_Resource": [
+    3376,
+    4432,
+    4460,
+    4488,
+    4516,
+    11231,
+    11259,
+    11287,
+    11315,
+    11343
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25419",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1040f43a00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_25419.png",
+  "usage": {
+   "PS_Resource": [
+    3383,
+    3404,
+    4530,
+    4546,
+    4562,
+    4576,
+    4590,
+    4604,
+    4632,
+    4646,
+    4653,
+    4667
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25422",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1042009a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0627 0 0 0.996) max(0.518 1 1 1)",
+  "png": "tex_ResourceId_25422.png",
+  "usage": {
+   "PS_Resource": [
+    3411,
+    4660,
+    4674,
+    7301,
+    7308,
+    11401,
+    11408
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25423",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1044429200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25423.png",
+  "usage": {
+   "PS_Resource": [
+    3411,
+    4660,
+    4674,
+    11401,
+    11408
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25430",
+  "name": "Image 2048x1024x1 Thin1DThin Bc7UnormBlock 0x104558da00:0x2ac000 L:1 M:12 S:1",
+  "dims": "2048x1024x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0627 0 0 0) max(0.549 1 1 1)",
+  "png": "tex_ResourceId_25430.png",
+  "usage": {
+   "PS_Resource": [
+    4765,
+    7399,
+    11514
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25431",
+  "name": "Image 2048x1024x1 Thin1DThin Bc7UnormBlock 0x1045839a00:0x2ac000 L:1 M:12 S:1",
+  "dims": "2048x1024x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25431.png",
+  "usage": {
+   "PS_Resource": [
+    4765,
+    11514
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25436",
+  "name": "Image 256x1024x1 Thin1DThin Bc7UnormBlock 0x1040ff1200:0x57000 L:1 M:11 S:1",
+  "dims": "256x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0.302 0 0) max(0.58 1 1 1)",
+  "png": "tex_ResourceId_25436.png",
+  "usage": {
+   "PS_Resource": [
+    2054,
+    2061,
+    2068,
+    2075,
+    2082,
+    2089
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25437",
+  "name": "Image 256x1024x1 Thin1DThin Bc7UnormBlock 0x1040f9a200:0x57000 L:1 M:11 S:1",
+  "dims": "256x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0941 0.0157 0.0627 0) max(0.827 1 0.859 1)",
+  "png": "tex_ResourceId_25437.png",
+  "usage": {
+   "PS_Resource": [
+    2054,
+    2061,
+    2068,
+    2075,
+    2082,
+    2089
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25442",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1043acba00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.529 1 1 1)",
+  "png": "tex_ResourceId_25442.png",
+  "usage": {
+   "PS_Resource": [
+    3390,
+    4569,
+    4583,
+    7259,
+    7266,
+    11359,
+    11366
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25443",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104417c200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25443.png",
+  "usage": {
+   "PS_Resource": [
+    3390,
+    4569,
+    4583,
+    11359,
+    11366
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25452",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1044025a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0784 0.812 0 0) max(0.498 1 1 1)",
+  "png": "tex_ResourceId_25452.png",
+  "usage": {
+   "PS_Resource": [
+    4625,
+    4639,
+    7294,
+    11394
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25453",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1043d78a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0627 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25453.png",
+  "usage": {
+   "PS_Resource": [
+    4625,
+    4639,
+    11394
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25458",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1045437200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0314 0 0 0.996) max(0.51 1 1 1)",
+  "png": "tex_ResourceId_25458.png",
+  "usage": {
+   "PS_Resource": [
+    4597,
+    4611,
+    7273,
+    11373
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25459",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104341b200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25459.png",
+  "usage": {
+   "PS_Resource": [
+    4597,
+    4611,
+    11373
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25464",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104457fa00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0941 0 0 0.996) max(0.498 1 1 1)",
+  "png": "tex_ResourceId_25464.png",
+  "usage": {
+   "PS_Resource": [
+    4538,
+    4554,
+    7251,
+    11351
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25465",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x104316e200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_25465.png",
+  "usage": {
+   "PS_Resource": [
+    4538,
+    4554,
+    11351
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25699",
+  "name": "Image 1024x256x1 Thin1DThin Bc6HSfloatBlock 0x10b04ca600:0x40000 L:1 M:1 S:1",
+  "dims": "1024x256x1 ms1 mips1",
+  "fmt": "BC6_SFLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0206 0.0296 0.0641 1) max(6.41 5.69 5.2 1)",
+  "png": "tex_ResourceId_25699.png",
+  "usage": {
+   "PS_Resource": [
+    2104,
+    2110,
+    2116,
+    2122,
+    2128,
+    2134
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::25788",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x10a6a1c100:0x2c00000 L:2048 M:7 S:1",
+  "dims": "64x64x2048 ms1 mips7",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0 0 0 1)",
+  "png": "tex_ResourceId_25788.png",
+  "usage": {
+   "PS_Resource": [
+    692,
+    702,
+    712,
+    722,
+    732,
+    742,
+    "..365 total..",
+    14572,
+    14583
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::26561",
+  "name": "Image 128x128x1 Thin1DThin B10G11R11UfloatPack32 0x1001800000:0x1000000 L:256 M:1 S:1",
+  "dims": "128x128x256 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1 1 1 1)",
+  "png": "tex_ResourceId_26561.png",
+  "usage": {
+   "PS_Resource": [
+    692,
+    702,
+    712,
+    722,
+    732,
+    742,
+    "..482 total..",
+    14572,
+    14583
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40861",
+  "name": "Image 64x64x1 Thin1DThin R8G8B8A8Unorm 0x10b2a20000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.475 0.478 0.996 1) max(0.525 0.518 0.996 1)",
+  "png": "tex_ResourceId_40861.png",
+  "usage": {
+   "ColorTarget": [
+    161
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40864",
+  "name": "Image 32x32x1 Thin1DThin R8G8B8A8Unorm 0x10b2a24000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.478 0.478 0.996 1) max(0.518 0.518 0.996 1)",
+  "png": "tex_ResourceId_40864.png",
+  "usage": {
+   "ColorTarget": [
+    171
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40932",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x1002800000:0x1800000 L:1536 M:1 S:1",
+  "dims": "64x64x1536 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0483 0.0483 0.0479 1) max(2.31 2.31 2.31 1)",
+  "png": "tex_ResourceId_40932.png",
+  "usage": {
+   "PS_Resource": [
+    692,
+    702,
+    712,
+    722,
+    732,
+    742,
+    "..482 total..",
+    14572,
+    14583
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40977",
+  "name": "Image 2048x2048x1 ThinThinPrt Bc7SrgbBlock 0x3004b80000:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.451) max(0.93 0.801 0.688 1)",
+  "png": "tex_ResourceId_40977.png",
+  "usage": {
+   "PS_Resource": [
+    776,
+    786,
+    859,
+    869,
+    879,
+    889,
+    "..23 total..",
+    1328,
+    1338
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40978",
+  "name": "Image 2048x2048x1 ThinThinPrt Bc7SrgbBlock 0x30050e0000:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00916 0.00519 0 0.443) max(0.73 0.73 0.377 1)",
+  "png": "tex_ResourceId_40978.png",
+  "usage": {
+   "PS_Resource": [
+    776,
+    786,
+    859,
+    869,
+    879,
+    889,
+    "..23 total..",
+    1328,
+    1338
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40979",
+  "name": "Image 1024x1024x1 ThinThinPrt Bc7UnormBlock 0x3000c90000:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.29 0.29 0 0.996) max(0.71 0.78 0.843 1)",
+  "png": "tex_ResourceId_40979.png",
+  "usage": {
+   "PS_Resource": [
+    776,
+    786,
+    859,
+    869,
+    879,
+    889,
+    "..23 total..",
+    1328,
+    1338
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40980",
+  "name": "Image 2048x2048x1 ThinThinPrt Bc7SrgbBlock 0x3005640000:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00916 0.00916 0 0) max(1 1 0.672 0.541)",
+  "png": "tex_ResourceId_40980.png",
+  "usage": {
+   "PS_Resource": [
+    776,
+    786,
+    859,
+    869,
+    879,
+    889,
+    "..23 total..",
+    1328,
+    1338
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40981",
+  "name": "Image 2048x2048x1 ThinThinPrt Bc7UnormBlock 0x3001370000:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0314 0.0314 0 0) max(0.953 0.969 0.612 1)",
+  "png": "tex_ResourceId_40981.png",
+  "usage": {
+   "PS_Resource": [
+    776,
+    786,
+    859,
+    869,
+    879,
+    889,
+    "..23 total..",
+    1328,
+    1338
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40982",
+  "name": "Image 2048x2048x1 ThinThinPrt Bc7UnormBlock 0x3001e30000:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0314 0.0471 0.647 0.741) max(0.969 0.969 1 1)",
+  "png": "tex_ResourceId_40982.png",
+  "usage": {
+   "PS_Resource": [
+    776,
+    786,
+    859,
+    869,
+    879,
+    889,
+    "..23 total..",
+    1328,
+    1338
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::40983",
+  "name": "Image 2048x2048x1 ThinThinPrt Bc7UnormBlock 0x30018d0000:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0314 0 0 0.38) max(0.969 0.969 0.71 1)",
+  "png": "tex_ResourceId_40983.png",
+  "usage": {
+   "PS_Resource": [
+    776,
+    786,
+    859,
+    869,
+    879,
+    889,
+    "..23 total..",
+    1328,
+    1338
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41030",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1073b01f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0471 0.11 0.125 0.996) max(0.906 0.906 0.929 1)",
+  "png": "tex_ResourceId_41030.png",
+  "usage": {
+   "PS_Resource": [
+    793,
+    800,
+    807,
+    814,
+    821
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41031",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x108ad42f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00476 0.00476 0.00476 0.996) max(0.48 0.48 0.463 1)",
+  "png": "tex_ResourceId_41031.png",
+  "usage": {
+   "PS_Resource": [
+    793,
+    800,
+    807,
+    814,
+    821
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41032",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x107369d700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 0.694 0.333)",
+  "png": "tex_ResourceId_41032.png",
+  "usage": {
+   "PS_Resource": [
+    793,
+    800,
+    807,
+    814,
+    821
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41049",
+  "name": "Image 512x256x1 ThinThinPrt Bc7SrgbBlock 0x30023f0000:0x2c000 L:1 M:10 S:1",
+  "dims": "512x256x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00476 0.00476 0.00214 0.996) max(0.367 0.348 0.377 1)",
+  "png": "tex_ResourceId_41049.png",
+  "usage": {
+   "PS_Resource": [
+    960,
+    967,
+    974,
+    981,
+    988,
+    995
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41060",
+  "name": "Image 1024x128x1 ThinThinPrt Bc7SrgbBlock 0x3002c90000:0x4d000 L:1 M:11 S:1",
+  "dims": "1024x128x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 0.541)",
+  "png": "tex_ResourceId_41060.png",
+  "usage": {
+   "PS_Resource": [
+    702,
+    1005,
+    1015,
+    1022,
+    1029,
+    1036,
+    1043,
+    1050,
+    1057,
+    1064,
+    1071
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41067",
+  "name": "Image 1024x1024x1 ThinThinPrt Bc7UnormBlock 0x3000df0000:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1 1 0.969 1)",
+  "png": "tex_ResourceId_41067.png",
+  "usage": {
+   "PS_Resource": [
+    1078,
+    1085,
+    1095,
+    1102,
+    1112,
+    1122,
+    1132,
+    1142,
+    1152,
+    1162
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41068",
+  "name": "Image 1024x1024x1 ThinThinPrt Bc7UnormBlock 0x3000b30000:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 0.58 0.0314 1)",
+  "png": "tex_ResourceId_41068.png",
+  "usage": {
+   "PS_Resource": [
+    1078,
+    1085,
+    1095,
+    1102,
+    1112,
+    1122,
+    1132,
+    1142,
+    1152,
+    1162
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41069",
+  "name": "Image 1024x1024x1 ThinThinPrt Bc7SrgbBlock 0x3003000000:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00854 0.00916 0.00916 0.0314) max(0.287 0.287 0.287 0.914)",
+  "png": "tex_ResourceId_41069.png",
+  "usage": {
+   "PS_Resource": [
+    1078,
+    1085,
+    1095,
+    1102,
+    1112,
+    1122,
+    1132,
+    1142,
+    1152,
+    1162
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41093",
+  "name": "Image 512x256x1 ThinThinPrt Bc7SrgbBlock 0x3002420000:0x2c000 L:1 M:10 S:1",
+  "dims": "512x256x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.011 0.0116 0.000916 0) max(0.328 0.318 0.0344 0.51)",
+  "png": "tex_ResourceId_41093.png",
+  "usage": {
+   "PS_Resource": [
+    1415
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41098",
+  "name": "Image 512x512x1 ThinThinPrt Bc7SrgbBlock 0x30027b0000:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.738 0.738 0.738 0.541)",
+  "png": "tex_ResourceId_41098.png",
+  "usage": {
+   "PS_Resource": [
+    1359,
+    1366,
+    1373,
+    1380,
+    1387,
+    1394,
+    1408,
+    1422,
+    1429
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41138",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1076d2af00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.11 0.0941 0.698 0.157) max(0.906 0.871 1 0.388)",
+  "png": "tex_ResourceId_41138.png",
+  "usage": {
+   "PS_Resource": [
+    1506,
+    1513,
+    1520,
+    1534,
+    1541,
+    1548,
+    "..24 total..",
+    1688,
+    1695
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41139",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x108487c700:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.267 0.259 0 0) max(0.745 0.745 1 1)",
+  "png": "tex_ResourceId_41139.png",
+  "usage": {
+   "PS_Resource": [
+    1506,
+    1513,
+    1520,
+    1534,
+    1541,
+    1548,
+    "..24 total..",
+    1688,
+    1695
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41140",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x1084325f00:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0314 0.0314 0.765 0.451) max(0.969 0.937 1 1)",
+  "png": "tex_ResourceId_41140.png",
+  "usage": {
+   "PS_Resource": [
+    1506,
+    1513,
+    1520,
+    1534,
+    1541,
+    1548,
+    "..24 total..",
+    1688,
+    1695
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41141",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x1083dcf700:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.969 0.969 0.678 1)",
+  "png": "tex_ResourceId_41141.png",
+  "usage": {
+   "PS_Resource": [
+    1506,
+    1513,
+    1520,
+    1534,
+    1541,
+    1548,
+    "..24 total..",
+    1688,
+    1695
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41142",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x108f6b7700:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0144 0.0153 0 0) max(0.672 0.73 0.463 0.475)",
+  "png": "tex_ResourceId_41142.png",
+  "usage": {
+   "PS_Resource": [
+    1506,
+    1513,
+    1520,
+    1534,
+    1541,
+    1548,
+    "..24 total..",
+    1688,
+    1695
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41143",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7SrgbBlock 0x1096711700:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.863 0.801 0.73 0.541)",
+  "png": "tex_ResourceId_41143.png",
+  "usage": {
+   "PS_Resource": [
+    1506,
+    1513,
+    1520,
+    1534,
+    1541,
+    1548,
+    "..24 total..",
+    1688,
+    1695
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41204",
+  "name": "Image 2048x512x1 Thin1DThin Bc7UnormBlock 0x108045af00:0x157000 L:1 M:12 S:1",
+  "dims": "2048x512x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0.902 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_41204.png",
+  "usage": {
+   "PS_Resource": [
+    1653,
+    1660,
+    1667
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41205",
+  "name": "Image 2048x512x1 Thin1DThin Bc7SrgbBlock 0x1093da2f00:0x157000 L:1 M:12 S:1",
+  "dims": "2048x512x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.0684 0.0845 0.0308 1)",
+  "png": "tex_ResourceId_41205.png",
+  "usage": {
+   "PS_Resource": [
+    1653,
+    1660,
+    1667
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41214",
+  "name": "Image 2048x512x1 Thin1DThin Bc7UnormBlock 0x1080b0df00:0x157000 L:1 M:12 S:1",
+  "dims": "2048x512x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0.902 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_41214.png",
+  "usage": {
+   "PS_Resource": [
+    1702,
+    1709,
+    1716
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41215",
+  "name": "Image 2048x512x1 Thin1DThin Bc7SrgbBlock 0x109485af00:0x157000 L:1 M:12 S:1",
+  "dims": "2048x512x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00366 0.00366 0.00244 0) max(0.0845 0.0952 0.041 1)",
+  "png": "tex_ResourceId_41215.png",
+  "usage": {
+   "PS_Resource": [
+    1702,
+    1709,
+    1716
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41223",
+  "name": "Image 512x1024x1 Thin1DThin Bc7SrgbBlock 0x1046c43200:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00244 0.00122 0 0.318) max(0.377 0.463 0.262 1)",
+  "png": "tex_ResourceId_41223.png",
+  "usage": {
+   "PS_Resource": [
+    11196
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41226",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7SrgbBlock 0x1049167200:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00519 0.00519 0.00153 0.427) max(0.332 0.332 0.297 1)",
+  "png": "tex_ResourceId_41226.png",
+  "usage": {
+   "PS_Resource": [
+    1802,
+    1809,
+    1816,
+    1823,
+    1830,
+    1837
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41229",
+  "name": "Image 512x1024x1 Thin1DThin Bc7SrgbBlock 0x1046b97200:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.000916 0.000305 0 0.396) max(0.463 0.516 0.262 1)",
+  "png": "tex_ResourceId_41229.png",
+  "usage": {
+   "PS_Resource": [
+    1844,
+    1851,
+    1858,
+    1865,
+    1872,
+    1879,
+    11203
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41232",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048d63a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0308 0.0308 0.00751 0.361) max(0.332 0.297 0.262 1)",
+  "png": "tex_ResourceId_41232.png",
+  "usage": {
+   "PS_Resource": [
+    1928,
+    1935,
+    1942,
+    1949,
+    1956,
+    1963
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41235",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048ab6a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0308 0.0308 0.00916 0.204) max(0.297 0.275 0.238 1)",
+  "png": "tex_ResourceId_41235.png",
+  "usage": {
+   "PS_Resource": [
+    1970,
+    1977,
+    1984,
+    1991,
+    1998,
+    2005
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41238",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x10472a1a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00244 0.00244 0.00214 0) max(0.23 0.172 0.172 1)",
+  "png": "tex_ResourceId_41238.png",
+  "usage": {
+   "PS_Resource": [
+    2012,
+    2019,
+    2026,
+    2033,
+    2040,
+    2047,
+    11380
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41241",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048c0d200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00366 0.00244 0.00244 0.682) max(0.165 0.159 0.127 1)",
+  "png": "tex_ResourceId_41241.png",
+  "usage": {
+   "PS_Resource": [
+    11514
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41510",
+  "name": "Image 1024x1024x1 Thin2DThin R8G8B8A8Unorm 0x10c5200000:0x400000 L:1 M:1 S:1",
+  "dims": "1024x1024x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 0.992 1 0.498)",
+  "png": "tex_ResourceId_41510.png",
+  "usage": {
+   "CS_Resource": [
+    2558,
+    2558,
+    2569,
+    2569,
+    2580,
+    2580,
+    "..20 total..",
+    2657,
+    2657
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::41512",
+  "name": "Image 1024x1024x1 Thin2DThin R32Sfloat 0x10c4e00000:0x400000 L:1 M:1 S:1",
+  "dims": "1024x1024x1 ms1 mips1",
+  "fmt": "R32_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(5.43e+04 0 0 1)",
+  "png": "tex_ResourceId_41512.png",
+  "usage": {
+   "CS_Resource": [
+    2558,
+    2558,
+    2569,
+    2569,
+    2580,
+    2580,
+    "..20 total..",
+    2657,
+    2657
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42054",
+  "name": "Image 256x256x1 Thin1DThin R8G8B8A8Unorm 0x10c5e40000:0x40000 L:1 M:1 S:1",
+  "dims": "256x256x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0.522 0 1) max(1 0.996 1 1)",
+  "png": "tex_ResourceId_42054.png",
+  "usage": {
+   "CS_Resource": [
+    2717,
+    2727,
+    2737,
+    2747
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42295",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1043c22200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0157 0.0157 0.741 0.996) max(0.976 0.937 0.776 1)",
+  "png": "tex_ResourceId_42295.png",
+  "usage": {
+   "PS_Resource": [
+    11210,
+    11238,
+    11266,
+    11294,
+    11322,
+    11415
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42296",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1041959200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0627 0.0627 0 0.996) max(0.937 0.953 0.0314 1)",
+  "png": "tex_ResourceId_42296.png",
+  "usage": {
+   "PS_Resource": [
+    11210,
+    11238,
+    11266,
+    11294,
+    11322,
+    11415,
+    11443,
+    11471
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42297",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x104855ca00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.66 0.637 0.609 1)",
+  "png": "tex_ResourceId_42297.png",
+  "usage": {
+   "PS_Resource": [
+    11210,
+    11238,
+    11266,
+    11294,
+    11322,
+    11415
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42304",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x10482afa00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0168 0.0295 0.00244 0.38) max(0.234 0.262 0.147 0.678)",
+  "png": "tex_ResourceId_42304.png",
+  "usage": {
+   "PS_Resource": [
+    11217,
+    11245,
+    11273,
+    11301,
+    11329
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42307",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1047aa8a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0177 0.0295 0.00244 0.392) max(0.23 0.234 0.125 0.682)",
+  "png": "tex_ResourceId_42307.png",
+  "usage": {
+   "PS_Resource": [
+    11224,
+    11252,
+    11280,
+    11308,
+    11336
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42310",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048809a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.016 0.0273 0.00244 0.376) max(0.227 0.234 0.125 0.682)",
+  "png": "tex_ResourceId_42310.png",
+  "usage": {
+   "PS_Resource": [
+    11231,
+    11259,
+    11287,
+    11315,
+    11343
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42313",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x10473f8200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.808) max(0.27 0.297 0.125 1)",
+  "png": "tex_ResourceId_42313.png",
+  "usage": {
+   "PS_Resource": [
+    11351
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42316",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048eba200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.82) max(0.418 0.428 0.185 1)",
+  "png": "tex_ResourceId_42316.png",
+  "usage": {
+   "PS_Resource": [
+    11373
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42319",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1047bff200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.175 0.27 0.168 1)",
+  "png": "tex_ResourceId_42319.png",
+  "usage": {
+   "PS_Resource": [
+    11394
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42322",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1041d5ca00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.157 0.157 0.741 0.996) max(0.839 0.843 0.776 1)",
+  "png": "tex_ResourceId_42322.png",
+  "usage": {
+   "PS_Resource": [
+    11443,
+    11471
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42323",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048406200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00214 0.00153 0.000305 0.996) max(0.428 0.408 0.387 1)",
+  "png": "tex_ResourceId_42323.png",
+  "usage": {
+   "PS_Resource": [
+    11443,
+    11471
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42328",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1046ff4a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0212 0.0251 0.00336 0.235) max(0.172 0.185 0.125 0.612)",
+  "png": "tex_ResourceId_42328.png",
+  "usage": {
+   "PS_Resource": [
+    11450
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42331",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1047d55a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0222 0.0295 0.00439 0.204) max(0.15 0.172 0.125 0.573)",
+  "png": "tex_ResourceId_42331.png",
+  "usage": {
+   "PS_Resource": [
+    11457
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42334",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x1046b40a00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0116 0.00702 0.00366 0.22) max(0.147 0.172 0.0845 0.62)",
+  "png": "tex_ResourceId_42334.png",
+  "usage": {
+   "PS_Resource": [
+    11464
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42475",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x10757c2f00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 0.525 1)",
+  "png": "tex_ResourceId_42475.png",
+  "usage": {
+   "PS_Resource": [
+    6851,
+    6858,
+    6865,
+    6872,
+    6879,
+    6886,
+    "..16 total..",
+    6949,
+    6956
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42495",
+  "name": "Image 4096x1024x1 Thin1DThin Bc7UnormBlock 0x1046592a00:0x557000 L:1 M:13 S:1",
+  "dims": "4096x1024x1 ms1 mips13",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0196 0.0706 0 0.996) max(1 0.937 1 1)",
+  "png": "tex_ResourceId_42495.png",
+  "usage": {
+   "PS_Resource": [
+    7287,
+    11387
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42498",
+  "name": "Image 1024x2048x1 Thin1DThin Bc7UnormBlock 0x104afcaf00:0x2ac000 L:1 M:12 S:1",
+  "dims": "1024x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.129 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_42498.png",
+  "usage": {
+   "PS_Resource": [
+    2969,
+    4017,
+    6694,
+    7410,
+    7421,
+    7432,
+    "..111 total..",
+    12328,
+    12339
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42845",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x10486b3200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00916 0.0153 0.00916 0) max(0.508 0.377 0.318 1)",
+  "png": "tex_ResourceId_42845.png",
+  "usage": {
+   "PS_Resource": [
+    1886,
+    1893,
+    1900,
+    1907,
+    1914,
+    1921
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42848",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048960200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.839) max(0.23 0.23 0.0952 1)",
+  "png": "tex_ResourceId_42848.png",
+  "usage": {
+   "PS_Resource": [
+    11359,
+    11366
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42851",
+  "name": "Image 1024x256x1 Thin1DThin Bc7UnormBlock 0x10413a5200:0x57000 L:1 M:11 S:1",
+  "dims": "1024x256x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.286) max(0.984 0.957 0.612 0.78)",
+  "png": "tex_ResourceId_42851.png",
+  "usage": {
+   "PS_Resource": [
+    11387
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42852",
+  "name": "Image 1024x256x1 Thin1DThin Bc7SrgbBlock 0x1046cef200:0x57000 L:1 M:11 S:1",
+  "dims": "1024x256x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0889 0.0977 0.0452 0.29) max(0.238 0.23 0.147 1)",
+  "png": "tex_ResourceId_42852.png",
+  "usage": {
+   "PS_Resource": [
+    11387
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42857",
+  "name": "Image 256x1024x1 Thin1DThin Bc7SrgbBlock 0x1046ae9a00:0x57000 L:1 M:11 S:1",
+  "dims": "256x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0295 0.0222 0.0153 0.271) max(0.508 0.332 0.262 1)",
+  "png": "tex_ResourceId_42857.png",
+  "usage": {
+   "PS_Resource": [
+    2054,
+    2061,
+    2068,
+    2075,
+    2082,
+    2089
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42860",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1047eac200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.847) max(0.352 0.332 0.147 1)",
+  "png": "tex_ResourceId_42860.png",
+  "usage": {
+   "PS_Resource": [
+    11401,
+    11408
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42863",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x10477fba00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00702 0.0144 0 0.459) max(0.275 0.238 0.13 0.957)",
+  "png": "tex_ResourceId_42863.png",
+  "usage": {
+   "PS_Resource": [
+    11422
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42866",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1049010a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00854 0.0153 0 0.518) max(0.297 0.262 0.198 0.89)",
+  "png": "tex_ResourceId_42866.png",
+  "usage": {
+   "PS_Resource": [
+    11429
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42869",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x10476a5200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00244 0.00519 0 0.475) max(0.617 0.566 0.508 0.984)",
+  "png": "tex_ResourceId_42869.png",
+  "usage": {
+   "PS_Resource": [
+    11436
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42872",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1048002a00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0186 0.0212 0.00244 0.263) max(0.159 0.172 0.114 0.541)",
+  "png": "tex_ResourceId_42872.png",
+  "usage": {
+   "PS_Resource": [
+    11478
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42875",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1046e9e200:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0177 0.0212 0.00305 0.235) max(0.142 0.153 0.119 0.51)",
+  "png": "tex_ResourceId_42875.png",
+  "usage": {
+   "PS_Resource": [
+    11490
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42878",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x104754ea00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0177 0.0212 0.00366 0.247) max(0.125 0.13 0.0908 0.51)",
+  "png": "tex_ResourceId_42878.png",
+  "usage": {
+   "PS_Resource": [
+    11502
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42883",
+  "name": "Image 1024x2048x1 Thin1DThin Bc7SrgbBlock 0x104b276f00:0x2ac000 L:1 M:12 S:1",
+  "dims": "1024x2048x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42883.png",
+  "usage": {
+   "PS_Resource": [
+    11528,
+    11539,
+    11550,
+    11564,
+    11578,
+    11592,
+    "..54 total..",
+    12328,
+    12339
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42888",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1034a5f000:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.204 0.204 0.204 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42888.png",
+  "usage": {
+   "PS_Resource": [
+    14797
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42896",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x103372b300:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.196 0.196 0.196 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42896.png",
+  "usage": {
+   "PS_Resource": [
+    14786
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42899",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1021951600:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.227 0.227 0.227 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42899.png",
+  "usage": {
+   "PS_Resource": [
+    14830
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42902",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1032907300:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.192 0.192 0.192 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42902.png",
+  "usage": {
+   "PS_Resource": [
+    14764
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42905",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x10226eb200:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.263 0.263 0.263 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42905.png",
+  "usage": {
+   "PS_Resource": [
+    14819
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42908",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x10235e2800:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.208 0.208 0.208 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42908.png",
+  "usage": {
+   "PS_Resource": [
+    14808
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42911",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1031a77300:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.204 0.204 0.204 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42911.png",
+  "usage": {
+   "PS_Resource": [
+    14753
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42914",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1030907300:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.192 0.192 0.192 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42914.png",
+  "usage": {
+   "PS_Resource": [
+    14742
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42917",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102f9c5200:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.224 0.224 0.224 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42917.png",
+  "usage": {
+   "PS_Resource": [
+    14698
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42920",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1024895600:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.165 0.165 0.165 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42920.png",
+  "usage": {
+   "PS_Resource": [
+    14775
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42923",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102ea14100:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0392 0.0392 0.0392 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42923.png",
+  "usage": {
+   "PS_Resource": [
+    14676
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42934",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102548bb00:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.224 0.224 0.224 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42934.png",
+  "usage": {
+   "PS_Resource": [
+    14731
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42937",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102669bd00:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.216 0.216 0.216 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42937.png",
+  "usage": {
+   "PS_Resource": [
+    14720
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42942",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1027a14100:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0392 0.0392 0.0392 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42942.png",
+  "usage": {
+   "PS_Resource": [
+    14709
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42945",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102872b300:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.196 0.196 0.196 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42945.png",
+  "usage": {
+   "PS_Resource": [
+    14687
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42948",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102d892900:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.224 0.224 0.224 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42948.png",
+  "usage": {
+   "PS_Resource": [
+    14654
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42951",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102c895600:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.165 0.165 0.165 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42951.png",
+  "usage": {
+   "PS_Resource": [
+    14621
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42954",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102b9c5200:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.224 0.224 0.224 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42954.png",
+  "usage": {
+   "PS_Resource": [
+    14632
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42957",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x1029a77300:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.204 0.204 0.204 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42957.png",
+  "usage": {
+   "PS_Resource": [
+    14665
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42960",
+  "name": "Image 128x256x1 Thin1DThin Bc7UnormBlock 0x102a951600:0xc000 L:1 M:9 S:1",
+  "dims": "128x256x1 ms1 mips9",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.227 0.227 0.227 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_42960.png",
+  "usage": {
+   "PS_Resource": [
+    14643
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::42974",
+  "name": "Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1006bc8000:0x7f8000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.5e+04 6.5e+04 6.45e+04 1)",
+  "png": "tex_ResourceId_42974.png",
+  "usage": {
+   "Barrier": [
+    15024,
+    15385,
+    15488,
+    15680,
+    15693,
+    15704,
+    16106,
+    16118
+   ],
+   "ColorTarget": [
+    15047,
+    15347,
+    15497,
+    15700,
+    16116
+   ],
+   "PS_Resource": [
+    15407,
+    15690,
+    15721,
+    16127
+   ],
+   "CS_Resource": [
+    15833
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43223",
+  "name": "Image 720x540x1 Thin2DThin R16Sfloat 0x100a410000:0xf0000 L:1 M:1 S:1",
+  "dims": "720x540x1 ms1 mips1",
+  "fmt": "R16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-0.00883 0 0 1) max(-0.00883 0 0 1)",
+  "png": "tex_ResourceId_43223.png",
+  "usage": {
+   "Barrier": [
+    15183,
+    15221
+   ],
+   "ColorTarget": [
+    15192
+   ],
+   "PS_Resource": [
+    15245
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43269",
+  "name": "Image 64x64x1 Thin1DThin R16G16Sfloat 0x100a0c0000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-3.44 -4.43 0 1) max(3.37 3.52 0 1)",
+  "png": "tex_ResourceId_43269.png",
+  "usage": {
+   "ColorTarget": [
+    15618
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43275",
+  "name": "Image 32x32x1 Thin1DThin R16G16Sfloat 0x100a0c4000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-4.02 -3.33 0 1) max(3.41 3.85 0 1)",
+  "png": "tex_ResourceId_43275.png",
+  "usage": {
+   "ColorTarget": [
+    15628
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43321",
+  "name": "Image 480x270x1 Thin2DThin B10G11R11UfloatPack32 0x100a770000:0xa0000 L:1 M:1 S:1",
+  "dims": "480x270x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1.04e+04 1.04e+04 1.02e+04 1)",
+  "png": "tex_ResourceId_43321.png",
+  "usage": {
+   "Barrier": [
+    15829,
+    15839
+   ],
+   "CS_RWResource": [
+    15833
+   ],
+   "PS_Resource": [
+    15863,
+    16094
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43325",
+  "name": "Image 480x270x1 Thin2DThin B10G11R11UfloatPack32 0x100a2f0000:0x140000 L:1 M:1 S:1",
+  "dims": "480x270x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1.04e+04 1.04e+04 1.02e+04 1)",
+  "png": "tex_ResourceId_43325.png",
+  "usage": {
+   "Barrier": [
+    15840,
+    15865
+   ],
+   "ColorTarget": [
+    15863
+   ],
+   "PS_Resource": [
+    15873
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43329",
+  "name": "Image 480x270x1 Thin2DThin B10G11R11UfloatPack32 0x100a810000:0xa0000 L:1 M:1 S:1",
+  "dims": "480x270x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1.04e+04 1.04e+04 1.02e+04 1)",
+  "png": "tex_ResourceId_43329.png",
+  "usage": {
+   "Barrier": [
+    15866,
+    15877
+   ],
+   "ColorTarget": [
+    15873
+   ],
+   "PS_Resource": [
+    15894,
+    16094
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43337",
+  "name": "Image 240x135x1 Thin2DThin B10G11R11UfloatPack32 0x100a2f0000:0xc0000 L:1 M:1 S:1",
+  "dims": "240x135x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1.15e+04 1.15e+04 1.1e+04 1)",
+  "png": "tex_ResourceId_43337.png",
+  "usage": {
+   "Barrier": [
+    15897,
+    15906
+   ],
+   "ColorTarget": [
+    15904
+   ],
+   "PS_Resource": [
+    15914
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43341",
+  "name": "Image 240x135x1 Thin2DThin B10G11R11UfloatPack32 0x100a8b0000:0x30000 L:1 M:1 S:1",
+  "dims": "240x135x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1.14e+04 1.14e+04 1.08e+04 1)",
+  "png": "tex_ResourceId_43341.png",
+  "usage": {
+   "Barrier": [
+    15907,
+    15918
+   ],
+   "ColorTarget": [
+    15914
+   ],
+   "PS_Resource": [
+    15935,
+    16094
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43349",
+  "name": "Image 120x67x1 Thin2DThin B10G11R11UfloatPack32 0x100a2f0000:0x80000 L:1 M:1 S:1",
+  "dims": "120x67x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(7.17e+03 7.17e+03 6.66e+03 1)",
+  "png": "tex_ResourceId_43349.png",
+  "usage": {
+   "Barrier": [
+    15938,
+    15947
+   ],
+   "ColorTarget": [
+    15945
+   ],
+   "PS_Resource": [
+    15955
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43353",
+  "name": "Image 120x67x1 Thin2DThin B10G11R11UfloatPack32 0x100a8e0000:0x10000 L:1 M:1 S:1",
+  "dims": "120x67x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.4e+03 6.4e+03 6.02e+03 1)",
+  "png": "tex_ResourceId_43353.png",
+  "usage": {
+   "Barrier": [
+    15948,
+    15959
+   ],
+   "ColorTarget": [
+    15955
+   ],
+   "PS_Resource": [
+    15976,
+    16080
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43361",
+  "name": "Image 60x33x1 Thin2DThin B10G11R11UfloatPack32 0x100a2f0000:0x40000 L:1 M:1 S:1",
+  "dims": "60x33x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(5.5e+03 5.5e+03 5.12e+03 1)",
+  "png": "tex_ResourceId_43361.png",
+  "usage": {
+   "Barrier": [
+    15979,
+    15988
+   ],
+   "ColorTarget": [
+    15986
+   ],
+   "PS_Resource": [
+    15996
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43365",
+  "name": "Image 60x33x1 Thin2DThin B10G11R11UfloatPack32 0x100a8f0000:0x8000 L:1 M:1 S:1",
+  "dims": "60x33x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(3.55e+03 3.55e+03 3.26e+03 1)",
+  "png": "tex_ResourceId_43365.png",
+  "usage": {
+   "Barrier": [
+    15989,
+    16000
+   ],
+   "ColorTarget": [
+    15996
+   ],
+   "PS_Resource": [
+    16017,
+    16069
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43385",
+  "name": "Image 120x66x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b8000:0x10000 L:1 M:1 S:1",
+  "dims": "120x66x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(3.49e+03 3.49e+03 3.2e+03 1)",
+  "png": "tex_ResourceId_43385.png",
+  "usage": {
+   "Barrier": [
+    16060,
+    16083
+   ],
+   "ColorTarget": [
+    16069
+   ],
+   "PS_Resource": [
+    16094
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43409",
+  "name": "Image 480x540x1 Thin2DThin B10G11R11UfloatPack32 0x1015200000:0x240000 L:2 M:1 S:1",
+  "dims": "480x540x2 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(4.2e+04 4.2e+04 4.2e+04 1)",
+  "png": "tex_ResourceId_43409.png",
+  "usage": {
+   "Barrier": [
+    16085,
+    16096
+   ],
+   "ColorTarget": [
+    16094
+   ],
+   "PS_Resource": [
+    16104
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43416",
+  "name": "Image 480x540x1 Thin2DThin B10G11R11UfloatPack32 0x1015600000:0x240000 L:2 M:1 S:1",
+  "dims": "480x540x2 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(9.38 9.38 9.25 1)",
+  "png": "tex_ResourceId_43416.png",
+  "usage": {
+   "Barrier": [
+    16097,
+    16119
+   ],
+   "ColorTarget": [
+    16104
+   ],
+   "PS_Resource": [
+    16127
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43425",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x10987b2700:0xc000 L:12 M:1 S:1",
+  "dims": "32x32x12 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(2 2 2 1)",
+  "png": "tex_ResourceId_43425.png",
+  "usage": {
+   "VS_Resource": [
+    16116
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43939",
+  "name": "Image 960x540x1 Thin2DThin B10G11R11UfloatPack32 0x100a628000:0x240000 L:1 M:1 S:1",
+  "dims": "960x540x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.5e+04 6.5e+04 6.45e+04 1)",
+  "png": "tex_ResourceId_43939.png",
+  "usage": {
+   "Barrier": [
+    15386,
+    15454
+   ],
+   "ColorTarget": [
+    15407
+   ],
+   "PS_Resource": [
+    15466
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43941",
+  "name": "Image 960x540x1 Thin2DThin R16G16Sfloat 0x100aaa8000:0x240000 L:1 M:1 S:1",
+  "dims": "960x540x1 ms1 mips1",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0.00883 0 1) max(40.9 0.00883 0 1)",
+  "png": "tex_ResourceId_43941.png",
+  "usage": {
+   "Barrier": [
+    15387,
+    15455
+   ],
+   "ColorTarget": [
+    15407
+   ],
+   "PS_Resource": [
+    15466,
+    15497
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43945",
+  "name": "Image 960x540x1 Thin2DThin R16Sfloat 0x100a4e8000:0x140000 L:1 M:1 S:1",
+  "dims": "960x540x1 ms1 mips1",
+  "fmt": "R16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(1 0 0 1) max(1 0 0 1)",
+  "png": "tex_ResourceId_43945.png",
+  "usage": {
+   "Barrier": [
+    15396,
+    15456
+   ],
+   "ColorTarget": [
+    15407
+   ],
+   "PS_Resource": [
+    15466
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::43968",
+  "name": "Image 960x540x1 Thin2DThin R16G16B16A16Sfloat 0x100acf0000:0x480000 L:1 M:1 S:1",
+  "dims": "960x540x1 ms1 mips1",
+  "fmt": "R16G16B16A16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(6.5e+04 6.5e+04 6.45e+04 1)",
+  "png": "tex_ResourceId_43968.png",
+  "usage": {
+   "Barrier": [
+    15457,
+    15470
+   ],
+   "ColorTarget": [
+    15466
+   ],
+   "PS_Resource": [
+    15485
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::44058",
+  "name": "Image 480x540x1 Thin2DThin B10G11R11UfloatPack32 0x1014e00000:0x240000 L:2 M:1 S:1",
+  "dims": "480x540x2 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(4.45e+04 4.45e+04 4.4e+04 1)",
+  "png": "tex_ResourceId_44058.png",
+  "usage": {
+   "PS_Resource": [
+    16094
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::45038",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x109a3fa000:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_45038.png",
+  "usage": {
+   "PS_Resource": [
+    12746,
+    12757,
+    12768,
+    12779,
+    12790,
+    12801,
+    "..21 total..",
+    12955,
+    12966
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::45039",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7SrgbBlock 0x109a9bd800:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 0.353)",
+  "png": "tex_ResourceId_45039.png",
+  "usage": {
+   "PS_Resource": [
+    12746,
+    12757,
+    12768,
+    12779,
+    12790,
+    12801,
+    "..21 total..",
+    12955,
+    12966
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::56445",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x1098c38900:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_56445.png",
+  "usage": {
+   "PS_Resource": [
+    2980,
+    4028,
+    6705,
+    8004,
+    8015,
+    8026,
+    "..75 total..",
+    12724,
+    12735
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::56460",
+  "name": "Image 512x1024x1 Thin1DThin Bc7UnormBlock 0x1098b8c900:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.267 0 0 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_56460.png",
+  "usage": {
+   "PS_Resource": [
+    12350,
+    12361,
+    12372,
+    12383,
+    12394,
+    12405,
+    "..36 total..",
+    12724,
+    12735
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::72846",
+  "name": "Image 32x32x1 Thin1DThin Bc7UnormBlock 0x1098322f00:0x1800 L:1 M:6 S:1",
+  "dims": "32x32x1 ms1 mips6",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.22 0.322 0.369 0.0157) max(0.812 0.796 0.71 1)",
+  "png": "tex_ResourceId_72846.png",
+  "usage": {
+   "PS_Resource": [
+    3908,
+    3915,
+    6401,
+    6408
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::78973",
+  "name": "Image 48x60x1 Thin1DThin Bc7UnormBlock 0x101388cc00:0x1000 L:1 M:1 S:1",
+  "dims": "48x60x1 ms1 mips1",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_78973.png",
+  "usage": {
+   "PS_Resource": [
+    20269
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::81201",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x109bf0ef00:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_81201.png",
+  "usage": {
+   "PS_Resource": [
+    12977,
+    12988,
+    12999,
+    13010,
+    13021,
+    13032
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::81202",
+  "name": "Image 2048x1024x1 Thin1DThin Bc7SrgbBlock 0x109c465700:0x2ac000 L:1 M:12 S:1",
+  "dims": "2048x1024x1 ms1 mips12",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 0.349)",
+  "png": "tex_ResourceId_81202.png",
+  "usage": {
+   "PS_Resource": [
+    12977,
+    12988,
+    12999,
+    13010,
+    13021,
+    13032
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::94353",
+  "name": "Image 420x72x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c65ce000:0x1e600 L:1 M:1 S:1",
+  "dims": "420x72x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_94353.png",
+  "usage": {
+   "PS_Resource": [
+    16140
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::94361",
+  "name": "Image 400x400x1 Thin1DThin Bc7UnormBlock 0x10c6a00000:0x2a400 L:1 M:1 S:1",
+  "dims": "400x400x1 ms1 mips1",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0941 0 0 0.996) max(1 1 0.984 1)",
+  "png": "tex_ResourceId_94361.png",
+  "usage": {
+   "PS_Resource": [
+    16206
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::94395",
+  "name": "Image 520x480x1 Thin2DThin R8G8B8A8Unorm 0x100a1f0000:0x280000 L:1 M:1 S:2",
+  "dims": "520x480x1 ms2 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_94395.png",
+  "usage": {
+   "Barrier": [
+    16386,
+    16503
+   ],
+   "Clear": [
+    16400
+   ],
+   "ColorTarget": [
+    16402,
+    16411,
+    16423,
+    16433,
+    16442,
+    16452,
+    16463,
+    16469,
+    16475,
+    16484,
+    16490,
+    16499
+   ],
+   "ResolveSrc": [
+    16505
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::94399",
+  "name": "Image 480x480x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c6a2a400:0xe1000 L:1 M:1 S:1",
+  "dims": "480x480x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0 0 0 1)",
+  "png": "tex_ResourceId_94399.png",
+  "usage": {
+   "PS_Resource": [
+    16463,
+    16469,
+    16475,
+    16484,
+    16490
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::94403",
+  "name": "Image 32x32x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c65ec600:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.898 0.898 0.898 0.898)",
+  "png": "tex_ResourceId_94403.png",
+  "usage": {
+   "PS_Resource": [
+    16549
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::95050",
+  "name": "Image 1920x1080x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c6c00000:0x7e9000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_95050.png",
+  "usage": {
+   "PS_Resource": [
+    16967
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::95061",
+  "name": "Image 40x40x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c65ed600:0x1e00 L:1 M:1 S:1",
+  "dims": "40x40x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_95061.png",
+  "usage": {
+   "PS_Resource": [
+    17200
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::95064",
+  "name": "Image 40x40x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c65f1200:0x1e00 L:1 M:1 S:1",
+  "dims": "40x40x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_95064.png",
+  "usage": {
+   "PS_Resource": [
+    17464
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::95067",
+  "name": "Image 40x40x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c65f3000:0x1e00 L:1 M:1 S:1",
+  "dims": "40x40x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_95067.png",
+  "usage": {
+   "PS_Resource": [
+    17688
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::95070",
+  "name": "Image 40x40x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c65f6c00:0x1e00 L:1 M:1 S:1",
+  "dims": "40x40x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_95070.png",
+  "usage": {
+   "PS_Resource": [
+    17927
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::95074",
+  "name": "Image 40x40x1 DisplayLinearAligned R8G8B8A8Unorm 0x10c65f8a00:0x1e00 L:1 M:1 S:1",
+  "dims": "40x40x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_95074.png",
+  "usage": {
+   "PS_Resource": [
+    18264
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::95076",
+  "name": "Image 48x60x1 Thin1DThin Bc7UnormBlock 0x10c65cc000:0x1000 L:1 M:1 S:1",
+  "dims": "48x60x1 ms1 mips1",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_95076.png",
+  "usage": {
+   "PS_Resource": [
+    20262
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::96970",
+  "name": "Image 512x512x1 ThinThinPrt Bc7SrgbBlock 0x3002b10000:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00244 0.00244 0.00244 0.153) max(0.938 0.922 0.887 0.584)",
+  "png": "tex_ResourceId_96970.png",
+  "usage": {
+   "PS_Resource": [
+    1345,
+    1352
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::100350",
+  "name": "Image 1024x512x1 Thin1DThin Bc7UnormBlock 0x10755c0700:0xac000 L:1 M:11 S:1",
+  "dims": "1024x512x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.224 0.451 0.427 0.157) max(1 0.569 0.549 0.996)",
+  "png": "tex_ResourceId_100350.png",
+  "usage": {
+   "PS_Resource": [
+    1183,
+    1190,
+    1197,
+    1204
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::100358",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x108ca90f00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00916 0.00916 0.00916 0.996) max(0.816 0.816 0.816 1)",
+  "png": "tex_ResourceId_100358.png",
+  "usage": {
+   "PS_Resource": [
+    1183
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::100361",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1072fdb700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.243 0.173 0.361 0.996) max(0.773 0.914 0.765 1)",
+  "png": "tex_ResourceId_100361.png",
+  "usage": {
+   "PS_Resource": [
+    1211,
+    1218
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::100362",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x108a57d700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.332 0.355 0.355 0.196) max(0.516 0.52 0.52 1)",
+  "png": "tex_ResourceId_100362.png",
+  "usage": {
+   "PS_Resource": [
+    1211,
+    1218
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114543",
+  "name": "Image 512x1024x1 Thin1DThin Bc7UnormBlock 0x1074579700:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 0.00392 0.00392 1)",
+  "png": "tex_ResourceId_114543.png",
+  "usage": {
+   "PS_Resource": [
+    692
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114595",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x108f560f00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.142 0.159 0.185 0.671) max(0.832 0.848 0.895 1)",
+  "png": "tex_ResourceId_114595.png",
+  "usage": {
+   "PS_Resource": [
+    828,
+    835,
+    842,
+    849
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114630",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x108dbf5700:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0103 0.0103 0.0097 0.996) max(0.723 0.645 0.0801 1)",
+  "png": "tex_ResourceId_114630.png",
+  "usage": {
+   "PS_Resource": [
+    1190,
+    1197
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114637",
+  "name": "Image 1024x512x1 Thin1DThin Bc7SrgbBlock 0x108ba79f00:0xac000 L:1 M:11 S:1",
+  "dims": "1024x512x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.008 0.008 0.008 0.996) max(0.816 0.816 0.816 1)",
+  "png": "tex_ResourceId_114637.png",
+  "usage": {
+   "PS_Resource": [
+    1204
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114662",
+  "name": "Image 256x256x1 Thin1DThin Bc7SrgbBlock 0x10985ff700:0x16800 L:1 M:9 S:1",
+  "dims": "256x256x1 ms1 mips9",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0284 0.0369 0.0547 0) max(0.863 0.695 0.463 0.502)",
+  "png": "tex_ResourceId_114662.png",
+  "usage": {
+   "PS_Resource": [
+    1401,
+    1471
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114679",
+  "name": "Image 1024x1024x1 ThinThinPrt Bc7SrgbBlock 0x3003840000:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0684 0.0977 0.254 0) max(0.198 0.23 0.387 0.525)",
+  "png": "tex_ResourceId_114679.png",
+  "usage": {
+   "PS_Resource": [
+    1436,
+    1443
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114684",
+  "name": "Image 1024x1024x1 ThinThinPrt Bc7SrgbBlock 0x3004600000:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 0.588)",
+  "png": "tex_ResourceId_114684.png",
+  "usage": {
+   "PS_Resource": [
+    946,
+    953,
+    1450,
+    1457,
+    1464
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114693",
+  "name": "Image 512x512x1 ThinThinPrt Bc7SrgbBlock 0x3002630000:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.333) max(0.617 0.672 0.508 0.525)",
+  "png": "tex_ResourceId_114693.png",
+  "usage": {
+   "PS_Resource": [
+    1478
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114700",
+  "name": "Image 1024x256x1 ThinThinPrt Bc7SrgbBlock 0x3002ce0000:0x57000 L:1 M:11 S:1",
+  "dims": "1024x256x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.801 0.73 0.863 0.557)",
+  "png": "tex_ResourceId_114700.png",
+  "usage": {
+   "PS_Resource": [
+    1485,
+    1492
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114709",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x107f2f4f00:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.482 0.243 0 0) max(1 0.518 1 1)",
+  "png": "tex_ResourceId_114709.png",
+  "usage": {
+   "PS_Resource": [
+    1527,
+    6506
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114710",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x1077e8f700:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 0.875 1)",
+  "png": "tex_ResourceId_114710.png",
+  "usage": {
+   "PS_Resource": [
+    1527,
+    6506
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114711",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7SrgbBlock 0x108d141700:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00604 0.0097 0.00244 0) max(0.23 0.205 0.198 1)",
+  "png": "tex_ResourceId_114711.png",
+  "usage": {
+   "PS_Resource": [
+    1527
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114732",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1073c5bf00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.678) max(1 1 0.557 0.827)",
+  "png": "tex_ResourceId_114732.png",
+  "usage": {
+   "PS_Resource": [
+    1731,
+    1741,
+    1751,
+    1761,
+    1771,
+    1781
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114733",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x108a784700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.508 0.463 0.463 1)",
+  "png": "tex_ResourceId_114733.png",
+  "usage": {
+   "PS_Resource": [
+    1731,
+    1741,
+    1751,
+    1761,
+    1771,
+    1781
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114734",
+  "name": "Image 512x512x1 ThinThinPrt Bc7SrgbBlock 0x3002570000:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.77 0.66 0.0723 0.502) max(0.895 0.895 0.895 0.553)",
+  "png": "tex_ResourceId_114734.png",
+  "usage": {
+   "PS_Resource": [
+    1731,
+    1741,
+    1751,
+    1761,
+    1771,
+    1781
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::114735",
+  "name": "Image 512x512x1 ThinThinPrt Bc7UnormBlock 0x30001b0000:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 0.00784 0.00784 1)",
+  "png": "tex_ResourceId_114735.png",
+  "usage": {
+   "PS_Resource": [
+    1731,
+    1741,
+    1751,
+    1761,
+    1771,
+    1781
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::115344",
+  "name": "Image 512x256x1 Thin1DThin Bc7UnormBlock 0x1072459f00:0x2c000 L:1 M:10 S:1",
+  "dims": "512x256x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.235 0.204 0.271 0) max(0.745 0.796 0.796 1)",
+  "png": "tex_ResourceId_115344.png",
+  "usage": {
+   "PS_Resource": [
+    3880,
+    3887,
+    6373,
+    6380
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::115347",
+  "name": "Image 64x64x1 Thin1DThin Bc7UnormBlock 0x10718b6700:0x2800 L:1 M:7 S:1",
+  "dims": "64x64x1 ms1 mips7",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.188 0.141 0.275 0) max(0.796 0.859 0.729 1)",
+  "png": "tex_ResourceId_115347.png",
+  "usage": {
+   "PS_Resource": [
+    3894,
+    3901,
+    6387,
+    6394
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::115380",
+  "name": "Image 256x256x1 Thin1DThin Bc7SrgbBlock 0x109862c700:0x16800 L:1 M:9 S:1",
+  "dims": "256x256x1 ms1 mips9",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_115380.png",
+  "usage": {
+   "PS_Resource": [
+    6352
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::115383",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1072c23f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0627 0 0.161 0.157) max(1 0.969 1 1)",
+  "png": "tex_ResourceId_115383.png",
+  "usage": {
+   "PS_Resource": [
+    6613
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::115847",
+  "name": "Image 2048x2048x1 Thin1DThin Bc7UnormBlock 0x10a1ae6100:0x556800 L:1 M:12 S:1",
+  "dims": "2048x2048x1 ms1 mips12",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.482 0 0 0.996) max(1 1 1 1)",
+  "png": "tex_ResourceId_115847.png",
+  "usage": {
+   "PS_Resource": [
+    13043,
+    13054,
+    13065,
+    13076,
+    13087,
+    13098,
+    "..141 total..",
+    14572,
+    14583
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::115850",
+  "name": "Image 512x1024x1 Thin1DThin Bc7SrgbBlock 0x10a203c900:0xac000 L:1 M:11 S:1",
+  "dims": "512x1024x1 ms1 mips11",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_115850.png",
+  "usage": {
+   "PS_Resource": [
+    13043,
+    13054,
+    13065,
+    13076,
+    13087,
+    13098,
+    "..141 total..",
+    14572,
+    14583
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::115851",
+  "name": "Image 4096x2048x1 Thin1DThin Bc7SrgbBlock 0x10a20e8900:0xaac000 L:1 M:13 S:1",
+  "dims": "4096x2048x1 ms1 mips13",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 0.4)",
+  "png": "tex_ResourceId_115851.png",
+  "usage": {
+   "PS_Resource": [
+    13043,
+    13054,
+    13065,
+    13076,
+    13087,
+    13098,
+    "..141 total..",
+    14572,
+    14583
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::116001",
+  "name": "Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x100a0c8000:0x7f8000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.5e+04 6.5e+04 6.45e+04 1)",
+  "png": "tex_ResourceId_116001.png",
+  "usage": {
+   "Barrier": [
+    15681,
+    15692
+   ],
+   "ColorTarget": [
+    15690
+   ],
+   "PS_Resource": [
+    15700
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::116048",
+  "name": "Image 240x134x1 Thin2DThin B10G11R11UfloatPack32 0x100a0c8000:0x30000 L:1 M:1 S:1",
+  "dims": "240x134x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.27e+03 6.27e+03 5.89e+03 1)",
+  "png": "tex_ResourceId_116048.png",
+  "usage": {
+   "Barrier": [
+    16071,
+    16082
+   ],
+   "ColorTarget": [
+    16080
+   ],
+   "PS_Resource": [
+    16094
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::119457",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x108a272f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0222 0.0222 0.0222 0) max(0.418 0.418 0.402 0.541)",
+  "png": "tex_ResourceId_119457.png",
+  "usage": {
+   "PS_Resource": [
+    766
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::119458",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1073599f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0157 0.0314 0 0.678) max(0.969 0.969 0.588 0.827)",
+  "png": "tex_ResourceId_119458.png",
+  "usage": {
+   "PS_Resource": [
+    766
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::119459",
+  "name": "Image 512x256x1 ThinThinPrt Bc7UnormBlock 0x3000060000:0x2c000 L:1 M:10 S:1",
+  "dims": "512x256x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(1 0.00784 0.00784 1)",
+  "png": "tex_ResourceId_119459.png",
+  "usage": {
+   "PS_Resource": [
+    766
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::123092",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x1073088700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0627 0 0.0902 0) max(0.906 0.906 0.549 1)",
+  "png": "tex_ResourceId_123092.png",
+  "usage": {
+   "PS_Resource": [
+    1795
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::123093",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x1089db7f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.00183 0.00153 0.00153 0) max(0.551 0.539 0.516 0.51)",
+  "png": "tex_ResourceId_123093.png",
+  "usage": {
+   "PS_Resource": [
+    1795
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::123094",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x1089d61700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.895 1 1 1)",
+  "png": "tex_ResourceId_123094.png",
+  "usage": {
+   "PS_Resource": [
+    1795
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::125167",
+  "name": "Image 512x256x1 Thin1DThin Bc7SrgbBlock 0x1089848700:0x2c000 L:1 M:10 S:1",
+  "dims": "512x256x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_125167.png",
+  "usage": {
+   "PS_Resource": [
+    6359
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::127001",
+  "name": "Image 256x256x1 Thin1DThin Bc7SrgbBlock 0x1089276700:0x16800 L:1 M:9 S:1",
+  "dims": "256x256x1 ms1 mips9",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0.93 0.93 0.93 0.525)",
+  "png": "tex_ResourceId_127001.png",
+  "usage": {
+   "PS_Resource": [
+    1499
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::131233",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x107bc1a700:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.125 0.157 0.235 0.427) max(0.843 0.871 1 1)",
+  "png": "tex_ResourceId_131233.png",
+  "usage": {
+   "PS_Resource": [
+    712,
+    722,
+    732,
+    742,
+    752,
+    759
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::131234",
+  "name": "Image 1024x1024x1 Thin1DThin Bc7UnormBlock 0x107ac0c700:0x156800 L:1 M:11 S:1",
+  "dims": "1024x1024x1 ms1 mips11",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0 0 0 0.996) max(0.537 0.725 0.0314 1)",
+  "png": "tex_ResourceId_131234.png",
+  "usage": {
+   "PS_Resource": [
+    712,
+    722,
+    732,
+    742,
+    752,
+    759
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::131235",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x108abe8f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.0222 0.0295 0.0295 0.424) max(0.93 0.738 0.516 1)",
+  "png": "tex_ResourceId_131235.png",
+  "usage": {
+   "PS_Resource": [
+    712,
+    722,
+    732,
+    742,
+    752,
+    759
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::131252",
+  "name": "Image 512x512x1 Thin1DThin Bc7UnormBlock 0x10732e5f00:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.388 0.388 0.22 1) max(0.612 0.612 0.969 1)",
+  "png": "tex_ResourceId_131252.png",
+  "usage": {
+   "PS_Resource": [
+    1169,
+    1176
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::131253",
+  "name": "Image 512x512x1 Thin1DThin Bc7SrgbBlock 0x108a98b700:0x56800 L:1 M:10 S:1",
+  "dims": "512x512x1 ms1 mips10",
+  "fmt": "BC7_SRGB",
+  "flags": "TextureCategory.ShaderReadWrite|ShaderRead",
+  "minmax": "min(0.041 0.0308 0.0308 0) max(0.23 0.238 0.238 0.525)",
+  "png": "tex_ResourceId_131253.png",
+  "usage": {
+   "PS_Resource": [
+    1169,
+    1176
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137298",
+  "name": "Image 256x256x1 Thin1DThin B10G11R11UfloatPack32 0x100b1b0000:0x180000 L:6 M:1 S:1",
+  "dims": "256x256x6 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0 0 0 1)",
+  "png": "tex_ResourceId_137298.png",
+  "usage": {
+   "Barrier": [
+    639,
+    651,
+    654,
+    655,
+    2172,
+    2173,
+    "..29 total..",
+    10850,
+    10850
+   ],
+   "Discard": [
+    639
+   ],
+   "Clear": [
+    640
+   ],
+   "CopyDst": [
+    652
+   ],
+   "ColorTarget": [
+    692,
+    702,
+    712,
+    722,
+    732,
+    742,
+    "..204 total..",
+    2365,
+    2375
+   ],
+   "PS_Resource": [
+    2195,
+    2206,
+    2217,
+    2228,
+    2239,
+    2250
+   ],
+   "CS_Resource": [
+    10264,
+    10294,
+    10324,
+    10354,
+    10384,
+    10414
+   ],
+   "CopySrc": [
+    10852
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137371",
+  "name": "Image 128x128x1 Thin1DThin B10G11R11UfloatPack32 0x100b3b0000:0x10000 L:1 M:1 S:1",
+  "dims": "128x128x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137371.png",
+  "usage": {
+   "Barrier": [
+    10239,
+    10248,
+    10251,
+    10252,
+    10855
+   ],
+   "Discard": [
+    10239
+   ],
+   "Clear": [
+    10240
+   ],
+   "CopyDst": [
+    10249
+   ],
+   "CS_RWResource": [
+    10264
+   ],
+   "CopySrc": [
+    10856
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137372",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x100b430000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137372.png",
+  "usage": {
+   "Barrier": [
+    10241,
+    10256,
+    10259,
+    10260,
+    10432,
+    10875
+   ],
+   "Discard": [
+    10241
+   ],
+   "Clear": [
+    10242
+   ],
+   "CopyDst": [
+    10257
+   ],
+   "CS_RWResource": [
+    10264
+   ],
+   "CS_Resource": [
+    10484
+   ],
+   "CopySrc": [
+    10876
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137378",
+  "name": "Image 128x128x1 Thin1DThin B10G11R11UfloatPack32 0x100b3c0000:0x10000 L:1 M:1 S:1",
+  "dims": "128x128x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137378.png",
+  "usage": {
+   "Barrier": [
+    10270,
+    10278,
+    10281,
+    10282,
+    10859
+   ],
+   "Discard": [
+    10270
+   ],
+   "Clear": [
+    10271
+   ],
+   "CopyDst": [
+    10279
+   ],
+   "CS_RWResource": [
+    10294
+   ],
+   "CopySrc": [
+    10860
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137379",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x100b434000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137379.png",
+  "usage": {
+   "Barrier": [
+    10272,
+    10286,
+    10289,
+    10290,
+    10502,
+    10879
+   ],
+   "Discard": [
+    10272
+   ],
+   "Clear": [
+    10273
+   ],
+   "CopyDst": [
+    10287
+   ],
+   "CS_RWResource": [
+    10294
+   ],
+   "CS_Resource": [
+    10554
+   ],
+   "CopySrc": [
+    10880
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137385",
+  "name": "Image 128x128x1 Thin1DThin B10G11R11UfloatPack32 0x100b3d0000:0x10000 L:1 M:1 S:1",
+  "dims": "128x128x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0 0 0 1)",
+  "png": "tex_ResourceId_137385.png",
+  "usage": {
+   "Barrier": [
+    10300,
+    10308,
+    10311,
+    10312,
+    10863
+   ],
+   "Discard": [
+    10300
+   ],
+   "Clear": [
+    10301
+   ],
+   "CopyDst": [
+    10309
+   ],
+   "CS_RWResource": [
+    10324
+   ],
+   "CopySrc": [
+    10864
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137386",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x100b438000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0105 0.0153 0.0322 1) max(0.422 0.418 0.445 1)",
+  "png": "tex_ResourceId_137386.png",
+  "usage": {
+   "Barrier": [
+    10302,
+    10316,
+    10319,
+    10320,
+    10572,
+    10883
+   ],
+   "Discard": [
+    10302
+   ],
+   "Clear": [
+    10303
+   ],
+   "CopyDst": [
+    10317
+   ],
+   "CS_RWResource": [
+    10324
+   ],
+   "CS_Resource": [
+    10624
+   ],
+   "CopySrc": [
+    10884
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137392",
+  "name": "Image 128x128x1 Thin1DThin B10G11R11UfloatPack32 0x100b3e0000:0x10000 L:1 M:1 S:1",
+  "dims": "128x128x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0002 0.00021 0.000282 1) max(0.0332 0.0332 0.0322 1)",
+  "png": "tex_ResourceId_137392.png",
+  "usage": {
+   "Barrier": [
+    10330,
+    10338,
+    10341,
+    10342,
+    10867
+   ],
+   "Discard": [
+    10330
+   ],
+   "Clear": [
+    10331
+   ],
+   "CopyDst": [
+    10339
+   ],
+   "CS_RWResource": [
+    10354
+   ],
+   "CopySrc": [
+    10868
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137393",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x100b43c000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.000248 0.000275 0.000343 1) max(0.0242 0.0242 0.0234 1)",
+  "png": "tex_ResourceId_137393.png",
+  "usage": {
+   "Barrier": [
+    10332,
+    10346,
+    10349,
+    10350,
+    10642,
+    10887
+   ],
+   "Discard": [
+    10332
+   ],
+   "Clear": [
+    10333
+   ],
+   "CopyDst": [
+    10347
+   ],
+   "CS_RWResource": [
+    10354
+   ],
+   "CS_Resource": [
+    10694
+   ],
+   "CopySrc": [
+    10888
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137399",
+  "name": "Image 128x128x1 Thin1DThin B10G11R11UfloatPack32 0x100b3f0000:0x10000 L:1 M:1 S:1",
+  "dims": "128x128x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137399.png",
+  "usage": {
+   "Barrier": [
+    10360,
+    10368,
+    10371,
+    10372,
+    10871
+   ],
+   "Discard": [
+    10360
+   ],
+   "Clear": [
+    10361
+   ],
+   "CopyDst": [
+    10369
+   ],
+   "CS_RWResource": [
+    10384
+   ],
+   "CopySrc": [
+    10872
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137400",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x100b440000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137400.png",
+  "usage": {
+   "Barrier": [
+    10362,
+    10376,
+    10379,
+    10380,
+    10712,
+    10891
+   ],
+   "Discard": [
+    10362
+   ],
+   "Clear": [
+    10363
+   ],
+   "CopyDst": [
+    10377
+   ],
+   "CS_RWResource": [
+    10384
+   ],
+   "CS_Resource": [
+    10764
+   ],
+   "CopySrc": [
+    10892
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137406",
+  "name": "Image 128x128x1 Thin1DThin B10G11R11UfloatPack32 0x100b400000:0x10000 L:1 M:1 S:1",
+  "dims": "128x128x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0 0 0 1)",
+  "png": "tex_ResourceId_137406.png",
+  "usage": {
+   "Barrier": [
+    10390,
+    10398,
+    10401,
+    10402,
+    10895
+   ],
+   "Discard": [
+    10390
+   ],
+   "Clear": [
+    10391
+   ],
+   "CopyDst": [
+    10399
+   ],
+   "CS_RWResource": [
+    10414
+   ],
+   "CopySrc": [
+    10896
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137407",
+  "name": "Image 64x64x1 Thin1DThin B10G11R11UfloatPack32 0x100b444000:0x4000 L:1 M:1 S:1",
+  "dims": "64x64x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0.248 0.254 0.281 1)",
+  "png": "tex_ResourceId_137407.png",
+  "usage": {
+   "Barrier": [
+    10392,
+    10406,
+    10409,
+    10410,
+    10782,
+    10899
+   ],
+   "Discard": [
+    10392
+   ],
+   "Clear": [
+    10393
+   ],
+   "CopyDst": [
+    10407
+   ],
+   "CS_RWResource": [
+    10414
+   ],
+   "CS_Resource": [
+    10834
+   ],
+   "CopySrc": [
+    10900
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137413",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100b450000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137413.png",
+  "usage": {
+   "Barrier": [
+    10420,
+    10436,
+    10439,
+    10440,
+    10903
+   ],
+   "Discard": [
+    10420
+   ],
+   "Clear": [
+    10421
+   ],
+   "CopyDst": [
+    10437
+   ],
+   "CS_RWResource": [
+    10484
+   ],
+   "CopySrc": [
+    10904
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137433",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100b451000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(4.76e+04 4.76e+04 4.71e+04 1)",
+  "png": "tex_ResourceId_137433.png",
+  "usage": {
+   "Barrier": [
+    10490,
+    10506,
+    10509,
+    10510,
+    10927
+   ],
+   "Discard": [
+    10490
+   ],
+   "Clear": [
+    10491
+   ],
+   "CopyDst": [
+    10507
+   ],
+   "CS_RWResource": [
+    10554
+   ],
+   "CopySrc": [
+    10928
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137453",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100b452000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.0107 0.0154 0.0322 1) max(0.336 0.34 0.367 1)",
+  "png": "tex_ResourceId_137453.png",
+  "usage": {
+   "Barrier": [
+    10560,
+    10576,
+    10579,
+    10580,
+    10951
+   ],
+   "Discard": [
+    10560
+   ],
+   "Clear": [
+    10561
+   ],
+   "CopyDst": [
+    10577
+   ],
+   "CS_RWResource": [
+    10624
+   ],
+   "CopySrc": [
+    10952
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137473",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100b453000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0.000271 0.000305 0.000374 1) max(0.0186 0.0188 0.0186 1)",
+  "png": "tex_ResourceId_137473.png",
+  "usage": {
+   "Barrier": [
+    10630,
+    10646,
+    10649,
+    10650,
+    10975
+   ],
+   "Discard": [
+    10630
+   ],
+   "Clear": [
+    10631
+   ],
+   "CopyDst": [
+    10647
+   ],
+   "CS_RWResource": [
+    10694
+   ],
+   "CopySrc": [
+    10976
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137493",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100b454000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(5.79e+04 5.79e+04 5.73e+04 1)",
+  "png": "tex_ResourceId_137493.png",
+  "usage": {
+   "Barrier": [
+    10700,
+    10716,
+    10719,
+    10720,
+    10999
+   ],
+   "Discard": [
+    10700
+   ],
+   "Clear": [
+    10701
+   ],
+   "CopyDst": [
+    10717
+   ],
+   "CS_RWResource": [
+    10764
+   ],
+   "CopySrc": [
+    11000
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137513",
+  "name": "Image 32x32x1 Thin1DThin B10G11R11UfloatPack32 0x100b455000:0x1000 L:1 M:1 S:1",
+  "dims": "32x32x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(0.156 0.18 0.242 1)",
+  "png": "tex_ResourceId_137513.png",
+  "usage": {
+   "Barrier": [
+    10770,
+    10786,
+    10789,
+    10790,
+    11023
+   ],
+   "Discard": [
+    10770
+   ],
+   "Clear": [
+    10771
+   ],
+   "CopyDst": [
+    10787
+   ],
+   "CS_RWResource": [
+    10834
+   ],
+   "CopySrc": [
+    11024
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137533",
+  "name": "Image 256x256x1 Thin1DThin B10G11R11UfloatPack32 0x100b1b0000:0x2ac000 L:8 M:9 S:1",
+  "dims": "256x256x8 ms1 mips9",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.3e+04 6.3e+04 6.25e+04 1)",
+  "png": "tex_ResourceId_137533.png",
+  "usage": {
+   "Barrier": [
+    10840,
+    10846,
+    10849,
+    10851,
+    10853,
+    10854,
+    "..155 total..",
+    11046,
+    11046
+   ],
+   "Discard": [
+    10840
+   ],
+   "Clear": [
+    10841
+   ],
+   "CopyDst": [
+    10847,
+    10852,
+    10856,
+    10860,
+    10864,
+    10868,
+    "..50 total..",
+    11040,
+    11044
+   ],
+   "CS_Resource": [
+    11051,
+    11060,
+    11069,
+    11078,
+    11087,
+    11096,
+    11105,
+    11114,
+    11123,
+    11132,
+    11142
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137575",
+  "name": "Image 720x540x1 Thin2DThin R16G16B16A16Sfloat 0x100a0b0000:0x360000 L:1 M:1 S:1",
+  "dims": "720x540x1 ms1 mips1",
+  "fmt": "R16G16B16A16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0 0 0 0)",
+  "png": "tex_ResourceId_137575.png",
+  "usage": {
+   "Barrier": [
+    15210,
+    15216,
+    15219,
+    15220
+   ],
+   "Discard": [
+    15210
+   ],
+   "Clear": [
+    15211
+   ],
+   "CopyDst": [
+    15217
+   ],
+   "PS_Resource": [
+    15245
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137585",
+  "name": "Image 1920x1080x1 Thin2DThin R16Sfloat 0x100a0b0000:0x438000 L:1 M:1 S:1",
+  "dims": "1920x1080x1 ms1 mips1",
+  "fmt": "R16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(1 0 0 1) max(1 0 0 1)",
+  "png": "tex_ResourceId_137585.png",
+  "usage": {
+   "Barrier": [
+    15349,
+    15354,
+    15357,
+    15358,
+    15384
+   ],
+   "Discard": [
+    15349
+   ],
+   "Clear": [
+    15350
+   ],
+   "CopyDst": [
+    15355
+   ],
+   "ColorTarget": [
+    15372,
+    15379
+   ],
+   "PS_Resource": [
+    15407
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137589",
+  "name": "Image 960x540x1 Thin2DThin R16G16Sfloat 0x100b200000:0x240000 L:1 M:1 S:1",
+  "dims": "960x540x1 ms1 mips1",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-40 -8.52 0 1) max(3.95 1.03 0 1)",
+  "png": "tex_ResourceId_137589.png",
+  "usage": {
+   "Barrier": [
+    15381,
+    15391,
+    15394,
+    15395,
+    15452
+   ],
+   "Discard": [
+    15381
+   ],
+   "Clear": [
+    15382
+   ],
+   "CopyDst": [
+    15392
+   ],
+   "ColorTarget": [
+    15407
+   ],
+   "PS_Resource": [
+    15466,
+    15485
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137594",
+  "name": "Image 48x1080x1 Thin2DThin R16G16Sfloat 0x100b170000:0x88000 L:1 M:1 S:1",
+  "dims": "48x1080x1 ms1 mips1",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-40 -8.38 0 1) max(3.95 1.06 0 1)",
+  "png": "tex_ResourceId_137594.png",
+  "usage": {
+   "Barrier": [
+    15409,
+    15414,
+    15417,
+    15418,
+    15430
+   ],
+   "Discard": [
+    15409
+   ],
+   "Clear": [
+    15410
+   ],
+   "CopyDst": [
+    15415
+   ],
+   "ColorTarget": [
+    15428
+   ],
+   "PS_Resource": [
+    15440
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137599",
+  "name": "Image 960x540x1 Thin2DThin R16G16B16A16Sfloat 0x100b440000:0x480000 L:1 M:1 S:1",
+  "dims": "960x540x1 ms1 mips1",
+  "fmt": "R16G16B16A16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(6.5e+04 6.5e+04 6.45e+04 1)",
+  "png": "tex_ResourceId_137599.png",
+  "usage": {
+   "Barrier": [
+    15468,
+    15474,
+    15477,
+    15478,
+    15487
+   ],
+   "Discard": [
+    15468
+   ],
+   "Clear": [
+    15469
+   ],
+   "CopyDst": [
+    15475
+   ],
+   "ColorTarget": [
+    15485
+   ],
+   "PS_Resource": [
+    15497
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137604",
+  "name": "Image 128x128x1 Thin2DThin R16G16Sfloat 0x100a0b0000:0x10000 L:1 M:1 S:1",
+  "dims": "128x128x1 ms1 mips1",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-6.45e+04 -350 0 1) max(6.4e+04 6.45e+04 0 1)",
+  "png": "tex_ResourceId_137604.png",
+  "usage": {
+   "Barrier": [
+    15499,
+    15504,
+    15507,
+    15508,
+    15591
+   ],
+   "Discard": [
+    15499
+   ],
+   "Clear": [
+    15500
+   ],
+   "CopyDst": [
+    15505
+   ],
+   "ColorTarget": [
+    15517
+   ],
+   "CopySrc": [
+    15593
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137613",
+  "name": "Image 128x128x1 Thin2DThin R16G16Sfloat 0x100a0b0000:0x15800 L:1 M:8 S:1",
+  "dims": "128x128x1 ms1 mips8",
+  "fmt": "R16G16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(-4.02 -4.66 0 1) max(3.46 3.91 0 1)",
+  "png": "tex_ResourceId_137613.png",
+  "usage": {
+   "Barrier": [
+    15582,
+    15587,
+    15590,
+    15592,
+    15594,
+    15595
+   ],
+   "Discard": [
+    15582
+   ],
+   "Clear": [
+    15583
+   ],
+   "CopyDst": [
+    15588,
+    15593
+   ],
+   "PS_Resource": [
+    15618,
+    15628,
+    15638,
+    15648,
+    15658,
+    15668,
+    15678,
+    15690
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137616",
+  "name": "Image 480x270x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0xa0000 L:1 M:1 S:1",
+  "dims": "480x270x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.5e+04 6.5e+04 6.45e+04 1)",
+  "png": "tex_ResourceId_137616.png",
+  "usage": {
+   "Barrier": [
+    15702,
+    15708,
+    15711,
+    15712,
+    15743
+   ],
+   "Discard": [
+    15702
+   ],
+   "Clear": [
+    15703
+   ],
+   "CopyDst": [
+    15709
+   ],
+   "ColorTarget": [
+    15721
+   ],
+   "PS_Resource": [
+    15753
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137628",
+  "name": "Image 240x135x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0xc0000 L:1 M:1 S:1",
+  "dims": "240x135x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(1.16e+04 1.16e+04 1.13e+04 1)",
+  "png": "tex_ResourceId_137628.png",
+  "usage": {
+   "Barrier": [
+    15875,
+    15881,
+    15884,
+    15885,
+    15896
+   ],
+   "Discard": [
+    15875
+   ],
+   "Clear": [
+    15876
+   ],
+   "CopyDst": [
+    15882
+   ],
+   "ColorTarget": [
+    15894
+   ],
+   "PS_Resource": [
+    15904
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137632",
+  "name": "Image 120x67x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x80000 L:1 M:1 S:1",
+  "dims": "120x67x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(7.23e+03 7.23e+03 6.78e+03 1)",
+  "png": "tex_ResourceId_137632.png",
+  "usage": {
+   "Barrier": [
+    15916,
+    15922,
+    15925,
+    15926,
+    15937
+   ],
+   "Discard": [
+    15916
+   ],
+   "Clear": [
+    15917
+   ],
+   "CopyDst": [
+    15923
+   ],
+   "ColorTarget": [
+    15935
+   ],
+   "PS_Resource": [
+    15945
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137636",
+  "name": "Image 60x33x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x40000 L:1 M:1 S:1",
+  "dims": "60x33x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 1) max(6.08e+03 6.08e+03 5.63e+03 1)",
+  "png": "tex_ResourceId_137636.png",
+  "usage": {
+   "Barrier": [
+    15957,
+    15963,
+    15966,
+    15967,
+    15978
+   ],
+   "Discard": [
+    15957
+   ],
+   "Clear": [
+    15958
+   ],
+   "CopyDst": [
+    15964
+   ],
+   "ColorTarget": [
+    15976
+   ],
+   "PS_Resource": [
+    15986
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137644",
+  "name": "Image 60x32x1 Thin2DThin B10G11R11UfloatPack32 0x100a0b0000:0x8000 L:1 M:1 S:1",
+  "dims": "60x32x1 ms1 mips1",
+  "fmt": "R11G11B10_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(7.38 7.38 6.75 1) max(1.07e+03 1.07e+03 976 1)",
+  "png": "tex_ResourceId_137644.png",
+  "usage": {
+   "Barrier": [
+    16039,
+    16045,
+    16048,
+    16049,
+    16084
+   ],
+   "Discard": [
+    16039
+   ],
+   "Clear": [
+    16040
+   ],
+   "CopyDst": [
+    16046
+   ],
+   "ColorTarget": [
+    16058
+   ],
+   "PS_Resource": [
+    16094
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137655",
+  "name": "Image 520x480x1 Thin2DThin R8G8B8A8Unorm 0x100a0b0000:0x140000 L:1 M:1 S:1",
+  "dims": "520x480x1 ms1 mips1",
+  "fmt": "R8G8B8A8_UNORM",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(1 1 1 1)",
+  "png": "tex_ResourceId_137655.png",
+  "usage": {
+   "Barrier": [
+    16501,
+    16504,
+    16506
+   ],
+   "Discard": [
+    16501
+   ],
+   "Clear": [
+    16502
+   ],
+   "ResolveDst": [
+    16505
+   ],
+   "PS_Resource": [
+    16517
+   ]
+  }
+ },
+ {
+  "id": "ResourceId::137663",
+  "name": "Image 140x60x1 Thin2DThin R16G16B16A16Sfloat 0x100a0b0000:0x100000 L:1 M:1 S:1",
+  "dims": "140x60x1 ms1 mips1",
+  "fmt": "R16G16B16A16_FLOAT",
+  "flags": "TextureCategory.ShaderReadWrite|ColorTarget|ShaderRead",
+  "minmax": "min(0 0 0 0) max(0 0 0 0)",
+  "png": "tex_ResourceId_137663.png",
+  "usage": {
+   "Barrier": [
+    17045,
+    17051,
+    17054,
+    17055,
+    17111,
+    17112,
+    "..27 total..",
+    18191,
+    18203
+   ],
+   "Discard": [
+    17045
+   ],
+   "Clear": [
+    17046
+   ],
+   "CopyDst": [
+    17052
+   ],
+   "ColorTarget": [
+    17078,
+    17088,
+    17109,
+    17122,
+    17319,
+    17329,
+    "..24 total..",
+    18188,
+    18201
+   ],
+   "PS_Resource": [
+    17122,
+    17351,
+    17590,
+    17814,
+    18053,
+    18201
+   ],
+   "CopySrc": [
+    17126,
+    17355,
+    17594,
+    17818,
+    18057,
+    18205
+   ]
+  }
+ }
+]

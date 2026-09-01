@@ -1,0 +1,67 @@
+USAGE  ResourceId::170 [Swapchain Image 0]
+
+=== eid 6026 ? ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0.00123596 0.00112915 0.0119629 1) max(0.0253906 0.0288086 0.0576172 1)
+
+=== eid 6027 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 10265 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 10615 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 10929 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 11269 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 11576 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 11877 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 12239 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 12546 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 12847 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 13208 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 13508 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 13834 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 14233 vkCmdDrawIndexedIndirect(1) => <0, 0> ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+
+=== eid 14706 vkCmdDrawIndexedIndirect(1) => <1686, 176> ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 15179 vkCmdDrawIndexedIndirect(1) => <9, 44> ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 15652 vkCmdDrawIndexedIndirect(1) => <26778, 44> ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 16125 vkCmdDrawIndexedIndirect(1) => <0, 0> ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 16798 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 17128 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 17679 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)

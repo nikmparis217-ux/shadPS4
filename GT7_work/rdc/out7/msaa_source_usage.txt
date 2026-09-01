@@ -1,0 +1,22 @@
+USAGE 0x100a0b0000 ResourceId::140642 [Image 1024x512x1 Depth2DThin64 D32SfloatS8Uint 0x100a0b0000:0x200000 L:1 M:1 S:1]
+  WRITE eid 280 ResourceUsage.CopyDst vkCmdCopyBufferToImage()
+  WRITE eid 310 ResourceUsage.Clear vkCmdBeginRendering(C=Load, D=Clear, S=Load)
+  WRITE eid 312 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 322 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 329 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 336 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 343 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 350 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 357 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 364 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 371 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 378 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 385 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 392 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 399 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+  WRITE eid 406 ResourceUsage.DepthStencilTarget vkCmdDrawIndexed()
+
+=== eid 5885 ? ===
+WATCH 0x100a0b0000 ResourceId::140642 [Image 1024x512x1 Depth2DThin64 D32SfloatS8Uint 0x100a0b0000:0x200000 L:1 M:1 S:1] min(0 0 0 1) max(0.198917 1 0 1)
+STATS 0x100a0b0000 ResourceId::140642 D32S8 1024x512x1 bytes=4194304
+  raw stats unsupported for this format

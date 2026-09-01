@@ -1,0 +1,416 @@
+﻿pid: 11316
+dump written: C:\Users\3E30~1\DOCUME~1\GitHub\shadPS4\GT7_work\rdc\live_stall.dmp (969550 bytes)
+271 threads, 248 named
+tid   7908 60Hz                         rip 0x7ffa90c40404
+tid  21688 ADTsk                        rip 0x7ffa90c40404
+tid  15544 ADTsk                        rip 0x7ffa90c40404
+tid  13020 ADTsk                        rip 0x7ffa90c40404
+tid  15268 ADTsk                        rip 0x7ffa90c40404
+tid  22488 ADTsk                        rip 0x7ffa90c40404
+tid  11920 ADZip                        rip 0x7ffa90c40404
+tid   5176 CrsLd                        rip 0x7ffa90c40404
+tid   3324 D3D Background Thread 0      rip 0x7ffa90c43fd4
+tid  27428 D3D Background Thread 1      rip 0x7ffa90c43fd4
+tid   4980 D3D Background Thread 2      rip 0x7ffa90c43fd4
+tid   3780 D3D Background Thread 3      rip 0x7ffa90c43fd4
+tid  25956 DeviceHotplugThread          rip 0x7ffa90c40404
+                                             <- SDL_HidP_GetData @??:0:0
+                                             <- DeviceHotplugThread @SDL_hid.c:197:0
+                                             <- DeviceHotplugThread @SDL_hid.c:188:0
+                                             <- SDL_RunThread @SDL_thread.c:339:0
+                                             <- RunThread @SDL_systhread.c:47:0
+                                             <- RunThreadViaBeginThreadEx @SDL_systhread.c:60:0
+tid   3964 DlyLd                        rip 0x7ffa90c40404
+tid   9596 FWRKR                        rip 0x7ffa90c40404
+tid  26488 FWRKR                        rip 0x7ffa90c40404
+tid   8732 FWRKR                        rip 0x7ffa90c40404
+tid   8512 FWRKR                        rip 0x7ffa90c40404
+tid   2180 FWRKR                        rip 0x7ffa90c40404
+tid   7020 FWRKR                        rip 0x7ffa90c40404
+tid  10428 FWRKR                        rip 0x7ffa90c40404
+tid   2500 FWRKR                        rip 0x7ffa90c40404
+tid  25308 FWRKR                        rip 0x7ffa90c40404
+tid   8024 FexpR                        rip 0x7ffa90c40404
+tid  21584 FexpR                        rip 0x7ffa90c40404
+tid   9148 FexpR                        rip 0x7ffa90c40404
+tid  23016 FexpR                        rip 0x7ffa90c40404
+tid  25624 FexpR                        rip 0x7ffa90c40404
+tid   4448 Flipx                        rip 0x7ffa90c40404
+tid  15076 GARequest_0                  rip 0x7ffa90c40404
+tid  25732 GARequest_1                  rip 0x7ffa90c40404
+tid   2456 GARequest_2                  rip 0x7ffa90c40404
+tid  25696 GARequest_3                  rip 0x7ffa90c40404
+tid  27128 GPUex                        rip 0x7ffa90c40404
+tid  25828 Game:Main                    rip 0x7ffa90c40404
+tid   5196 HIDAPI Rumble                rip 0x7ffa90c43fd4
+                                             <- ??:0:0
+                                             <- ??:0:0
+                                             <- OPENSSL_ia32cap_P @??:0:0
+                                             <- OPENSSL_ia32cap_P @??:0:0
+                                             <- SDL_WaitSemaphoreTimeoutNS_atom @SDL_syssem.c:119:0
+                                             <- OPENSSL_ia32cap_P @??:0:0
+                                             <- OPENSSL_ia32cap_P @??:0:0
+                                             <- SDL_HIDAPI_RumbleThread @SDL_hidapi_rumble.c:69:0
+tid   9840 Job#0                        rip 0xcafe255
+tid   2172 Job#1                        rip 0x7ffa90c40404
+tid   8764 Job#10                       rip 0x7ffa90c40404
+tid  26796 Job#11                       rip 0x7ffa90c40404
+tid  13444 Job#12                       rip 0x7ffa90c40404
+tid  24268 Job#13                       rip 0x7ffa90c40404
+tid    836 Job#14                       rip 0x7ffa90c40404
+tid   5200 Job#15                       rip 0x7ffa90c40404
+tid  21012 Job#16                       rip 0x7ffa90c40404
+tid  14248 Job#17                       rip 0x7ffa90c40404
+tid   5776 Job#18                       rip 0x7ffa90c40404
+tid  22416 Job#19                       rip 0x7ffa90c40404
+tid  23624 Job#2                        rip 0x7ffa90c40404
+tid  27184 Job#20                       rip 0x7ffa90c40404
+tid   8700 Job#21                       rip 0x7ffa90c40404
+tid  16760 Job#22                       rip 0x7ffa90c40404
+tid  26012 Job#23                       rip 0x7ffa90c40404
+tid  24544 Job#24                       rip 0x7ffa90c40404
+tid   1808 Job#25                       rip 0x7ffa90c40404
+tid  26000 Job#26                       rip 0x7ffa90c40404
+tid  24080 Job#27                       rip 0x7ffa90c40404
+tid   1212 Job#28                       rip 0x7ffa90c40404
+tid  13288 Job#29                       rip 0x7ffa90c40404
+tid   5100 Job#3                        rip 0x7ffa90c40404
+tid   3988 Job#30                       rip 0x7ffa90c40404
+tid  26412 Job#31                       rip 0x7ffa90c40404
+tid  26100 Job#32                       rip 0x7ffa90c40404
+tid   9608 Job#33                       rip 0x7ffa90c40404
+tid  27368 Job#34                       rip 0x7ffa90c40404
+tid  25968 Job#35                       rip 0x7ffa90c40404
+tid  10532 Job#36                       rip 0x7ffa90c40404
+tid   1712 Job#37                       rip 0x7ffa90c40404
+tid  11064 Job#38                       rip 0x7ffa90c40404
+tid   7620 Job#39                       rip 0x7ffa90c40404
+tid  23652 Job#4                        rip 0x7ffa90c40404
+tid   7424 Job#40                       rip 0x7ffa90c40404
+tid  13840 Job#41                       rip 0x7ffa90c40404
+tid   6868 Job#42                       rip 0x7ffa90c40404
+tid   1056 Job#43                       rip 0xc7e0de5
+tid  26008 Job#44                       rip 0x7ffa90c40404
+tid  10792 Job#45                       rip 0x7ffa90c40404
+tid  27236 Job#46                       rip 0x7ffa90c40404
+tid   1116 Job#47                       rip 0x7ffa90c40404
+tid   2892 Job#48                       rip 0x7ffa90c40404
+tid  26572 Job#49                       rip 0x7ffa90c40404
+tid  10996 Job#5                        rip 0x7ffa90c40404
+tid  14364 Job#50                       rip 0x7ffa90c40404
+tid   1280 Job#51                       rip 0x7ffa90c40404
+tid  26324 Job#52                       rip 0x7ffa90c40404
+tid  26732 Job#53                       rip 0x7ffa90c40404
+tid  16200 Job#54                       rip 0x7ffa90c40404
+tid  10264 Job#55                       rip 0x7ffa90c40404
+tid   3472 Job#56                       rip 0x7ffa90c40404
+tid  27396 Job#57                       rip 0x7ffa90c40404
+tid   3528 Job#58                       rip 0x7ffa90c40404
+tid  12716 Job#59                       rip 0x7ffa90c40404
+tid  25668 Job#6                        rip 0x7ffa90c40404
+tid  24040 Job#60                       rip 0x7ffa90c40404
+tid  27432 Job#61                       rip 0x7ffa90c40404
+tid   6260 Job#62                       rip 0x7ffa90c40404
+tid  24372 Job#7                        rip 0x7ffa90c40404
+tid  22580 Job#8                        rip 0x7ffa90c40404
+tid  26220 Job#9                        rip 0x7ffa90c40404
+tid  10556 LogOF                        rip 0x7ffa90c40404
+tid  26892 NetRequest_0                 rip 0x7ffa90c40404
+tid   3936 NetRequest_1                 rip 0x7ffa90c40404
+tid  10152 NetRequest_2                 rip 0x7ffa90c40404
+tid  27596 NetRequest_3                 rip 0x7ffa90c40404
+tid  27028 NetRequest_4                 rip 0x7ffa90c40404
+tid   2412 NetRequest_5                 rip 0x7ffa90c40404
+tid  27504 Netwk                        rip 0x7ffa90c40404
+tid   2184 NpRequest_0                  rip 0x7ffa90c40404
+tid   2264 NpRequest_1                  rip 0x7ffa90c40404
+tid   2856 NpRequest_2                  rip 0x7ffa90c40404
+tid  15220 NpRequest_3                  rip 0x7ffa90c40404
+tid   6136 PCL Event                    rip 0x7ffa90c43fd4
+tid   4000 PGL Event                    rip 0x7ffa90c43fd4
+tid  25980 QWRKR                        rip 0x7ffa90c40404
+tid  13068 QWRKR                        rip 0x7ffa90c43fd4
+tid  12636 QWRKR                        rip 0x7ffa90c40404
+tid   7472 QWRKR                        rip 0x7ffa90c40404
+tid   5464 Quest                        rip 0x7ffa90c40404
+tid  27124 RDisp                        rip 0x7ffa90c40404
+tid  10004 Rendr                        rip 0x7ffa90c40404
+tid   2968 SDLAudioP23                  rip 0x7ffa90c40404
+                                             <- SDL_PlaybackAudioThreadIterate @SDL_audio.c:1284:0
+                                             <- WASAPI_WaitDevice @SDL_wasapi.c:570:0
+                                             <- PlaybackAudioThread @SDL_audio.c:1315:0
+                                             <- PlaybackAudioThread @SDL_audio.c:1322:0
+                                             <- PlaybackAudioThread @SDL_audio.c:1315:0
+                                             <- SDL_RunThread @SDL_thread.c:339:0
+                                             <- RunThread @SDL_systhread.c:47:0
+                                             <- RunThreadViaBeginThreadEx @SDL_systhread.c:60:0
+tid  25856 SDLTimer                     rip 0x7ffa90c43fd4
+                                             <- SDL_GetPerformanceCounter_REAL @SDL_systimer.c:32:0
+                                             <- SDL_WaitSemaphoreTimeoutNS_atom @SDL_syssem.c:148:0
+                                             <- consoleAttached @??:0:0
+                                             <- consoleAttached @??:0:0
+                                             <- SDL_TimerThread @SDL_timer.c:116:0
+                                             <- SDL_SYS_SetupThread @SDL_systhread.c:160:0
+                                             <- SDL_TimerThread @SDL_timer.c:101:0
+                                             <- consoleAttached @??:0:0
+tid  27016 SDLWASAPIMgmt                rip 0x7ffa90c43fd4
+                                             <- mgmtthrtask_PrepDevice @SDL_wasapi.c:656:0
+                                             <- SDL_WaitConditionTimeoutNS_cv @SDL_syscond_cv.c:122:0
+                                             <- SDL_LockMutex_srw @SDL_sysmutex.c:80:0
+                                             <- SYS_Joystick @??:0:0
+                                             <- SDL_GetError_REAL @SDL_error.c:85:0
+                                             <- SYS_Joystick @??:0:0
+                                             <- SYS_Joystick @??:0:0
+                                             <- ManagementThreadMainloop @SDL_wasapi.c:90:0
+tid  15896 SDL_joystick                 rip 0x7ffa8de61344
+                                             <- SDL_JoystickThread @SDL_windowsjoystick.c:222:0
+                                             <- SDL_UnlockMutex_srw @SDL_sysmutex.c:109:0
+                                             <- WindowsDeviceChanged @SDL_windowsjoystick.c:69:0
+                                             <- SDL_WaitForDeviceNotification @SDL_windowsjoystick.c:205:0
+                                             <- SDL_JoystickThread @SDL_windowsjoystick.c:222:0
+                                             <- SDL_LockMutex_srw @SDL_sysmutex.c:80:0
+                                             <- SDL_JoystickThread @SDL_windowsjoystick.c:237:0
+                                             <- SDL_SYS_SetupThread @SDL_systhread.c:160:0
+tid  20704 SNDZ                         rip 0x7ffa90c40404
+tid   4100 SceLibc_Thr                  rip 0x7ffa90c40404
+tid  23584 SceLibc_Thr                  rip 0x7ffa90c40404
+tid  21280 SceLibc_Thr                  rip 0x7ffa90c40404
+tid  27092 SceLibc_Thr                  rip 0x7ffa90c40404
+tid  26988 SceSndzAudio3dOutMain        rip 0x7ffa90c43fd4
+tid   7004 SceSndzAudioOutMain          rip 0x7ffa90c43fd4
+tid   6160 SceSndzRenderThread          rip 0x7ffa90c43fd4
+tid   7028 ShadNet:Reader               rip 0x7ffa90c40404
+                                             <- "HandleServerFeaturesReply" @??:0:0
+                                             <- ShadNet::ShadNetClient::RecvN(unsigned char *, unsigned int) @client.cpp:451:0
+                                             <- ShadNet::ShadNetClient::ReaderThread(void) @client.cpp:222:0
+                                             <- std::invoke @type_traits:1686:0
+tid   2096 ShadNet:Writer               rip 0x7ffa90c43fd4
+                                             <- std::_Atomic_storage<bool,1>::load @atomic:714:0
+                                             <- std::invoke @type_traits:1686:0
+tid  27224 StBGM                        rip 0x7ffa90c40404
+tid  13076 StBuf                        rip 0x7ffa90c40404
+tid   1612 Strea                        rip 0x7ffa90c40404
+tid  13876 TMFFB                        rip 0x7ffa90c40404
+tid  10192 TM_FFB_WorkerThread          rip 0x7ffa90c40404
+tid  26608 TM_FFB_WorkerThread          rip 0x7ffa90c40404
+tid  25408 TM_FFB_WorkerThread          rip 0x7ffa90c40404
+tid  12988 TM_FFB_WorkerThread          rip 0x7ffa90c40404
+tid   9828 TargetControlServerThread    rip 0x7ffa90c40a04
+tid   6684 TmBluetoothMainThread        rip 0x7ffa90c40404
+tid  11360 Tracy Profiler               rip 0x7ffa90c40404
+                                             <- tracy::ListenSocket::Accept(void) @TracySocket.cpp:522:0
+                                             <- struct std::atomic<unsigned char> tracy::s_gpuCtxCounter @??:0:0
+                                             <- struct std::atomic<unsigned char> tracy::s_gpuCtxCounter @??:0:0
+                                             <- tracy::UdpBroadcast::Send(unsigned short, void const *, int) @TracySocket.cpp:632:0
+                                             <- tracy::Socket::~Socket(void) @TracySocket.cpp:103:0
+                                             <- ??:0:0
+                                             <- std::_Atomic_storage<bool,1>::load @atomic:719:0
+                                             <- struct std::atomic<unsigned char> tracy::s_gpuCtxCounter @??:0:0
+tid  10884 Trop                         rip 0x7ffa90c40404
+tid  25176 Updat                        rip 0x7ffa90c40404
+tid   9836 Vegas                        rip 0x7ffa90c40404
+tid   2700 VegasDownloader_0            rip 0x7ffa90c40404
+tid  25756 VegasDownloader_1            rip 0x7ffa90c40404
+tid  12504 VegasDownloader_2            rip 0x7ffa90c40404
+tid  26164 VegasDownloader_3            rip 0x7ffa90c40404
+tid  18888 VegasUploader_0              rip 0x7ffa90c40404
+tid   9636 VegasUploader_1              rip 0x7ffa90c40404
+tid  11960 Vsync                        rip 0x7ffa90c40404
+tid  23632 WebCache_0                   rip 0x7ffa90c40404
+tid  27416 WebCache_1                   rip 0x7ffa90c40404
+tid   2920 WorkT                        rip 0x7ffa90c40404
+tid  26676 WorkT                        rip 0x7ffa90c40404
+tid  26644 WorkT                        rip 0x7ffa90c40404
+tid   5916 WorkT                        rip 0x7ffa90c40404
+tid   8828 WorkT                        rip 0x7ffa90c40404
+tid  15468 WorkT                        rip 0x7ffa90c40404
+tid  27204 WorkT                        rip 0x7ffa90c40404
+tid   3388 WorkT                        rip 0x7ffa90c40404
+tid  11604 defTS                        rip 0x7ffa90c40404
+tid  27496 defTS                        rip 0x7ffa90c40404
+tid  26104 defTS                        rip 0x7ffa90c40404
+tid  22420 defTS                        rip 0x7ffa90c40404
+tid  27500 defTS                        rip 0x7ffa90c40404
+tid   6792 defTS                        rip 0x7ffa90c40404
+tid   7724 defTS                        rip 0x7ffa90c40404
+tid   6320 defTS                        rip 0x7ffa90c40404
+tid   2484 defTS                        rip 0x7ffa90c40404
+tid   2064 defTS                        rip 0x7ffa90c40404
+tid   8140 defTS                        rip 0x7ffa90c40404
+tid   2676 defTS                        rip 0x7ffa90c40404
+tid  24396 defTS                        rip 0x7ffa90c40404
+tid   8752 defTS                        rip 0x7ffa90c40404
+tid   9868 defTS                        rip 0x7ffa90c40404
+tid   3028 defTS                        rip 0x7ffa90c40404
+tid  25896 defTS                        rip 0x7ffa90c40404
+tid   2660 defTS                        rip 0x7ffa90c40404
+tid  10296 defTS                        rip 0x7ffa90c40404
+tid  12168 defTS                        rip 0x7ffa90c40404
+tid  26716 defTS                        rip 0x7ffa90c40404
+tid  10504 defTS                        rip 0x7ffa90c40404
+tid   6656 defTS                        rip 0x7ffa90c40404
+tid  14732 defTS                        rip 0x7ffa90c40404
+tid   8840 defTS                        rip 0x7ffa90c40404
+tid   7892 defTS                        rip 0x7ffa90c40404
+tid  10224 defTS                        rip 0x7ffa90c40404
+tid   4864 defTS                        rip 0x7ffa90c40404
+tid  27108 defTS                        rip 0x7ffa90c40404
+tid   3052 defTS                        rip 0x7ffa90c40404
+tid   2356 defTS                        rip 0x7ffa90c40404
+tid  27356 defTS                        rip 0x7ffa90c40404
+tid   5296 defTS                        rip 0x7ffa90c40404
+tid  23620 defTS                        rip 0x7ffa90c40404
+tid   6984 defTS                        rip 0x7ffa90c40404
+tid   3456 defTS                        rip 0x7ffa90c40404
+tid  11792 defTS                        rip 0x7ffa90c40404
+tid  25248 defTS                        rip 0x7ffa90c40404
+tid   6900 defTS                        rip 0x7ffa90c40404
+tid  10108 defTS                        rip 0x7ffa90c40404
+tid  22884 defTS                        rip 0x7ffa90c40404
+tid  22584 defTS                        rip 0x7ffa90c40404
+tid  11812 defTS                        rip 0x7ffa90c40404
+tid   5288 defTS                        rip 0x7ffa90c40404
+tid   7268 defTS                        rip 0x7ffa90c40404
+tid  26344 defTS                        rip 0x7ffa90c40404
+tid  24048 defTS                        rip 0x7ffa90c40404
+tid   3804 defTS                        rip 0x7ffa90c40404
+tid  18664 defTS                        rip 0x7ffa90c40404
+tid  26672 defTS                        rip 0x7ffa90c40404
+tid   2512 defTS                        rip 0x7ffa90c40404
+tid  14084 defTS                        rip 0x7ffa90c40404
+tid   5388 defTS                        rip 0x7ffa90c40404
+tid  12692 defTS                        rip 0x7ffa90c40404
+tid   2508 defTS                        rip 0x7ffa90c40404
+tid  15444 defTS                        rip 0x7ffa90c40404
+tid  27148 defTS                        rip 0x7ffa90c40404
+tid  13332 defTS                        rip 0x7ffa90c40404
+tid  12956 defTS                        rip 0x7ffa90c40404
+tid  26432 defTS                        rip 0x7ffa90c40404
+tid  25236 defTS                        rip 0x7ffa90c40404
+tid    408 defTS                        rip 0x7ffa90c40404
+tid   7068 defTS                        rip 0x7ffa90c40404
+tid   1064 defTS                        rip 0x7ffa90c40404
+tid  15060 logiwheel_events_thread      rip 0x7ffa90c43fd4
+tid  27548 shadPS4:AudioOutputThread:0x rip 0x7ffa90c40404
+tid   6972 shadPS4:AudioOutputThread:0x rip 0x7ffa90c40404
+tid  11744 shadPS4:AudioOutputThread:0x rip 0x7ffa90c40a04
+tid  24112 shadPS4:AudioOutputThread:0x rip 0x7ffa90c40404
+tid  26244 shadPS4:GpuCommandProcessor  rip XXH3_accumulate_512_avx2 @xxhash.h:5116:0
+                                             <- VideoCore::TextureCache::RefreshImage(struct VideoCore::Image &) @texture_cache.cpp:880:0
+                                             <- Common::TryLockRange<class std::_Array_iterator<class Common::SpinLock, 262144>>(class std::_Array_iterator<class Common::SpinLock, 262144>, class std::_Array_iterator<class Common::SpinLock, 262144>) @range_lock.h:46:0
+                                             <- std::_Atomic_storage<long,4>::exchange @atomic:941:0
+                                             <- std::_Atomic_storage<long,4>::exchange @atomic:941:0
+                                             <- Common::TryLockRange<class std::_Array_iterator<class Common::SpinLock, 262144>>(class std::_Array_iterator<class Common::SpinLock, 262144>, class std::_Array_iterator<class Common::SpinLock, 262144>) @range_lock.h:46:0
+                                             <- std::_Atomic_storage<long,4>::exchange @atomic:941:0
+                                             <- std::_Atomic_storage<long,4>::exchange @atomic:941:0
+                                             <- operator new(unsigned __int64) @new_scalar.cpp:36:0
+tid  14728 shadPS4:GpuSchedPriorityPend rip 0x7ffa90c43fd4
+                                             <- std::unique_ptr<Platform::IrqController,std::default_delete<Platform::IrqController> >::~unique_ptr @memory:3426:0
+                                             <- std::_Atomic_storage<unsigned long long,8>::compare_exchange_strong @atomic:1095:0
+                                             <- std::_Mutex_base::unlock @mutex:71:0
+                                             <- std::stop_callback<struct std::condition_variable_any::_Cv_any_notify_all>::_Invoke_by_stop(class std::_Stop_callback_base *const) @stop_token:382:0
+                                             <- std::invoke @type_traits:1686:0
+tid  26236 shadPS4:GpuSchedPriorityPend rip 0x7ffa90c43fd4
+                                             <- std::_Mutex_base::unlock @mutex:71:0
+                                             <- std::stop_callback<struct std::condition_variable_any::_Cv_any_notify_all>::_Invoke_by_stop(class std::_Stop_callback_base *const) @stop_token:382:0
+                                             <- std::invoke @type_traits:1686:0
+tid  25652 shadPS4:GpuSchedPriorityPend rip 0x7ffa90c43fd4
+                                             <- std::_Mutex_base::unlock @mutex:71:0
+                                             <- std::stop_callback<struct std::condition_variable_any::_Cv_any_notify_all>::_Invoke_by_stop(class std::_Stop_callback_base *const) @stop_token:382:0
+                                             <- std::invoke @type_traits:1686:0
+tid   5476 shadPS4:ImGuiTextureManager  rip 0x7ffa90c43fd4
+                                             <- class std::unique_ptr<class Input::GameControllers, struct std::default_delete<class Input::GameControllers>> Common::Singleton<class Input::GameControllers>::m_instance @??:0:0
+                                             <- class Input::GameControllers `RTTI Type Descriptor' @??:0:0
+                                             <- ImGui::Core::TextureManager::WorkerLoop(void) @texture_manager.cpp:142:0
+                                             <- std::invoke @type_traits:1670:0
+tid  26316 shadPS4:KernelServiceThread  rip 0x7ffa90c43fd4
+                                             <- class boost::asio::io_context Libraries::Kernel::io_context @??:0:0
+                                             <- boost::asio::detail::win_iocp_io_context::run(class boost::system::error_code &) @win_iocp_io_context.ipp:210:0
+                                             <- class boost::asio::io_context Libraries::Kernel::io_context @??:0:0
+                                             <- struct Core::EntryParams Libraries::Kernel::entry_params @??:0:0
+                                             <- struct Core::EntryParams Libraries::Kernel::entry_params @??:0:0
+                                             <- std::_Mutex_base::unlock @mutex:71:0
+                                             <- struct Core::EntryParams Libraries::Kernel::entry_params @??:0:0
+                                             <- std::stop_callback<struct std::condition_variable_any::_Cv_any_notify_all>::_Invoke_by_stop(class std::_Stop_callback_base *const) @stop_token:382:0
+tid    164 shadPS4:Main                 rip 0x7ffa8de6ae84
+                                             <- WIN_WaitEventTimeout @SDL_windowsevents.c:2521:0
+                                             <- SDL_CutEvent @SDL_events.c:1124:0
+                                             <- std::vector<unsigned char,std::allocator<unsigned char> >::_Construct_n @vector:2126:0
+                                             <- SDL_WaitEventTimeout_Device @SDL_events.c:1636:0
+                                             <- SDL_PeepEventsInternal @SDL_events.c:1168:0
+                                             <- char const **Libraries::Kernel::g_environment @??:0:0
+                                             <- SDL_WaitEventTimeoutNS @SDL_events.c:1761:0
+                                             <- ImGui::Sdl::ProcessEvent::<lambda_0>::operator() @imgui_impl_sdl3.cpp:383:0
+tid  23188 shadPS4:PipelineCacheIO      rip 0x7ffa90c43fd4
+                                             <- std::_Deallocate @xmemory:289:0
+                                             <- std::_Atomic_storage<unsigned long long,8>::compare_exchange_strong @atomic:1095:0
+                                             <- int `private: class tsl::detail_robin_hash::bucket_entry<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>, 0> * __cdecl tsl::detail_robin_hash::robin_hash<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>, class tsl::robin_map<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::KeySelect, class tsl::robin_map<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::ValueSelect, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::static_empty_bucket_ptr(void)'::`2'::$TSS0 @??:0:0
+                                             <- int `private: class tsl::detail_robin_hash::bucket_entry<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>, 0> * __cdecl tsl::detail_robin_hash::robin_hash<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>, class tsl::robin_map<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::KeySelect, class tsl::robin_map<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::ValueSelect, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::static_empty_bucket_ptr(void)'::`2'::$TSS0 @??:0:0
+                                             <- std::_Mutex_base::unlock @mutex:71:0
+                                             <- std::stop_callback<struct std::condition_variable_any::_Cv_any_notify_all>::_Invoke_by_stop(class std::_Stop_callback_base *const) @stop_token:382:0
+                                             <- int `private: class tsl::detail_robin_hash::bucket_entry<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>, 0> * __cdecl tsl::detail_robin_hash::robin_hash<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>, class tsl::robin_map<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::KeySelect, class tsl::robin_map<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::ValueSelect, struct std::hash<unsigned __int64>, struct std::equal_to<unsigned __int64>, class std::allocator<struct std::pair<unsigned __int64, struct VideoCore::TextureCache::MetaDataInfo>>, 0, class tsl::rh::power_of_two_growth_policy<2>>::static_empty_bucket_ptr(void)'::`2'::$TSS0 @??:0:0
+                                             <- class glslang::TShader::Includer `RTTI Type Descriptor' @??:0:0
+tid  27056 shadPS4:PresentThread        rip 0x7ffa90c40404
+                                             <- Common::AccurateSleep(class std::chrono::duration<__int64, struct std::ratio<1, 1000000000>>, class std::chrono::duration<__int64, struct std::ratio<1, 1000000000>> *, bool) @thread.cpp:120:0
+                                             <- std::chrono::steady_clock::now @__msvc_chrono.hpp:657:0
+                                             <- Libraries::VideoOut::VideoOutDriver::PresentThread(class std::stop_token) @driver.cpp:359:0
+                                             <- Libraries::VideoOut::VideoOutDriver::VideoOutDriver::<lambda_0>::operator() @driver.cpp:48:0
+tid  13056 shadPS4:SaveData:BackupThrea rip 0x7ffa90c43fd4
+                                             <- Common::CPToUTF16 @string_util.cpp:55:0
+                                             <- bool Libraries::CommonDialog::g_isUsed @??:0:0
+                                             <- bool Libraries::CommonDialog::g_isUsed @??:0:0
+                                             <- bool Libraries::CommonDialog::g_isUsed @??:0:0
+                                             <- bool Libraries::CommonDialog::g_isUsed @??:0:0
+                                             <- std::counting_semaphore<9223372036854775807>::_Wait @semaphore:200:0
+                                             <- bool Libraries::CommonDialog::g_isUsed @??:0:0
+                                             <- bool Libraries::CommonDialog::g_isUsed @??:0:0
+tid  11628 shadPS4:ZlibTaskThread       rip 0x7ffa90c43fd4
+tid   4068 sndz_stream_task_service     rip 0x7ffa90c40404
+tid  16540 tm_ffb_deviceEventThread     rip 0x7ffa90c40404
+tid  15504 tm_ffb_eventHandleThread     rip 0x7ffa90c40ed4
+tid  26248                              rip 0x7ffa90c44034
+tid    980                              rip 0x7ffa90c40ed4
+tid  11124                              rip 0x7ffa90c40ed4
+tid  12508                              rip 0x7ffa90c40404
+tid  23472                              rip 0x7ffa90c40404
+tid  26864                              rip 0x7ffa90c40404
+tid  17172                              rip 0x7ffa90c40404
+tid  15884                              rip 0x7ffa90c40404
+tid  27260                              rip 0x7ffa90c40404
+tid  23980                              rip 0x7ffa90c40ed4
+tid   3872                              rip 0x7ffa90c40404
+tid  20396                              rip 0x7ffa90c40ed4
+tid  11188                              rip 0x7ffa90c40404
+tid  27316                              rip 0x7ffa90c404a4
+tid  11908                              rip 0x7ffa90c40a04
+                                             <- std::this_thread::sleep_until<struct std::chrono::steady_clock, class std::chrono::duration<__int64, struct std::ratio<1, 1000000000>>>(class std::chrono::time_point<struct std::chrono::steady_clock, class std::chrono::duration<__int64, struct std::ratio<1, 1000000000>>> const &) @thread:217:0
+                                             <- std::chrono::steady_clock::now @__msvc_chrono.hpp:664:0
+                                             <- std::this_thread::sleep_for<__int64, struct std::ratio<1, 1000>>(class std::chrono::duration<__int64, struct std::ratio<1, 1000>> const &) @thread:223:0
+                                             <- float Libraries::Np::NpTrophy::elapsed_time @??:0:0
+                                             <- float Libraries::Np::NpTrophy::elapsed_time @??:0:0
+                                             <- std::_Vector_val<std::_Simple_types<int> >::_Vector_val @vector:400:0
+                                             <- float Libraries::Np::NpTrophy::elapsed_time @??:0:0
+                                             <- std::invoke @type_traits:1686:0
+tid   9940                              rip 0x7ffa90c40404
+tid  25840                              rip 0x7ffa90c40ed4
+tid  27248                              rip 0x7ffa90c43fd4
+                                             <- "[{}] <{}> ({}) {}:{} {}: Playing"... @??:0:0
+                                             <- const std::basic_ofstream<char, struct std::char_traits<char>>::`vbtable' @??:0:0
+                                             <- _Cnd_timedwait_for_impl @sharedmutex.cpp:58:0
+                                             <- std::unique_lock<std::mutex>::_Validate @mutex:252:0
+                                             <- std::stop_callback<struct std::condition_variable_any::_Cv_any_notify_all>::_Invoke_by_stop(class std::_Stop_callback_base *const) @stop_token:382:0
+                                             <- std::condition_variable_any::wait_for @condition_variable:228:0
+                                             <- Core::Emulator::Run::<lambda_1>::operator() @emulator.cpp:691:0
+tid   4724                              rip 0x7ffa90c40404
+                                             <- boost::asio::detail::win_iocp_io_context::timer_thread_function::operator() @win_iocp_io_context.ipp:68:0
+                                             <- boost::asio::detail::win_thread_function(void *) @win_thread.ipp:119:0
+tid  15496                              rip 0x7ffa90c404a4
+                                             <- usbi_log @core.c:3013:0
+                                             <- windows_iocp_thread @windows_common.c:451:0
+tid  26140                              rip 0x7ffa90c404a4
+                                             <- usbi_log @core.c:3013:0
+                                             <- windows_iocp_thread @windows_common.c:451:0
+tid  15004                              rip 0x7ffa90c404a4
+                                             <- usbi_log @core.c:3013:0
+                                             <- windows_iocp_thread @windows_common.c:451:0
+tid  26620                              rip 0x7ffa90c44034

@@ -421,3 +421,7 @@ cmake-build-*
 
 # Nix Result symlink
 result
+
+# GT7 lane: RenderDoc captures and crash dumps are too big / not for the repo
+GT7_work/rdc/capture*.zip
+GT7_work/rdc/*.dmp

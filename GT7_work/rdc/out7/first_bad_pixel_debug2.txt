@@ -1,0 +1,876 @@
+USAGE 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1]
+  WRITE eid 6027 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 9939 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 9949 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 9959 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 9969 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 9979 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 9989 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 9999 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10009 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10019 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10029 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10039 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10049 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10059 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10066 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10073 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10080 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10087 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10094 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10101 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10108 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10115 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10122 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10132 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10139 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10146 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10153 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10160 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10167 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10174 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10181 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10188 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10195 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10202 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10209 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10216 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10223 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10230 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10237 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10244 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10251 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10258 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10265 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10272 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10279 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10286 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10293 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10300 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10307 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10314 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10321 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10328 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10335 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10342 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10349 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10356 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10363 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10370 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10377 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10384 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10391 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10398 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10405 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10412 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10419 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10426 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10433 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10443 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10453 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10460 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10467 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10474 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10481 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10488 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10495 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10502 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10509 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10516 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10523 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10530 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10580 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10587 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10594 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10601 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10608 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10615 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10622 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10629 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10636 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10646 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10654 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10661 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10671 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10678 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10685 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10692 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10699 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10706 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10713 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10720 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10727 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10734 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10741 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10748 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10755 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10762 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10769 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10776 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10783 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10790 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10797 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10804 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10811 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10818 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10825 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10832 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10839 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10846 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10853 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10860 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10867 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10874 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10881 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10888 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10895 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10902 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10912 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10922 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10929 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10936 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10943 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10950 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10957 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10964 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10971 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10978 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10985 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10992 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 10999 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11006 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11013 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11020 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11027 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11034 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11041 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11048 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11055 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11062 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11069 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11109 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11116 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11123 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11130 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11137 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11144 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11154 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11164 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11171 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11178 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11185 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11192 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11199 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11206 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11213 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11220 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11227 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11234 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11241 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11248 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11255 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11262 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11269 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11276 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11283 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11290 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11297 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11304 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11311 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11318 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11325 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11332 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11339 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11346 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11353 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11360 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11367 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11374 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11381 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11388 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11395 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11402 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11409 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11419 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11429 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11436 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11443 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11450 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11457 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11464 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11471 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11478 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11485 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11492 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11499 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11506 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11513 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11520 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11527 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11534 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11541 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11548 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11555 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11562 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11569 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11576 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11583 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11590 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11597 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11604 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11611 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11618 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11625 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11632 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11639 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11646 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11653 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11660 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11667 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11674 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11681 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11688 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11695 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11702 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11709 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11716 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11723 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11730 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11737 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11744 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11751 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11758 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11765 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11772 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11779 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11786 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11793 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11800 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11807 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11814 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11821 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11828 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11835 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11842 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11849 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11856 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11863 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11870 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11877 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11884 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11891 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11898 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11905 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11912 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11919 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11980 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11987 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 11994 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12001 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12008 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12015 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12025 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12032 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12040 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12047 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12054 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12064 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12071 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12078 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12085 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12092 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12099 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12106 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12113 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12120 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12127 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12134 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12141 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12148 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12155 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12162 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12169 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12176 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12183 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12190 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12197 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12204 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12211 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12218 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12225 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12232 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12239 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12246 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12253 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12260 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12267 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12274 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12281 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12288 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12295 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12302 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12309 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12316 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12323 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12330 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12337 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12344 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12354 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12361 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12371 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12378 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12385 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12392 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12399 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12406 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12413 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12420 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12427 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12434 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12441 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12448 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12455 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12462 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12469 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12476 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12483 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12490 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12497 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12504 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12511 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12518 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12525 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12532 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12539 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12546 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12553 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12560 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12567 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12574 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12581 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12588 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12595 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12602 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12609 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12616 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12623 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12630 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12637 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12644 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12651 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12658 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12665 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12672 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12679 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12686 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12693 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12700 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12707 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12714 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12721 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12728 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12735 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12742 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12749 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12756 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12763 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12770 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12777 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12784 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12791 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12798 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12805 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12812 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12819 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12826 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12833 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12840 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12847 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12902 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12909 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12916 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12926 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12936 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12943 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12953 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12963 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12970 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12977 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12984 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12991 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 12998 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13005 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13012 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13019 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13026 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13033 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13040 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13047 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13054 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13061 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13068 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13075 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13082 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13089 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13096 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13103 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13110 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13117 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13124 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13131 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13138 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13145 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13152 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13159 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13166 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13173 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13180 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13187 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13194 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13201 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13208 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13215 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13222 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13229 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13239 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13249 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13256 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13263 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13270 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13277 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13284 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13291 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13298 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13305 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13312 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13319 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13326 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13333 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13340 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13347 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13354 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13361 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13368 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13375 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13382 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13389 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13396 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13403 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13410 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13417 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13424 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13431 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13438 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13445 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13452 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13459 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13466 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13473 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13480 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13487 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13494 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13501 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13508 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13515 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13522 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13529 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13536 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13543 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13550 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13557 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13564 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13571 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13578 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13585 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13592 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13599 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13606 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13613 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13620 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13627 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13634 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13641 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13648 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13655 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13662 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13669 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13676 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13683 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13715 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 13721 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 13727 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 13733 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 13739 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 13745 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 13757 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13764 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13771 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13778 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13785 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13792 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13799 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13806 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13813 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13820 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13827 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13834 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13841 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13848 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13855 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13863 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13871 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13878 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13885 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13892 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13899 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13906 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13913 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13920 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13927 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13934 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13941 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13948 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13955 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13962 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13969 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 13980 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1512, 396>
+  WRITE eid 13991 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14002 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14013 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1512, 440>
+  WRITE eid 14024 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14035 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14046 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1884, 88>
+  WRITE eid 14057 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14068 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14079 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1860, 88>
+  WRITE eid 14090 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14101 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14112 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1884, 132>
+  WRITE eid 14123 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14134 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14145 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1920, 44>
+  WRITE eid 14156 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14167 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14178 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1950, 44>
+  WRITE eid 14189 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14200 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14211 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1512, 484>
+  WRITE eid 14222 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14233 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14244 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1494, 308>
+  WRITE eid 14255 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14266 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14277 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1620, 572>
+  WRITE eid 14288 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14299 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14310 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1524, 352>
+  WRITE eid 14321 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14332 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14343 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1518, 616>
+  WRITE eid 14354 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14365 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14376 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1506, 352>
+  WRITE eid 14387 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14398 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14409 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1560, 440>
+  WRITE eid 14420 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14431 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14442 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1518, 264>
+  WRITE eid 14453 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14464 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14475 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1584, 44>
+  WRITE eid 14486 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14497 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14508 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1734, 220>
+  WRITE eid 14519 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14530 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14541 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1656, 352>
+  WRITE eid 14552 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14563 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14574 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1638, 264>
+  WRITE eid 14585 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14596 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14607 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1704, 616>
+  WRITE eid 14618 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14629 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14640 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1542, 264>
+  WRITE eid 14651 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14662 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14673 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1776, 264>
+  WRITE eid 14684 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14695 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14706 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1686, 176>
+  WRITE eid 14717 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14728 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14739 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <1596, 176>
+  WRITE eid 14750 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14761 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14772 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <17610, 44>
+  WRITE eid 14783 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14794 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14805 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <13284, 176>
+  WRITE eid 14816 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14827 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14838 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <13554, 44>
+  WRITE eid 14849 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14860 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14871 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <17850, 44>
+  WRITE eid 14882 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14893 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14904 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <14022, 44>
+  WRITE eid 14915 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14926 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14937 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <17610, 44>
+  WRITE eid 14948 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14959 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14970 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <17610, 44>
+  WRITE eid 14981 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 14992 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15003 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <17850, 44>
+  WRITE eid 15014 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15025 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15036 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <17538, 44>
+  WRITE eid 15047 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15058 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15069 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <19434, 44>
+  WRITE eid 15080 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15091 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15102 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <18504, 44>
+  WRITE eid 15113 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15124 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15135 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15146 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15157 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15168 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15179 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15190 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15201 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15212 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15223 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 88>
+  WRITE eid 15234 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 132>
+  WRITE eid 15245 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15256 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 88>
+  WRITE eid 15267 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 176>
+  WRITE eid 15278 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15289 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 44>
+  WRITE eid 15300 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 88>
+  WRITE eid 15311 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <9, 176>
+  WRITE eid 15322 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23190, 44>
+  WRITE eid 15333 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15344 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15355 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23112, 132>
+  WRITE eid 15366 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15377 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15388 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23736, 132>
+  WRITE eid 15399 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15410 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15421 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23112, 44>
+  WRITE eid 15432 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15443 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15454 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23460, 132>
+  WRITE eid 15465 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15476 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15487 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23388, 44>
+  WRITE eid 15498 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15509 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15520 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <26976, 44>
+  WRITE eid 15531 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15542 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15553 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <27246, 88>
+  WRITE eid 15564 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15575 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15586 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <28776, 44>
+  WRITE eid 15597 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15608 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15619 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <25362, 44>
+  WRITE eid 15630 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15641 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15652 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <26778, 44>
+  WRITE eid 15663 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15674 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15685 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <26760, 44>
+  WRITE eid 15696 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15707 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15718 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <28476, 44>
+  WRITE eid 15729 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15740 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15751 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <27360, 44>
+  WRITE eid 15762 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15773 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15784 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <27942, 44>
+  WRITE eid 15795 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15806 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15817 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <18510, 44>
+  WRITE eid 15828 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15839 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15850 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <24150, 88>
+  WRITE eid 15861 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15872 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15883 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <22578, 132>
+  WRITE eid 15894 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15905 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15916 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <24126, 44>
+  WRITE eid 15927 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15938 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15949 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <22710, 88>
+  WRITE eid 15960 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15971 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 15982 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <19050, 44>
+  WRITE eid 15993 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16004 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16015 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <22734, 88>
+  WRITE eid 16026 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16037 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16048 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23556, 44>
+  WRITE eid 16059 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16070 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16081 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <18864, 132>
+  WRITE eid 16092 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16103 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16114 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <22476, 88>
+  WRITE eid 16125 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16136 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16147 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <18534, 44>
+  WRITE eid 16158 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16169 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16180 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <23250, 88>
+  WRITE eid 16191 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16202 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16213 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <17940, 88>
+  WRITE eid 16224 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16235 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16246 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <18960, 44>
+  WRITE eid 16257 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16268 ResourceUsage.ColorTarget vkCmdDrawIndexedIndirect(1) => <0, 0>
+  WRITE eid 16284 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 16303 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16311 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16330 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16338 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16346 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16354 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16382 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 16605 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 16630 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16637 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16648 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16655 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16662 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16669 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16676 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16683 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16690 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16697 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16704 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16714 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16725 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16732 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16743 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16750 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16761 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16768 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16779 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16786 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16798 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16806 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16813 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16820 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16827 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16834 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16841 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16848 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16855 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16862 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16873 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16880 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16887 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16894 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16901 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16908 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16915 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16922 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16929 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16940 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16951 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16962 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16969 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16976 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16983 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16990 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 16997 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17004 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17011 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17018 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17029 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17036 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17043 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17050 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17057 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17064 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17071 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17078 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17085 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17092 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17103 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17110 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17117 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17128 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17135 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17146 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17157 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17168 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17179 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17186 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17193 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17200 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17207 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17214 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17221 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17232 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17243 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17254 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17261 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17289 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17295 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17301 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17307 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17313 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17319 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17325 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17331 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17337 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17343 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17349 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17355 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17526 ResourceUsage.ColorTarget vkCmdDraw()
+  WRITE eid 17547 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17554 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17561 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17568 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17575 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17586 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17597 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17604 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17615 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17626 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17640 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17647 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17658 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17668 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+  WRITE eid 17679 ResourceUsage.ColorTarget vkCmdDrawIndexed()
+
+=== eid 3952 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+DEBUG_STATUS debuggable=False source=False reason=Unsupported SPIR-V extension SPV_KHR_fragment_shader_barycentric
+Unsupported capability 'DenormPreserve'
+Unsupported capability 'FragmentBarycentricKHR'
+DEBUG_PIXEL resource=ResourceId::140659 xy=769,15 sample=0
+  history modifications=3
+  HISTORY eventId=3839 primitiveID=0 fragIndex=0 sampleMasked=False backfaceCulled=False depthTestFailed=False stencilTestFailed=False shaderDiscarded=False
+  HISTORY eventId=3874 primitiveID=0 fragIndex=0 sampleMasked=False backfaceCulled=False depthTestFailed=False stencilTestFailed=False shaderDiscarded=False
+  HISTORY eventId=3952 primitiveID=195 fragIndex=0 sampleMasked=False backfaceCulled=False depthTestFailed=False stencilTestFailed=False shaderDiscarded=False
+  shader debugging returned no trace

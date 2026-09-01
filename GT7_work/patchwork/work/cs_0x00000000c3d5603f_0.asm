@@ -1,0 +1,332 @@
+; SPIR-V
+; Version: 1.6
+; Generator: Khronos; 0
+; Bound: 211
+; Schema: 0
+               OpCapability Shader
+               OpCapability Image1D
+               OpCapability Int64
+               OpCapability Sampled1D
+               OpCapability UniformAndStorageBuffer8BitAccess
+               OpCapability ImageQuery
+               OpCapability Int8
+               OpCapability Int16
+               OpCapability UniformAndStorageBuffer16BitAccess
+               OpCapability GroupNonUniform
+               OpCapability GroupNonUniformBallot
+               OpCapability SignedZeroInfNanPreserve
+               OpExtension "SPV_KHR_float_controls"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %59 "main" %push_data %SubgroupLocalInvocationId %gl_WorkGroupID %gl_LocalInvocationID %ssbo_1 %srt_flatbuf
+               OpExecutionMode %59 LocalSize 64 1 1
+               OpExecutionMode %59 SignedZeroInfNanPreserve 32
+          %1 = OpString "0xc3d5603f"
+               OpName %void_id "void_id"
+               OpName %bool_id "bool_id"
+               OpName %u8_id "u8_id"
+               OpName %i8_id "i8_id"
+               OpName %u16_id "u16_id"
+               OpName %i16_id "i16_id"
+               OpName %f32_id "f32_id"
+               OpName %i32_id "i32_id"
+               OpName %u32_id "u32_id"
+               OpName %u64_id "u64_id"
+               OpName %f32vec2_id "f32vec2_id"
+               OpName %i32vec2_id "i32vec2_id"
+               OpName %u32vec2_id "u32vec2_id"
+               OpName %bvec2_id "bvec2_id"
+               OpName %f32vec3_id "f32vec3_id"
+               OpName %i32vec3_id "i32vec3_id"
+               OpName %u32vec3_id "u32vec3_id"
+               OpName %bvec3_id "bvec3_id"
+               OpName %f32vec4_id "f32vec4_id"
+               OpName %i32vec4_id "i32vec4_id"
+               OpName %u32vec4_id "u32vec4_id"
+               OpName %bvec4_id "bvec4_id"
+               OpName %input_f32 "input_f32"
+               OpName %input_u32 "input_u32"
+               OpName %input_s32 "input_s32"
+               OpName %output_f32 "output_f32"
+               OpName %output_u32 "output_u32"
+               OpName %output_s32 "output_s32"
+               OpName %full_result_i32x2 "full_result_i32x2"
+               OpName %full_result_u32x2 "full_result_u32x2"
+               OpName %frexp_result_f32 "frexp_result_f32"
+               OpName %AuxData "AuxData"
+               OpMemberName %AuxData 0 "xoffset"
+               OpMemberName %AuxData 1 "yoffset"
+               OpMemberName %AuxData 2 "xscale"
+               OpMemberName %AuxData 3 "yscale"
+               OpMemberName %AuxData 4 "ud_regs0"
+               OpMemberName %AuxData 5 "ud_regs1"
+               OpMemberName %AuxData 6 "ud_regs2"
+               OpMemberName %AuxData 7 "ud_regs3"
+               OpMemberName %AuxData 8 "buf_offsets0"
+               OpMemberName %AuxData 9 "buf_offsets1"
+               OpMemberName %AuxData 10 "buf_offsets2"
+               OpName %push_data "push_data"
+               OpMemberName %_struct_53 0 "data"
+               OpName %ssbo_1 "ssbo_1"
+               OpName %srt_flatbuf "srt_flatbuf"
+               OpName %buf0_off "buf0_off"
+               OpName %buf0_dword_off "buf0_dword_off"
+               OpName %ud_0 "ud_0"
+               OpName %ud_1 "ud_1"
+               OpDecorate %AuxData Block
+               OpMemberDecorate %AuxData 0 Offset 0
+               OpMemberDecorate %AuxData 1 Offset 4
+               OpMemberDecorate %AuxData 2 Offset 8
+               OpMemberDecorate %AuxData 3 Offset 12
+               OpMemberDecorate %AuxData 4 Offset 16
+               OpMemberDecorate %AuxData 5 Offset 32
+               OpMemberDecorate %AuxData 6 Offset 48
+               OpMemberDecorate %AuxData 7 Offset 64
+               OpMemberDecorate %AuxData 8 Offset 80
+               OpMemberDecorate %AuxData 9 Offset 96
+               OpMemberDecorate %AuxData 10 Offset 112
+               OpDecorate %SubgroupLocalInvocationId BuiltIn SubgroupLocalInvocationId
+               OpDecorate %SubgroupLocalInvocationId Flat
+               OpDecorate %gl_WorkGroupID BuiltIn WorkgroupId
+               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
+               OpDecorate %_runtimearr_u32_id ArrayStride 4
+               OpDecorate %_struct_53 Block
+               OpMemberDecorate %_struct_53 0 Offset 0
+               OpDecorate %ssbo_1 Binding 0
+               OpDecorate %ssbo_1 DescriptorSet 0
+               OpDecorate %srt_flatbuf Binding 1
+               OpDecorate %srt_flatbuf DescriptorSet 0
+               OpDecorate %srt_flatbuf NonWritable
+    %void_id = OpTypeVoid
+    %bool_id = OpTypeBool
+      %u8_id = OpTypeInt 8 0
+      %i8_id = OpTypeInt 8 1
+     %u16_id = OpTypeInt 16 0
+     %i16_id = OpTypeInt 16 1
+     %f32_id = OpTypeFloat 32
+     %i32_id = OpTypeInt 32 1
+     %u32_id = OpTypeInt 32 0
+     %u64_id = OpTypeInt 64 0
+ %f32vec2_id = OpTypeVector %f32_id 2
+ %i32vec2_id = OpTypeVector %i32_id 2
+ %u32vec2_id = OpTypeVector %u32_id 2
+   %bvec2_id = OpTypeVector %bool_id 2
+ %f32vec3_id = OpTypeVector %f32_id 3
+ %i32vec3_id = OpTypeVector %i32_id 3
+ %u32vec3_id = OpTypeVector %u32_id 3
+   %bvec3_id = OpTypeVector %bool_id 3
+ %f32vec4_id = OpTypeVector %f32_id 4
+ %i32vec4_id = OpTypeVector %i32_id 4
+ %u32vec4_id = OpTypeVector %u32_id 4
+   %bvec4_id = OpTypeVector %bool_id 4
+       %true = OpConstantTrue %bool_id
+      %false = OpConstantFalse %bool_id
+    %u8_id_1 = OpConstant %u8_id 1
+    %u8_id_0 = OpConstant %u8_id 0
+   %u16_id_0 = OpConstant %u16_id 0
+   %u32_id_1 = OpConstant %u32_id 1
+   %u32_id_0 = OpConstant %u32_id 0
+   %f32_id_0 = OpConstant %f32_id 0
+   %u64_id_1 = OpConstant %u64_id 1
+   %u64_id_0 = OpConstant %u64_id 0
+%f32_id_6_28318548 = OpConstant %f32_id 6.28318548
+  %input_f32 = OpTypePointer Input %f32_id
+  %input_u32 = OpTypePointer Input %u32_id
+  %input_s32 = OpTypePointer Input %i32_id
+ %output_f32 = OpTypePointer Output %f32_id
+ %output_u32 = OpTypePointer Output %u32_id
+ %output_s32 = OpTypePointer Output %i32_id
+%full_result_i32x2 = OpTypeStruct %i32_id %i32_id
+%full_result_u32x2 = OpTypeStruct %u32_id %u32_id
+%frexp_result_f32 = OpTypeStruct %f32_id %i32_id
+    %AuxData = OpTypeStruct %f32_id %f32_id %f32_id %f32_id %u32vec4_id %u32vec4_id %u32vec4_id %u32vec4_id %u32vec4_id %u32vec4_id %u32vec2_id
+%_ptr_PushConstant_AuxData = OpTypePointer PushConstant %AuxData
+%_ptr_Input_u32vec3_id = OpTypePointer Input %u32vec3_id
+%u32_id_16368 = OpConstant %u32_id 16368
+%_runtimearr_u32_id = OpTypeRuntimeArray %u32_id
+ %_struct_53 = OpTypeStruct %_runtimearr_u32_id
+%_ptr_StorageBuffer__struct_53 = OpTypePointer StorageBuffer %_struct_53
+%_ptr_StorageBuffer_u32_id = OpTypePointer StorageBuffer %u32_id
+         %58 = OpTypeFunction %void_id
+   %u32_id_8 = OpConstant %u32_id 8
+%_ptr_PushConstant_u32_id = OpTypePointer PushConstant %u32_id
+   %u32_id_2 = OpConstant %u32_id 2
+   %u32_id_4 = OpConstant %u32_id 4
+   %u32_id_6 = OpConstant %u32_id 6
+  %u32_id_64 = OpConstant %u32_id 64
+  %u32_id_16 = OpConstant %u32_id 16
+   %u32_id_3 = OpConstant %u32_id 3
+  %u32_id_63 = OpConstant %u32_id 63
+   %u32_id_5 = OpConstant %u32_id 5
+ %u32_id_254 = OpConstant %u32_id 254
+ %u32_id_252 = OpConstant %u32_id 252
+ %u32_id_248 = OpConstant %u32_id 248
+ %u32_id_240 = OpConstant %u32_id 240
+   %u32_id_7 = OpConstant %u32_id 7
+ %u32_id_224 = OpConstant %u32_id 224
+  %u32_id_15 = OpConstant %u32_id 15
+  %u32_id_31 = OpConstant %u32_id 31
+  %u32_id_23 = OpConstant %u32_id 23
+  %u32_id_19 = OpConstant %u32_id 19
+  %push_data = OpVariable %_ptr_PushConstant_AuxData PushConstant
+%SubgroupLocalInvocationId = OpVariable %input_u32 Input
+%gl_WorkGroupID = OpVariable %_ptr_Input_u32vec3_id Input
+%gl_LocalInvocationID = OpVariable %_ptr_Input_u32vec3_id Input
+     %ssbo_1 = OpVariable %_ptr_StorageBuffer__struct_53 StorageBuffer
+%srt_flatbuf = OpVariable %_ptr_StorageBuffer__struct_53 StorageBuffer
+         %59 = OpFunction %void_id None %58
+         %60 = OpLabel
+         %79 = OpAccessChain %_ptr_PushConstant_u32_id %push_data %u32_id_8 %u32_id_0
+         %80 = OpLoad %u32_id %79
+   %buf0_off = OpBitFieldUExtract %u32_id %80 %u32_id_0 %u32_id_8
+%buf0_dword_off = OpShiftRightLogical %u32_id %buf0_off %u32_id_2
+         %85 = OpAccessChain %_ptr_PushConstant_u32_id %push_data %u32_id_4 %u32_id_0
+       %ud_0 = OpLoad %u32_id %85
+         %87 = OpAccessChain %_ptr_PushConstant_u32_id %push_data %u32_id_4 %u32_id_1
+       %ud_1 = OpLoad %u32_id %87
+         %89 = OpLoad %u32vec3_id %gl_LocalInvocationID
+         %90 = OpCompositeExtract %u32_id %89 0
+         %91 = OpLoad %u32vec3_id %gl_WorkGroupID
+         %92 = OpCompositeExtract %u32_id %91 0
+         %94 = OpShiftLeftLogical %u32_id %92 %u32_id_6
+         %95 = OpIAdd %u32_id %94 %90
+         %97 = OpUGreaterThan %bool_id %u32_id_64 %95
+               OpSelectionMerge %75 None
+               OpBranchConditional %97 %61 %75
+         %61 = OpLabel
+         %98 = OpBitFieldUExtract %u32_id %95 %u32_id_2 %u32_id_1
+         %99 = OpCompositeConstruct %u32vec2_id %ud_0 %ud_1
+        %101 = OpAccessChain %_ptr_StorageBuffer_u32_id %srt_flatbuf %u32_id_0 %u32_id_16
+        %102 = OpLoad %u32_id %101
+        %104 = OpBitFieldUExtract %u32_id %95 %u32_id_3 %u32_id_1
+        %106 = OpIAdd %u32_id %102 %u32_id_63
+        %107 = OpShiftRightLogical %u32_id %106 %u32_id_6
+        %108 = OpBitFieldUExtract %u32_id %95 %u32_id_4 %u32_id_1
+        %110 = OpBitFieldUExtract %u32_id %95 %u32_id_5 %u32_id_1
+        %111 = OpBitwiseAnd %u32_id %u32_id_1 %95
+        %112 = OpBitFieldUExtract %u32_id %95 %u32_id_1 %u32_id_1
+               OpBranch %62
+         %62 = OpLabel
+        %113 = OpPhi %u32_id %u32_id_0 %61 %209 %73
+        %114 = OpPhi %u32_id %u32_id_0 %61 %210 %73
+               OpLoopMerge %74 %73 None
+               OpBranch %63
+         %63 = OpLabel
+        %115 = OpShiftLeftLogical %u32_id %114 %u32_id_6
+        %116 = OpIAdd %u32_id %115 %95
+        %117 = OpSLessThan %bool_id %114 %107
+        %118 = OpUGreaterThan %bool_id %102 %116
+        %119 = OpLogicalNot %bool_id %117
+               OpBranchConditional %119 %74 %64
+         %64 = OpLabel
+        %120 = OpLogicalAnd %bool_id %97 %118
+               OpSelectionMerge %66 None
+               OpBranchConditional %120 %65 %66
+         %65 = OpLabel
+        %121 = OpIMul %u32_id %116 %u32_id_2
+        %122 = OpIAdd %u32_id %121 %buf0_dword_off
+        %123 = OpAccessChain %_ptr_StorageBuffer_u32_id %ssbo_1 %u32_id_0 %122
+        %124 = OpLoad %u32_id %123
+        %125 = OpIAdd %u32_id %124 %113
+               OpBranch %66
+         %66 = OpLabel
+        %126 = OpPhi %u32_id %125 %65 %u32_id_0 %64
+        %127 = OpLoad %u32_id %SubgroupLocalInvocationId
+        %129 = OpBitwiseAnd %u32_id %127 %u32_id_254
+        %130 = OpBitwiseOr %u32_id %129 %u32_id_0
+        %131 = OpBitwiseXor %u32_id %130 %u32_id_0
+        %132 = OpGroupNonUniformBroadcast %u32_id %u32_id_3 %126 %131
+        %133 = OpINotEqual %bool_id %u32_id_0 %111
+        %134 = OpIAdd %u32_id %126 %132
+        %135 = OpBitcast %f32_id %126
+        %136 = OpBitcast %f32_id %134
+        %137 = OpSelect %f32_id %133 %136 %135
+        %138 = OpBitcast %u32_id %137
+        %139 = OpLoad %u32_id %SubgroupLocalInvocationId
+        %141 = OpBitwiseAnd %u32_id %139 %u32_id_252
+        %142 = OpBitwiseOr %u32_id %141 %u32_id_1
+        %143 = OpBitwiseXor %u32_id %142 %u32_id_0
+        %144 = OpGroupNonUniformBroadcast %u32_id %u32_id_3 %138 %143
+        %145 = OpINotEqual %bool_id %u32_id_0 %112
+        %146 = OpIAdd %u32_id %144 %138
+        %147 = OpBitcast %f32_id %146
+        %148 = OpSelect %f32_id %145 %147 %137
+        %149 = OpBitcast %u32_id %148
+        %150 = OpLoad %u32_id %SubgroupLocalInvocationId
+        %152 = OpBitwiseAnd %u32_id %150 %u32_id_248
+        %153 = OpBitwiseOr %u32_id %152 %u32_id_3
+        %154 = OpBitwiseXor %u32_id %153 %u32_id_0
+        %155 = OpGroupNonUniformBroadcast %u32_id %u32_id_3 %149 %154
+        %156 = OpINotEqual %bool_id %u32_id_0 %98
+        %157 = OpIAdd %u32_id %155 %149
+        %158 = OpBitcast %f32_id %157
+        %159 = OpSelect %f32_id %156 %158 %148
+        %160 = OpBitcast %u32_id %159
+        %161 = OpLoad %u32_id %SubgroupLocalInvocationId
+        %163 = OpBitwiseAnd %u32_id %161 %u32_id_240
+        %165 = OpBitwiseOr %u32_id %163 %u32_id_7
+        %166 = OpBitwiseXor %u32_id %165 %u32_id_0
+        %167 = OpGroupNonUniformBroadcast %u32_id %u32_id_3 %160 %166
+        %168 = OpINotEqual %bool_id %u32_id_0 %104
+        %169 = OpIAdd %u32_id %167 %160
+        %170 = OpBitcast %f32_id %169
+        %171 = OpSelect %f32_id %168 %170 %159
+        %172 = OpBitcast %u32_id %171
+        %173 = OpLoad %u32_id %SubgroupLocalInvocationId
+        %175 = OpBitwiseAnd %u32_id %173 %u32_id_224
+        %177 = OpBitwiseOr %u32_id %175 %u32_id_15
+        %178 = OpBitwiseXor %u32_id %177 %u32_id_0
+        %179 = OpGroupNonUniformBroadcast %u32_id %u32_id_3 %172 %178
+        %180 = OpINotEqual %bool_id %u32_id_0 %108
+        %181 = OpIAdd %u32_id %179 %172
+        %182 = OpBitcast %f32_id %181
+        %183 = OpSelect %f32_id %180 %182 %171
+        %184 = OpBitcast %u32_id %183
+        %186 = OpGroupNonUniformBroadcast %u32_id %u32_id_3 %184 %u32_id_31
+        %187 = OpIAdd %u32_id %186 %184
+        %188 = OpIAdd %u32_id %116 %u32_id_1
+        %189 = OpINotEqual %bool_id %u32_id_0 %110
+        %190 = OpUGreaterThan %bool_id %102 %188
+        %191 = OpBitcast %f32_id %187
+        %192 = OpSelect %f32_id %189 %191 %183
+        %193 = OpBitcast %u32_id %192
+        %194 = OpLogicalAnd %bool_id %97 %190
+               OpSelectionMerge %70 None
+               OpBranchConditional %194 %67 %70
+         %67 = OpLabel
+        %195 = OpCompositeConstruct %u32vec2_id %ud_0 %ud_1
+        %198 = OpAccessChain %_ptr_StorageBuffer_u32_id %srt_flatbuf %u32_id_0 %u32_id_19
+        %199 = OpLoad %u32_id %198
+        %200 = OpUGreaterThan %bool_id %199 %188
+        %201 = OpLogicalAnd %bool_id %194 %200
+               OpSelectionMerge %69 None
+               OpBranchConditional %201 %68 %69
+         %68 = OpLabel
+        %202 = OpIMul %u32_id %188 %u32_id_2
+        %203 = OpIAdd %u32_id %202 %u32_id_1
+        %204 = OpIAdd %u32_id %203 %buf0_dword_off
+        %205 = OpAccessChain %_ptr_StorageBuffer_u32_id %ssbo_1 %u32_id_0 %204
+               OpStore %205 %193
+               OpBranch %69
+         %69 = OpLabel
+               OpBranch %70
+         %70 = OpLabel
+        %206 = OpIEqual %bool_id %u32_id_0 %95
+        %207 = OpLogicalAnd %bool_id %97 %206
+        %208 = OpGroupNonUniformBroadcast %u32_id %u32_id_3 %193 %u32_id_63
+               OpSelectionMerge %72 None
+               OpBranchConditional %207 %71 %72
+         %71 = OpLabel
+               OpBranch %72
+         %72 = OpLabel
+        %209 = OpPhi %u32_id %208 %71 %113 %70
+        %210 = OpIAdd %u32_id %114 %u32_id_1
+               OpBranch %73
+         %73 = OpLabel
+               OpBranchConditional %true %62 %74
+         %74 = OpLabel
+               OpBranch %75
+         %75 = OpLabel
+               OpBranch %76
+         %76 = OpLabel
+               OpReturn
+               OpFunctionEnd

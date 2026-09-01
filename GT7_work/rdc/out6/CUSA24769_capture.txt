@@ -1,0 +1,116 @@
+capture CUSA24769_capture: 4556 actions, last eid 22341
+found: 1 LUT64, 8 tiny(<=8x8), 1 curve
+
+LUT64 ResourceId::14117 64x64x64 arr1 R16G16B16A16_FLOAT
+  usage: 1 events, 0 WRITE-ish
+    eid 19045 PS_Resource
+  content@end: min(1 0 0 0) max(1 9.024e-05 1 1)
+
+CURVE ResourceId::14129 8192x1x1 arr1 R32_FLOAT
+  usage: 1 events, 0 WRITE-ish
+    eid 19045 PS_Resource
+  content@end: min(0 0 0 1) max(1 0 0 1)
+
+TINY ResourceId::40027 4x4x1 arr1 R16G16B16A16_FLOAT
+  usage: 16 events, 1 WRITE-ish
+    eid 141 Barrier
+    eid 261 CS_RWResource
+    eid 11368 Barrier
+    eid 11389 VS_Resource
+    eid 11396 VS_Resource
+    eid 11403 VS_Resource
+    eid 11410 VS_Resource
+    eid 11417 VS_Resource
+    eid 11424 VS_Resource
+    eid 11431 VS_Resource
+    eid 11438 VS_Resource
+    eid 11445 VS_Resource
+    eid 11452 VS_Resource
+    eid 11459 VS_Resource
+    eid 11466 VS_Resource
+    eid 11473 VS_Resource
+  content@end: min(0 0 0 0) max(0 0 0 0)
+    px row0: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+    px row1: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+    px row2: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+    px row3: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+
+TINY ResourceId::40028 4x4x1 arr1 R16G16B16A16_FLOAT
+  usage: 16 events, 1 WRITE-ish
+    eid 142 Barrier
+    eid 261 CS_RWResource
+    eid 11367 Barrier
+    eid 11389 VS_Resource
+    eid 11396 VS_Resource
+    eid 11403 VS_Resource
+    eid 11410 VS_Resource
+    eid 11417 VS_Resource
+    eid 11424 VS_Resource
+    eid 11431 VS_Resource
+    eid 11438 VS_Resource
+    eid 11445 VS_Resource
+    eid 11452 VS_Resource
+    eid 11459 VS_Resource
+    eid 11466 VS_Resource
+    eid 11473 VS_Resource
+  content@end: min(0 0 -0 0) max(0 0 0 0)
+    px row0: (0 0 0 0) (0 0 -0 0) (0 0 -0 0) (0 0 -0 0)
+    px row1: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+    px row2: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+    px row3: (0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)
+
+TINY ResourceId::105547 4x4x1 arr48 R32G32_UINT
+  usage: 252 events, 1 WRITE-ish
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    eid 362 Barrier
+    ... 204 more
+  content@end: min(0 0 0 1.401e-45) max(0 0 0 1.401e-45)
+    raw first 64 bytes: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+
+TRANSFORM draw eid 19045 -> out ResourceId::4775 1920x1080 R10G10B10A2_UNORM | min(0.004888 0.006843 0.01075 1) max(1 1 1 1)

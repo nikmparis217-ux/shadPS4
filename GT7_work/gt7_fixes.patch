@@ -1,0 +1,542 @@
+diff --git a/src/core/libraries/network/netctl.cpp b/src/core/libraries/network/netctl.cpp
+index f0bd459f..aa720bce 100644
+--- a/src/core/libraries/network/netctl.cpp
++++ b/src/core/libraries/network/netctl.cpp
+@@ -96,7 +96,15 @@ int PS4_SYSV_ABI sceNetCtlUnregisterCallbackV6() {
+ }
+ 
+ int PS4_SYSV_ABI sceNetCtlCheckCallback() {
+-    LOG_DEBUG(Lib_NetCtl, "(STUBBED) called");
++    // This is the PS4's dispatch point for pending network-state-change callbacks: a game
++    // registers one with sceNetCtlRegisterCallback and then polls this every frame to have it
++    // delivered on its own thread. It was a no-op, so a registered callback could never fire.
++    // NetCtlInternal::CheckCallback() was already written and correct, and NOTHING in the whole
++    // tree called it (grep: zero callers) - unlike the NP side, which dispatches properly in
++    // sceNpCheckCallback. Found because GT7 hangs at "INITIALIZING..." having called this
++    // 6486 times in one run while five threads spun at 100% waiting for a state that never came.
++    LOG_DEBUG(Lib_NetCtl, "called");
++    netctl.CheckCallback();
+     return ORBIS_OK;
+ }
+ 
+diff --git a/src/core/libraries/np/np_manager.cpp b/src/core/libraries/np/np_manager.cpp
+index efffc5ff..76c06410 100644
+--- a/src/core/libraries/np/np_manager.cpp
++++ b/src/core/libraries/np/np_manager.cpp
+@@ -275,7 +275,7 @@ s32 PS4_SYSV_ABI sceNpCheckPlus(s32 req_id, const OrbisNpCheckPlusParameter* par
+         return CompleteRequest(*req, ORBIS_NP_ERROR_SIGNED_OUT);
+     }
+     LOG_DEBUG(Lib_NpManager, "req_id = {:#x}, features = {:#x}", req_id, param->features);
+-    // Grant PS+ — shadNet has no subscription gating.
++    // Grant PS+ ï¿½ shadNet has no subscription gating.
+     result->authorized = true;
+     return CompleteRequest(*req, ORBIS_OK);
+ }
+@@ -830,6 +830,40 @@ static void QueueNpStateEvent(Libraries::UserService::OrbisUserServiceUserId use
+     g_np_state_events.emplace_back(event);
+ }
+ 
++// The PS4 tells a freshly registered NP state callback what the CURRENT state is - the callback
++// fires at the next sceNpCheckCallback rather than only on a later transition.
++//
++// shadPS4 only ever queued events on a real transition, and OFFLINE THERE ARE NONE:
++// NpHandler::Initialize() returns immediately when shadNet is disabled (np_handler.cpp:103), and
++// the only two FireStateCallback sites (SignedIn at :300, SignedOut at :367) both sit inside
++// shadNet client paths. So the single producer QueueNpStateEvent is never reached,
++// g_np_state_events stays empty for the whole run, and DispatchPendingNpStateCallbacks() takes its
++// `if (g_np_state_events.empty()) return;` every single time. A game that waits to be TOLD its NP
++// state therefore waits for ever.
++//
++// GT7 does exactly that: it registers a state callback and a reachability callback and then polls
++// sceNpCheckCallback thousands of times sitting on "INITIALIZING...". SignedOut is a perfectly
++// good answer - it is what lets an always-online title fall back to offline play - but it was
++// never delivered.
++//
++// Lock order here is callbacks -> events; DispatchPendingNpStateCallbacks takes both through one
++// std::scoped_lock (i.e. std::lock), which cannot deadlock against that.
++static void QueueCurrentNpStateForNewCallback() {
++    int user_id = Libraries::UserService::ORBIS_USER_SERVICE_USER_ID_INVALID;
++    if (Libraries::UserService::sceUserServiceGetInitialUser(&user_id) != ORBIS_OK ||
++        user_id == Libraries::UserService::ORBIS_USER_SERVICE_USER_ID_INVALID) {
++        LOG_WARNING(Lib_NpManager, "no initial user; cannot report current NP state");
++        return;
++    }
++    const auto state =
++        (g_shadnet_enabled && Libraries::Np::NpHandler::GetInstance().IsPsnSignedIn(user_id))
++            ? OrbisNpState::SignedIn
++            : OrbisNpState::SignedOut;
++    LOG_INFO(Lib_NpManager, "reporting current NP state to new callback: user_id={} state={}",
++             user_id, state == OrbisNpState::SignedIn ? "SignedIn" : "SignedOut");
++    QueueNpStateEvent(user_id, state);
++}
++
+ void NotifyNpStateFromUserServiceEvent(Libraries::UserService::OrbisUserServiceEventType event_type,
+                                        Libraries::UserService::OrbisUserServiceUserId user_id) {
+     switch (event_type) {
+@@ -878,6 +912,7 @@ static s32 RegisterStateCallbackA(OrbisNpStateCallbackA callback, void* userdata
+         entry.func = callback;
+         entry.userdata = userdata;
+         entry.in_use = true;
++        QueueCurrentNpStateForNewCallback();
+         return static_cast<s32>(i + 1);
+     }
+ 
+@@ -1031,6 +1066,8 @@ s32 PS4_SYSV_ABI sceNpRegisterNpReachabilityStateCallback(OrbisNpReachabilitySta
+     NpReachabilityCb.userdata = userdata;
+     // Reset the per-user cache so the next state transition reports fresh.
+     g_np_reachability_last.clear();
++    // ...and offline there IS no next transition, so report the current state now.
++    QueueCurrentNpStateForNewCallback();
+     return ORBIS_OK;
+ }
+ 
+diff --git a/src/core/memory.cpp b/src/core/memory.cpp
+index 4278a330..e65681a3 100644
+--- a/src/core/memory.cpp
++++ b/src/core/memory.cpp
+@@ -334,10 +334,26 @@ s32 MemoryManager::Free(PAddr phys_addr, u64 size, bool is_checked) {
+         for (auto& [offset_in_vma, phys_mapping] : mapping.phys_areas) {
+             if (phys_addr + size > phys_mapping.base &&
+                 phys_addr < phys_mapping.base + phys_mapping.size) {
+-                const u64 phys_offset =
+-                    std::max<u64>(phys_mapping.base, phys_addr) - phys_mapping.base;
++                // Clamp to the part of the released range that actually overlaps THIS mapping.
++                // Clamping against the total release length instead (the old behaviour) unmaps
++                // too much whenever the release starts before the mapping does.
++                const u64 phys_start = std::max<u64>(phys_mapping.base, phys_addr);
++                const u64 phys_end =
++                    std::min<u64>(phys_mapping.base + phys_mapping.size, phys_addr + size);
++                const u64 phys_offset = phys_start - phys_mapping.base;
+                 const VAddr addr_in_vma = mapping.base + offset_in_vma + phys_offset;
+-                const u64 unmap_size = std::min<u64>(phys_mapping.size - phys_offset, size);
++                const u64 unmap_size = phys_end - phys_start;
++
++                // Diagnostic: report when the old formula would have over-unmapped, so the
++                // bug can be seen firing even though it is now fixed.
++                const u64 old_unmap_size = std::min<u64>(phys_mapping.size - phys_offset, size);
++                if (old_unmap_size > unmap_size) {
++                    LOG_WARNING(Kernel_Vmm,
++                                "over-unmap avoided at {:#x}: would have unmapped {:#x} instead "
++                                "of {:#x}; range [{:#x}, {:#x}) stays mapped",
++                                addr_in_vma, old_unmap_size, unmap_size, addr_in_vma + unmap_size,
++                                addr_in_vma + old_unmap_size);
++                }
+ 
+                 // Unmapping might erase from vma_map. We can't do it here.
+                 remove_list.emplace_back(addr_in_vma, unmap_size);
+diff --git a/src/core/signals.cpp b/src/core/signals.cpp
+index 0dedf174..33b651b6 100644
+--- a/src/core/signals.cpp
++++ b/src/core/signals.cpp
+@@ -83,7 +83,19 @@ static LONG WINAPI SignalHandler(EXCEPTION_POINTERS* pExp) noexcept {
+                                       ? static_protection_exception
+                                       : code != EXCEPTION_BREAKPOINT;
+     if (report_unhandled) { // Windows static guest red-zone protection
+-        LOG_CRITICAL(Debug, "Unhandled Exception code {:#x} at {}", code, address);
++        // For access violations Windows also tells us WHICH address was touched and whether it
++        // was a read or a write. Without it a crash report only says where the code was, not
++        // what it tried to reach.
++        if (code == EXCEPTION_ACCESS_VIOLATION && pExp != nullptr &&
++            pExp->ExceptionRecord != nullptr && pExp->ExceptionRecord->NumberParameters >= 2) {
++            const ULONG_PTR op = pExp->ExceptionRecord->ExceptionInformation[0];
++            const ULONG_PTR fault_address = pExp->ExceptionRecord->ExceptionInformation[1];
++            const char* what = op == 0 ? "reading" : (op == 1 ? "writing" : "executing");
++            LOG_CRITICAL(Debug, "Unhandled Exception code {:#x} at {} while {} {:#x}", code,
++                         address, what, static_cast<u64>(fault_address));
++        } else {
++            LOG_CRITICAL(Debug, "Unhandled Exception code {:#x} at {}", code, address);
++        }
+         Common::Singleton<Core::Emulator>::Instance()->Shutdown();
+     }
+ 
+diff --git a/src/shader_recompiler/frontend/translate/translate.h b/src/shader_recompiler/frontend/translate/translate.h
+index 1eea047e..480b709e 100644
+--- a/src/shader_recompiler/frontend/translate/translate.h
++++ b/src/shader_recompiler/frontend/translate/translate.h
+@@ -213,6 +213,7 @@ public:
+     void V_FLOOR_F64(const GcnInst& inst);
+     void V_FRACT_F32(const GcnInst& inst);
+     void V_TRUNC_F32(const GcnInst& inst);
++    void V_TRUNC_F64(const GcnInst& inst);
+     void V_CEIL_F32(const GcnInst& inst);
+     void V_RNDNE_F32(const GcnInst& inst);
+     void V_FLOOR_F32(const GcnInst& inst);
+@@ -275,6 +276,7 @@ public:
+     void V_ALIGNBYTE_B32(const GcnInst& inst);
+     void V_MUL_F64(const GcnInst& inst);
+     void V_MAX_F64(const GcnInst& inst);
++    void V_MIN_F64(const GcnInst& inst);
+     void V_MUL_LO_U32(const GcnInst& inst);
+     void V_MUL_HI_U32(bool is_signed, const GcnInst& inst);
+     void V_MAD_U64_U32(const GcnInst& inst);
+diff --git a/src/shader_recompiler/frontend/translate/vector_alu.cpp b/src/shader_recompiler/frontend/translate/vector_alu.cpp
+index 5fc7dcfc..3f2386f4 100644
+--- a/src/shader_recompiler/frontend/translate/vector_alu.cpp
++++ b/src/shader_recompiler/frontend/translate/vector_alu.cpp
+@@ -158,6 +158,8 @@ void Translator::EmitVectorAlu(const GcnInst& inst) {
+         return V_FRACT_F32(inst);
+     case Opcode::V_TRUNC_F32:
+         return V_TRUNC_F32(inst);
++    case Opcode::V_TRUNC_F64:
++        return V_TRUNC_F64(inst);
+     case Opcode::V_CEIL_F32:
+         return V_CEIL_F32(inst);
+     case Opcode::V_RNDNE_F32:
+@@ -448,6 +450,8 @@ void Translator::EmitVectorAlu(const GcnInst& inst) {
+         return V_MUL_F64(inst);
+     case Opcode::V_MAX_F64:
+         return V_MAX_F64(inst);
++    case Opcode::V_MIN_F64:
++        return V_MIN_F64(inst);
+     case Opcode::V_MUL_LO_U32:
+         return V_MUL_LO_U32(inst);
+     case Opcode::V_MUL_HI_U32:
+@@ -993,6 +997,11 @@ void Translator::V_FLOOR_F64(const GcnInst& inst) {
+     SetDst64(inst.dst[0], ir.FPFloor(src0));
+ }
+ 
++void Translator::V_TRUNC_F64(const GcnInst& inst) {
++    const IR::F64 src0{GetSrc64<IR::F64>(inst.src[0])};
++    SetDst64(inst.dst[0], ir.FPTrunc(src0));
++}
++
+ void Translator::V_FRACT_F32(const GcnInst& inst) {
+     const IR::F32 src0{GetSrc<IR::F32>(inst.src[0])};
+     SetDst(inst.dst[0], ir.FPFract(src0));
+@@ -1598,6 +1607,12 @@ void Translator::V_MAX_F64(const GcnInst& inst) {
+     SetDst64(inst.dst[0], ir.FPMax(src0, src1));
+ }
+ 
++void Translator::V_MIN_F64(const GcnInst& inst) {
++    const IR::F64 src0{GetSrc64<IR::F64>(inst.src[0])};
++    const IR::F64 src1{GetSrc64<IR::F64>(inst.src[1])};
++    SetDst64(inst.dst[0], ir.FPMin(src0, src1));
++}
++
+ void Translator::V_MUL_LO_U32(const GcnInst& inst) {
+     const IR::U32 src0{GetSrc(inst.src[0])};
+     const IR::U32 src1{GetSrc(inst.src[1])};
+diff --git a/src/video_core/renderer_vulkan/vk_instance.cpp b/src/video_core/renderer_vulkan/vk_instance.cpp
+index 40d36f4d..407075c4 100644
+--- a/src/video_core/renderer_vulkan/vk_instance.cpp
++++ b/src/video_core/renderer_vulkan/vk_instance.cpp
+@@ -1,12 +1,17 @@
+ // SPDX-FileCopyrightText: Copyright 2024 shadPS4 Emulator Project
+ // SPDX-License-Identifier: GPL-2.0-or-later
+ 
++#include <algorithm>
++#include <limits>
++
+ #include <boost/container/static_vector.hpp>
+ #include <fmt/format.h>
+ #include <fmt/ranges.h>
+ 
+ #include "common/assert.h"
+ #include "common/debug.h"
++#include "common/io_file.h"
++#include "common/path_util.h"
+ #include "common/types.h"
+ #include "imgui/renderer/imgui_core.h"
+ #include "sdl_window.h"
+@@ -203,7 +208,8 @@ bool Instance::CreateDevice() {
+                           vk::PhysicalDevicePrimitiveTopologyListRestartFeaturesEXT,
+                           vk::PhysicalDeviceShaderAtomicFloat2FeaturesEXT,
+                           vk::PhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR,
+-                          vk::PhysicalDeviceImage2DViewOf3DFeaturesEXT>();
++                          vk::PhysicalDeviceImage2DViewOf3DFeaturesEXT,
++                          vk::PhysicalDeviceFaultFeaturesEXT>();
+     features = feature_chain.get().features;
+ 
+     const vk::StructureChain properties_chain = physical_device.getProperties2<
+@@ -336,6 +342,17 @@ bool Instance::CreateDevice() {
+     }
+     image_view_min_lod = add_extension(VK_EXT_IMAGE_VIEW_MIN_LOD_EXTENSION_NAME);
+     supports_memory_budget = add_extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
++
++    // VK_EXT_device_fault turns "the device was lost" into an address and a fault type. It costs
++    // nothing while nothing goes wrong: the driver only fills anything in after a device loss.
++    const auto fault_features = feature_chain.get<vk::PhysicalDeviceFaultFeaturesEXT>();
++    device_fault =
++        add_extension(VK_EXT_DEVICE_FAULT_EXTENSION_NAME) && fault_features.deviceFault;
++    device_fault_vendor_binary = device_fault && fault_features.deviceFaultVendorBinary;
++    if (device_fault) {
++        LOG_INFO(Render_Vulkan, "Device fault reporting enabled (vendor binary dumps: {})",
++                 device_fault_vendor_binary ? "yes" : "no");
++    }
+     const bool calibrated_timestamps =
+         TRACY_GPU_ENABLED ? add_extension(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME) : false;
+ 
+@@ -503,6 +520,10 @@ bool Instance::CreateDevice() {
+         vk::PhysicalDeviceImageViewMinLodFeaturesEXT{
+             .minLod = true,
+         },
++        vk::PhysicalDeviceFaultFeaturesEXT{
++            .deviceFault = true,
++            .deviceFaultVendorBinary = device_fault_vendor_binary,
++        },
+     };
+ 
+     if (!custom_border_color) {
+@@ -548,6 +569,9 @@ bool Instance::CreateDevice() {
+     if (!image_view_min_lod) {
+         device_chain.unlink<vk::PhysicalDeviceImageViewMinLodFeaturesEXT>();
+     }
++    if (!device_fault) {
++        device_chain.unlink<vk::PhysicalDeviceFaultFeaturesEXT>();
++    }
+ 
+     auto [device_result, dev] = physical_device.createDeviceUnique(device_chain.get());
+     if (device_result != vk::Result::eSuccess) {
+@@ -742,6 +766,149 @@ void Instance::CollectToolingInfo() const {
+     }
+ }
+ 
++void Instance::LogDeviceFaultInfo() const {
++    if (!device_fault) {
++        LOG_ERROR(Render_Vulkan, "Device lost, and VK_EXT_device_fault is not enabled on this "
++                                 "device - the driver cannot say where or why.");
++        return;
++    }
++
++    // A lost device stays lost, so every later submit reports the same loss. Query once: the
++    // driver is only required to answer, and the answer is the same for every caller.
++    std::call_once(device_fault_once, [this] {
++        // First call asks for the sizes only.
++        vk::DeviceFaultCountsEXT counts{};
++        if (const auto result = device->getFaultInfoEXT(&counts, nullptr);
++            result != vk::Result::eSuccess) {
++            LOG_ERROR(Render_Vulkan, "vkGetDeviceFaultInfoEXT (counts) failed: {}",
++                      vk::to_string(result));
++            return;
++        }
++
++        std::vector<vk::DeviceFaultAddressInfoEXT> address_infos(counts.addressInfoCount);
++        std::vector<vk::DeviceFaultVendorInfoEXT> vendor_infos(counts.vendorInfoCount);
++        std::vector<u8> vendor_binary(device_fault_vendor_binary ? counts.vendorBinarySize : 0);
++        if (!device_fault_vendor_binary) {
++            // Telling the driver we have no room for it is how the binary blob is declined.
++            counts.vendorBinarySize = 0;
++        }
++
++        vk::DeviceFaultInfoEXT info{};
++        info.pAddressInfos = address_infos.empty() ? nullptr : address_infos.data();
++        info.pVendorInfos = vendor_infos.empty() ? nullptr : vendor_infos.data();
++        info.pVendorBinaryData = vendor_binary.empty() ? nullptr : vendor_binary.data();
++
++        const auto result = device->getFaultInfoEXT(&counts, &info);
++        if (result != vk::Result::eSuccess && result != vk::Result::eIncomplete) {
++            LOG_ERROR(Render_Vulkan, "vkGetDeviceFaultInfoEXT (data) failed: {}",
++                      vk::to_string(result));
++            return;
++        }
++
++        const std::string_view description{info.description};
++        LOG_CRITICAL(Render_Vulkan, "==== DEVICE FAULT ({} address record(s), {} vendor record(s)) ====",
++                     counts.addressInfoCount, counts.vendorInfoCount);
++        LOG_CRITICAL(Render_Vulkan, "Driver description: {}",
++                     description.empty() ? "(none given)" : description);
++        if (result == vk::Result::eIncomplete) {
++            LOG_WARNING(Render_Vulkan, "The driver had more to report than it first said - "
++                                       "the records below are incomplete.");
++        }
++        if (counts.addressInfoCount == 0 && counts.vendorInfoCount == 0) {
++            LOG_CRITICAL(Render_Vulkan, "The driver reported NO records. It supports the "
++                                        "extension but knows nothing about this loss.");
++        }
++
++        // reportedAddress is only accurate to addressPrecision, which is a power of two. The
++        // useful output is the range, not the single number - a bare address invites a
++        // false-precision hunt for a byte the driver never claimed.
++        for (u32 i = 0; i < counts.addressInfoCount; ++i) {
++            const auto& addr = address_infos[i];
++            const u64 precision = addr.addressPrecision;
++            const u64 mask = precision ? ~(precision - 1) : ~u64{0};
++            const u64 lower = addr.reportedAddress & mask;
++            const u64 upper = precision ? lower + precision - 1 : lower;
++            LOG_CRITICAL(Render_Vulkan, "  address[{}] {}: 0x{:x} (in [0x{:x}, 0x{:x}], "
++                                        "precision 0x{:x})",
++                         i, vk::to_string(addr.addressType), addr.reportedAddress, lower, upper,
++                         precision);
++        }
++        for (u32 i = 0; i < counts.vendorInfoCount; ++i) {
++            const auto& vendor = vendor_infos[i];
++            const std::string_view vendor_description{vendor.description};
++            LOG_CRITICAL(Render_Vulkan, "  vendor[{}] code 0x{:x} data 0x{:x}: {}", i,
++                         vendor.vendorFaultCode, vendor.vendorFaultData, vendor_description);
++        }
++
++        // The two families of record want OPPOSITE investigations, and the difference is easy to
++        // miss in a wall of hex - so classify it here rather than leaving it to the reader.
++        //   memory-access records  -> something read/wrote/executed an address it should not have
++        //   instruction-pointer    -> where the shaders WERE when the device died; on its own it
++        //                             says nothing was caught accessing bad memory
++        u32 mem_faults = 0, ip_records = 0;
++        u64 ip_lo = std::numeric_limits<u64>::max(), ip_hi = 0;
++        for (u32 i = 0; i < counts.addressInfoCount; ++i) {
++            switch (address_infos[i].addressType) {
++            case vk::DeviceFaultAddressTypeEXT::eReadInvalid:
++            case vk::DeviceFaultAddressTypeEXT::eWriteInvalid:
++            case vk::DeviceFaultAddressTypeEXT::eExecuteInvalid:
++                ++mem_faults;
++                break;
++            case vk::DeviceFaultAddressTypeEXT::eInstructionPointerUnknown:
++            case vk::DeviceFaultAddressTypeEXT::eInstructionPointerInvalid:
++            case vk::DeviceFaultAddressTypeEXT::eInstructionPointerFault:
++                ++ip_records;
++                ip_lo = std::min(ip_lo, static_cast<u64>(address_infos[i].reportedAddress));
++                ip_hi = std::max(ip_hi, static_cast<u64>(address_infos[i].reportedAddress));
++                break;
++            default:
++                break;
++            }
++        }
++        if (counts.addressInfoCount > 0) {
++            LOG_CRITICAL(Render_Vulkan, "SUMMARY: {} memory-access fault(s), {} instruction "
++                                        "pointer(s){}",
++                         mem_faults, ip_records,
++                         ip_records > 1 ? fmt::format(" spanning 0x{:x} bytes (0x{:x}..0x{:x})",
++                                                      ip_hi - ip_lo, ip_lo, ip_hi)
++                                        : std::string{});
++        }
++        if (mem_faults == 0 && ip_records > 0) {
++            LOG_CRITICAL(Render_Vulkan,
++                         "SUMMARY: NO bad memory access was reported. These are only the shader "
++                         "instruction pointers that were live when the device died, so this looks "
++                         "like a HANG/TIMEOUT rather than an out-of-bounds access. Confirm in the "
++                         "Windows System event log: an nvlddmkm/amdkmdag reset at the same minute "
++                         "means the driver reset a hung engine.");
++            if (ip_records > 1 && (ip_hi - ip_lo) < 0x1000) {
++                LOG_CRITICAL(Render_Vulkan,
++                             "SUMMARY: all {} pointers sit inside 0x{:x} bytes - that is one "
++                             "shader, most likely one loop, entered by {} invocations at once.",
++                             ip_records, ip_hi - ip_lo, ip_records);
++            }
++        }
++
++        if (!vendor_binary.empty() && counts.vendorBinarySize > 0) {
++            // Trim to what the driver actually wrote, then hand it to disk - the contents are
++            // only readable by the vendor's own tooling, so there is nothing to parse here.
++            const auto written = std::min<u64>(counts.vendorBinarySize, vendor_binary.size());
++            const auto path =
++                Common::FS::GetUserPath(Common::FS::PathType::LogDir) / "device_fault.bin";
++            // NOT FileAccessMode::Write - in this codebase that maps to "r+b", i.e. open an
++            // EXISTING file, and fails with ENOENT the first time. "Create" is the one that
++            // makes the file (io_file.cpp:45-51).
++            Common::FS::IOFile file{path, Common::FS::FileAccessMode::Create};
++            if (file.IsOpen() && file.WriteRaw<u8>(vendor_binary.data(), written) == written) {
++                LOG_CRITICAL(Render_Vulkan, "Vendor crash dump ({} bytes) written to {}", written,
++                             Common::FS::PathToUTF8String(path));
++            } else {
++                LOG_ERROR(Render_Vulkan, "Could not write the {}-byte vendor crash dump to {}",
++                          written, Common::FS::PathToUTF8String(path));
++            }
++        }
++    });
++}
++
+ u64 Instance::GetDeviceMemoryUsage() const {
+     vk::PhysicalDeviceMemoryBudgetPropertiesEXT memory_budget_props{};
+     vk::PhysicalDeviceMemoryProperties2 props = {
+diff --git a/src/video_core/renderer_vulkan/vk_instance.h b/src/video_core/renderer_vulkan/vk_instance.h
+index 05839937..4c0d8b6a 100644
+--- a/src/video_core/renderer_vulkan/vk_instance.h
++++ b/src/video_core/renderer_vulkan/vk_instance.h
+@@ -3,6 +3,7 @@
+ 
+ #pragma once
+ 
++#include <mutex>
+ #include <span>
+ #include <unordered_map>
+ 
+@@ -439,6 +440,16 @@ public:
+         return supports_memory_budget;
+     }
+ 
++    /// Returns whether VK_EXT_device_fault is supported and was enabled.
++    bool IsDeviceFaultSupported() const {
++        return device_fault;
++    }
++
++    /// Asks the driver what actually killed the device after a VK_ERROR_DEVICE_LOST.
++    /// Call this *before* aborting, from whichever thread saw the error. Safe to call from
++    /// several threads and more than once: only the first call queries and reports.
++    void LogDeviceFaultInfo() const;
++
+     /// Returns the amount of memory used.
+     [[nodiscard]] u64 GetDeviceMemoryUsage() const;
+ 
+@@ -521,6 +532,9 @@ private:
+     bool image_view_min_lod{};
+     bool supports_memory_budget{};
+     bool supports_block_texel_view{};
++    bool device_fault{};
++    bool device_fault_vendor_binary{};
++    mutable std::once_flag device_fault_once;
+     u64 total_memory_budget{};
+     std::vector<size_t> valid_heaps;
+ };
+diff --git a/src/video_core/renderer_vulkan/vk_presenter.cpp b/src/video_core/renderer_vulkan/vk_presenter.cpp
+index ddf2e713..872d4d00 100644
+--- a/src/video_core/renderer_vulkan/vk_presenter.cpp
++++ b/src/video_core/renderer_vulkan/vk_presenter.cpp
+@@ -638,6 +638,9 @@ Frame* Presenter::PrepareLastFrame() {
+         if (result == vk::Result::eTimeout) {
+             continue;
+         }
++        if (result == vk::Result::eErrorDeviceLost) {
++            instance.LogDeviceFaultInfo();
++        }
+         ASSERT_MSG(result != vk::Result::eErrorDeviceLost,
+                    "Device lost during waiting for a frame");
+     }
+@@ -1132,6 +1135,9 @@ Frame* Presenter::GetRenderFrame() {
+ 
+     // Wait for the presentation to be finished so all frame resources are free
+     while (wait() != vk::Result::eSuccess) {
++        if (result == vk::Result::eErrorDeviceLost) {
++            instance.LogDeviceFaultInfo();
++        }
+         ASSERT_MSG(result != vk::Result::eErrorDeviceLost,
+                    "Device lost during waiting for a frame");
+         // Retry if the waiting times out
+diff --git a/src/video_core/renderer_vulkan/vk_scheduler.cpp b/src/video_core/renderer_vulkan/vk_scheduler.cpp
+index 3954742b..f2710d21 100644
+--- a/src/video_core/renderer_vulkan/vk_scheduler.cpp
++++ b/src/video_core/renderer_vulkan/vk_scheduler.cpp
+@@ -191,6 +191,11 @@ void Scheduler::SubmitExecution(SubmitInfo& info) {
+ 
+     ImGui::Core::TextureManager::Submit();
+     auto submit_result = instance.GetGraphicsQueue().submit(submit_info, info.fence);
++    if (submit_result == vk::Result::eErrorDeviceLost) {
++        // The loss is reported asynchronously, so this submit is not necessarily the guilty one.
++        // Ask the driver before aborting - it is the only thing that knows what it choked on.
++        instance.LogDeviceFaultInfo();
++    }
+     ASSERT_MSG(submit_result != vk::Result::eErrorDeviceLost, "Device lost during submit");
+ 
+     master_semaphore.Refresh();
+diff --git a/src/video_core/texture_cache/image_info.cpp b/src/video_core/texture_cache/image_info.cpp
+index 12ff6236..d23a1412 100644
+--- a/src/video_core/texture_cache/image_info.cpp
++++ b/src/video_core/texture_cache/image_info.cpp
+@@ -188,11 +188,18 @@ void ImageInfo::UpdateSize() {
+                 ImageSizeMicroTiled(mip_w, mip_h, thickness, num_bits, num_samples);
+             break;
+         }
++        // PRT (partially resident) modes use the same macro-tiled layout as their non-PRT
++        // counterparts; only residency differs, which does not affect the size arithmetic.
++        // Classification taken from AmdGpu::IsMacroTiled() in amdgpu/tiling.cpp.
+         case AmdGpu::ArrayMode::Array2DTiledThick:
++        case AmdGpu::ArrayMode::ArrayPrtTiledThick:
++        case AmdGpu::ArrayMode::ArrayPrt2DTiledThick:
+             thickness = 4;
+             mip_d += (-mip_d) & (thickness - 1);
+             [[fallthrough]];
+-        case AmdGpu::ArrayMode::Array2DTiledThin1: {
++        case AmdGpu::ArrayMode::Array2DTiledThin1:
++        case AmdGpu::ArrayMode::ArrayPrtTiledThin1:
++        case AmdGpu::ArrayMode::ArrayPrt2DTiledThin1: {
+             ASSERT(!props.is_block);
+             std::tie(mip_info.pitch, mip_info.height, mip_info.size) = ImageSizeMacroTiled(
+                 mip_w, mip_h, thickness, num_bits, num_samples, tile_mode, mip, alt_tile);

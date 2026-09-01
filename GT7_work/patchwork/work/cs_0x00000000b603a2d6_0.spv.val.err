@@ -1,0 +1,3 @@
+error: line 442: In OpPhi instruction '323[%323]', ID '324[%324]' definition does not dominate its parent '290[%290]'
+  %323 = OpPhi %u32_id %u32_id_0 %259 %324 %290
+

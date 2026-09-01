@@ -1,0 +1,19 @@
+USAGE  ResourceId::170 [Swapchain Image 0]
+
+=== eid 5885 ? ===
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64000 64000 63488 1)
+
+=== eid 5886 vkCmdResolveImage() ===
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5943 ? ===
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5944 vkCmdResolveImage() ===
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 5999 ? ===
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+
+=== eid 6000 vkCmdDraw() ===
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64000 64000 63488 1)

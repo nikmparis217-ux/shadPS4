@@ -1,0 +1,13 @@
+
+=== eid 3952 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+DEBUG_PIXEL resource=ResourceId::140659 xy=769,15 sample=0
+  history modifications=3
+  HISTORY eventId=3839 primitiveID=0 fragIndex=0 sampleMasked=False backfaceCulled=False depthTestFailed=False stencilTestFailed=False shaderDiscarded=False
+  HISTORY eventId=3874 primitiveID=0 fragIndex=0 sampleMasked=False backfaceCulled=False depthTestFailed=False stencilTestFailed=False shaderDiscarded=False
+  HISTORY eventId=3952 primitiveID=195 fragIndex=0 sampleMasked=False backfaceCulled=False depthTestFailed=False stencilTestFailed=False shaderDiscarded=False
+  shader debugging returned no trace

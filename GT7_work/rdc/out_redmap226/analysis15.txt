@@ -1,0 +1,29 @@
+
+== PixelHistory 4883 (UI target, inside red panel) at (1500,400) ==
+  eid 16127 passed=True shaderOut=(1 1 0.9999 1) post=(1 1 1 1)
+  eid 16517 passed=True shaderOut=(0 0 1 0) post=(0 0 1 1)
+
+== PixelHistory 4883 (UI target, panel lower-left) at (1400,640) ==
+  eid 16127 passed=True shaderOut=(1 1 0.9999 1) post=(1 1 1 1)
+  eid 16517 passed=True shaderOut=(0 0 1 0) post=(0 0 1 1)
+
+== PixelHistory 4883 (UI target, album cover control) at (170,300) ==
+  eid 16127 passed=True shaderOut=(1 1 0.9999 1) post=(1 1 1 1)
+  eid 16206 passed=True shaderOut=(0.7822 0.762 0.7807 0.9975) post=(0.783 0.7634 0.782 1)
+  eid 16215 passed=False shaderOut=(0 0 0 0) post=(0.783 0.7634 0.782 1)
+
+== PixelHistory 137655 (track preview texture, bg pixel) at (100,100) ==
+  eid 16502 passed=True shaderOut=(0 0 0 0) post=(0 0 0 0)
+  eid 16505 passed=True shaderOut=(0 0 0 0) post=(0 0 0 1)
+
+== eid 16517 state ==
+  ps_tex ResourceId::25697 fmt=R8_UNORM swz=TextureSwizzle.ZeroTextureSwizzle.ZeroTextureSwizzle.ZeroTextureSwizzle.Zero
+  ps_tex ResourceId::137655 fmt=R8G8B8A8_UNORM swz=TextureSwizzle.AlphaTextureSwizzle.BlueTextureSwizzle.GreenTextureSwizzle.Red
+  blend[0] enabled=True src=BlendMultiplier.One dst=BlendMultiplier.SrcAlpha op=BlendOperation.Add
+  blend[1] enabled=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add
+  blend[2] enabled=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add
+  blend[3] enabled=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add
+  blend[4] enabled=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add
+  blend[5] enabled=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add
+  blend[6] enabled=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add
+  blend[7] enabled=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add

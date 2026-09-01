@@ -1,0 +1,219 @@
+USAGE  ResourceId::170 [Swapchain Image 0]
+
+=== eid 6027 vkCmdDrawIndexed() ===
+WATCH 0x1005000000 ResourceId::9705 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1005000000:0x7f8000 L:1 M:1 S:1] min(0 0 0 1) max(64000 63488 62464 1)
+WATCH 0x1006bc8000 ResourceId::39806 [Image 1920x1080x1 Thin2DThin B10G11R11UfloatPack32 0x1006bc8000:0x7f8000 L:1 M:1 S:1] min(0.0012207 0.00112915 0.0119629 1) max(0.0253906 0.0288086 0.0576172 1)
+WATCH 0x1007600000 ResourceId::9724 [Image 1920x1080x1 Thin2DThin R16G16B16A16Sfloat 0x1007600000:0xff0000 L:1 M:1 S:1] min(0.528809 0.0119629 0.00112915 0.00123501) max(1315 0.0576172 0.0288086 0.0253906)
+pipeline ResourceId::99444 [Graphics Pipeline fs_0x0000000025051f3f,vs_0x00000000858904d4]
+fragment shader ResourceId::99440 [fs_0x0000000025051f3f_0] entry=main
+disassembly targets: SPIR-V (RenderDoc), KHR_pipeline_executable_properties, AMDIL, GCN (gfx804), GCN (gfx900), GCN (gfx902), GCN (gfx906), RDNA (gfx1010), RDNA (gfx1012), RDNA2 (gfx1030), RDNA2 (gfx1031), RDNA2 (gfx1032), RDNA2 (gfx1034), RDNA2 (gfx1035)
+--- fragment disassembly (SPIR-V (RenderDoc)) ---
+SPIR-V 1.6 module, <id> bound of 185
+
+Generator: rdcspv::Generator(0)
+Generator Version: 0
+
+Capability(Shader);
+Capability(Image1D);
+Capability(Int64);
+Capability(Sampled1D);
+Capability(UniformAndStorageBuffer8BitAccess);
+Capability(ImageQuery);
+Capability(Int8);
+Capability(Int16);
+Capability(UniformAndStorageBuffer16BitAccess);
+Capability(FragmentBarycentricKHR);
+Capability(SignedZeroInfNanPreserve);
+
+Extension("SPV_KHR_float_controls");
+Extension("SPV_KHR_fragment_shader_barycentric");
+
+
+MemoryModel(Logical, GLSL450);
+
+EntryPoint(Fragment, _65, "main", {
+    push_data, 
+    _48, 
+    fs_in_attr0_p, 
+    fs_in_attr1_p, 
+    frag_color0, 
+    frag_color1, 
+    fs_img0, 
+    fs_sampsgpr:8
+  });
+
+ExecutionMode(_65, OriginUpperLeft);
+ExecutionMode(_65, SignedZeroInfNanPreserve(32));
+
+
+
+
+
+struct full_result_i32x2 {
+  i32_id _child0;
+  i32_id _child1;
+}
+struct full_result_u32x2 {
+  u32_id _child0;
+  u32_id _child1;
+}
+struct frexp_result_f32 {
+  f32_id _child0;
+  i32_id _child1;
+}
+struct AuxData : [[Block]] {
+  f32_id xoffset : [[Offset(0)]];
+  f32_id yoffset : [[Offset(4)]];
+  f32_id xscale : [[Offset(8)]];
+  f32_id yscale : [[Offset(12)]];
+  u32vec4_id ud_regs0 : [[Offset(16)]];
+  u32vec4_id ud_regs1 : [[Offset(32)]];
+  u32vec4_id ud_regs2 : [[Offset(48)]];
+  u32vec4_id ud_regs3 : [[Offset(64)]];
+  u32vec4_id buf_offsets0 : [[Offset(80)]];
+  u32vec4_id buf_offsets1 : [[Offset(96)]];
+  u32vec2_id buf_offsets2 : [[Offset(112)]];
+}
+PushConstant AuxData* push_data;
+Input f32vec3_id* _48 : [[BuiltIn(BaryCoordKHR)]];
+Input f32vec4_id[3]* fs_in_attr0_p : [[Location(0), PerVertexKHR]];
+Input f32vec4_id[3]* fs_in_attr1_p : [[Location(1), PerVertexKHR]];
+Output f32vec4_id* frag_color0 : [[Location(0)]];
+Output f32vec4_id* frag_color1 : [[Location(1)]];
+UniformConstant Image<float, 2D>* fs_img0 : [[DescriptorSet(0), Binding(0)]];
+UniformConstant sampler* fs_sampsgpr:8 : [[DescriptorSet(0), Binding(1)]];
+
+void_id _65() {
+  input_f32 _68 = &_48.y;
+  f32_id _69 = *_68;
+  input_f32 _71 = &_48.z;
+  f32_id _72 = *_71;
+  input_f32 _73 = &fs_in_attr1_p[0].z;
+  f32_id _74 = *_73;
+  input_f32 _75 = &fs_in_attr1_p[1].z;
+  f32_id _76 = *_75;
+  f32_id _77 = _76 - _74;
+  f32_id _79 = GLSL.std.450::Fma(_77, _69, _74);
+  input_f32 _80 = &fs_in_attr1_p[0].z;
+  f32_id _81 = *_80;
+  input_f32 _82 = &fs_in_attr1_p[2].z;
+  f32_id _83 = *_82;
+  f32_id _84 = _83 - _81;
+  f32_id _85 = GLSL.std.450::Fma(_84, _72, _79);
+  input_f32 _86 = &fs_in_attr1_p[0].x;
+  f32_id _87 = *_86;
+  input_f32 _88 = &fs_in_attr1_p[1].x;
+  f32_id _89 = *_88;
+  f32_id _90 = _89 - _87;
+  f32_id _91 = GLSL.std.450::Fma(_90, _69, _87);
+  input_f32 _92 = &fs_in_attr1_p[0].y;
+  f32_id _93 = *_92;
+  input_f32 _94 = &fs_in_attr1_p[1].y;
+  f32_id _95 = *_94;
+  f32_id _96 = _95 - _93;
+  f32_id _97 = GLSL.std.450::Fma(_96, _69, _93);
+  f32_id _99 = 1.0000 / _85;
+  input_f32 _100 = &fs_in_attr1_p[0].x;
+  f32_id _101 = *_100;
+  input_f32 _102 = &fs_in_attr1_p[2].x;
+  f32_id _103 = *_102;
+  f32_id _104 = _103 - _101;
+  f32_id _105 = GLSL.std.450::Fma(_104, _72, _91);
+  input_f32 _106 = &fs_in_attr1_p[0].y;
+  f32_id _107 = *_106;
+  input_f32 _108 = &fs_in_attr1_p[2].y;
+  f32_id _109 = *_108;
+  f32_id _110 = _109 - _107;
+  f32_id _111 = GLSL.std.450::Fma(_110, _72, _97);
+  f32_id _112 = _105 * _99;
+  f32_id _113 = _111 * _99;
+  f32vec2_id _114 = CompositeConstruct({_112, _113});
+  Image<float, 2D> _115 = *fs_img0;
+  sampler _116 = *fs_sampsgpr:8;
+  SampledImage<float, 2D> _117 = SampledImage(_115, _116);
+  f32vec4_id _118 = ImageSampleImplicitLod(_117, _114, );
+  f32_id _119 = _118.x;
+  f32_id _120 = _118.y;
+  f32_id _121 = _118.z;
+  f32_id _122 = _118.w;
+  input_f32 _123 = &fs_in_attr0_p[0].x;
+  f32_id _124 = *_123;
+  input_f32 _125 = &fs_in_attr0_p[1].x;
+  f32_id _126 = *_125;
+  f32_id _127 = _126 - _124;
+  f32_id _128 = GLSL.std.450::Fma(_127, _69, _124);
+  input_f32 _129 = &fs_in_attr0_p[0].y;
+  f32_id _130 = *_129;
+  input_f32 _131 = &fs_in_attr0_p[1].y;
+  f32_id _132 = *_131;
+  f32_id _133 = _132 - _130;
+  f32_id _134 = GLSL.std.450::Fma(_133, _69, _130);
+  input_f32 _135 = &fs_in_attr0_p[0].w;
+  f32_id _136 = *_135;
+  input_f32 _137 = &fs_in_attr0_p[1].w;
+  f32_id _138 = *_137;
+  f32_id _139 = _138 - _136;
+  f32_id _140 = GLSL.std.450::Fma(_139, _69, _136);
+  input_f32 _141 = &fs_in_attr0_p[0].z;
+  f32_id _142 = *_141;
+  input_f32 _143 = &fs_in_attr0_p[1].z;
+  f32_id _144 = *_143;
+  f32_id _145 = _144 - _142;
+  f32_id _146 = GLSL.std.450::Fma(_145, _69, _142);
+  input_f32 _147 = &fs_in_attr0_p[0].x;
+  f32_id _148 = *_147;
+  input_f32 _149 = &fs_in_attr0_p[2].x;
+  f32_id _150 = *_149;
+  f32_id _151 = _150 - _148;
+  f32_id _152 = GLSL.std.450::Fma(_151, _72, _128);
+  input_f32 _153 = &fs_in_attr0_p[0].y;
+  f32_id _154 = *_153;
+  input_f32 _155 = &fs_in_attr0_p[2].y;
+  f32_id _156 = *_155;
+  f32_id _157 = _156 - _154;
+  f32_id _158 = GLSL.std.450::Fma(_157, _72, _134);
+  input_f32 _159 = &fs_in_attr0_p[0].w;
+  f32_id _160 = *_159;
+  input_f32 _161 = &fs_in_attr0_p[2].w;
+  f32_id _162 = *_161;
+  f32_id _163 = _162 - _160;
+  f32_id _164 = GLSL.std.450::Fma(_163, _72, _140);
+  input_f32 _165 = &fs_in_attr0_p[0].z;
+  f32_id _166 = *_165;
+  input_f32 _167 = &fs_in_attr0_p[2].z;
+  f32_id _168 = *_167;
+  f32_id _169 = _168 - _166;
+  f32_id _170 = GLSL.std.450::Fma(_169, _72, _146);
+  f32_id _171 = _119 * _152;
+  f32_id _172 = _158 * _120;
+  f32_id _173 = _164 * _122;
+  f32_id _174 = _170 * _121;
+  f32vec2_id _176 = GLSL.std.450::UnpackHalf2x16(58368);
+  f32_id _177 = _176.x;
+  f32_id _178 = _176.y;
+  output_f32 _179 = &frag_color1.x;
+  *_179 = _177;
+  output_f32 _180 = &frag_color1.y;
+  *_180 = _178;
+  output_f32 _181 = &frag_color0.x;
+  *_181 = _171;
+  output_f32 _182 = &frag_color0.y;
+  *_182 = _172;
+  output_f32 _183 = &frag_color0.z;
+  *_183 = _174;
+  output_f32 _184 = &frag_color0.w;
+  *_184 = _173;
+  return;
+}
+
+
+
+--- end fragment disassembly ---
+Traceback (most recent call last):
+  File "C:\Users\Νίκος\Documents\GitHub\shadps4\GT7_work\rdc\analyze11_scene_writer_headless.py", line 259, in <module>
+    run()
+  File "C:\Users\Νίκος\Documents\GitHub\shadps4\GT7_work\rdc\analyze11_scene_writer_headless.py", line 252, in run
+    inspect_event(controller, event_id, actions, names, textures, buffers)
+  File "C:\Users\Νίκος\Documents\GitHub\shadps4\GT7_work\rdc\analyze11_scene_writer_headless.py", line 140, in inspect_event
+    ("depth", pipe.GetDepthState),
+AttributeError: 'renderdoc.PipeState' object has no attribute 'GetDepthState'

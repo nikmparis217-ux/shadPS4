@@ -1,0 +1,227 @@
+== eid 16423: PS disassembly TAIL (export code) ==
+  (329 lines total; frag_color mentions at [33, 74, 313, 315, 317, 319])
+            f32_id _250 = _225 * _212;
+            f32_id _251 = GLSL.std.450::FClamp(_250, 0.0000, 1.0000);
+            f32_id _252 = _231 - _133;
+            f32_id _253 = _237 - _140;
+            f32_id _254 = _243 - _147;
+            f32_id _255 = _249 - _154;
+            f32_id _256 = _252 * _251;
+            f32_id _257 = _256 + _133;
+            u32_id _258 = Bitcast(_257);
+            f32_id _259 = _253 * _251;
+            f32_id _260 = _259 + _140;
+            u32_id _261 = Bitcast(_260);
+            f32_id _262 = _254 * _251;
+            f32_id _263 = _262 + _147;
+            u32_id _264 = Bitcast(_263);
+            f32_id _265 = _255 * _251;
+            f32_id _266 = _265 + _154;
+            u32_id _267 = Bitcast(_266);
+          }
+    
+          u32_id _268 = Phi(_258, _134);
+          u32_id _269 = Phi(_261, _141);
+          u32_id _270 = Phi(_264, _148);
+          u32_id _271 = Phi(_267, _155);
+        }
+    
+        u32_id _272 = Phi(_271, _155);
+        u32_id _273 = Phi(_270, _148);
+        u32_id _274 = Phi(_269, _141);
+        u32_id _275 = Phi(_268, _134);
+        input_f32 _276 = &fs_in_attr2_p[0].w;
+        f32_id _277 = *_276;
+        input_f32 _278 = &fs_in_attr2_p[1].w;
+        f32_id _279 = *_278;
+        f32_id _280 = _279 - _277;
+        f32_id _281 = GLSL.std.450::Fma(_280, _70, _277);
+        input_f32 _282 = &fs_in_attr2_p[0].w;
+        f32_id _283 = *_282;
+        input_f32 _284 = &fs_in_attr2_p[2].w;
+        f32_id _285 = *_284;
+        f32_id _286 = _285 - _283;
+        f32_id _287 = GLSL.std.450::Fma(_286, _73, _281);
+        f32_id _288 = Bitcast(_275);
+        f32_id _289 = _287 + _288;
+        f32_id _290 = Bitcast(_274);
+        f32_id _291 = _287 + _290;
+        f32_id _292 = Bitcast(_273);
+        f32_id _293 = _287 + _292;
+        f32_id _294 = Bitcast(_272);
+        
+        if(_89) {
+          DemoteToHelperInvocation();
+        }
+    
+        output_f32 _297 = &frag_color0.x;
+        *_297 = _294;
+        output_f32 _298 = &frag_color0.y;
+        *_298 = _293;
+        output_f32 _299 = &frag_color0.z;
+        *_299 = _291;
+        output_f32 _300 = &frag_color0.w;
+        *_300 = _289;
+        return;
+      }
+    
+      DemoteToHelperInvocation();
+      return;
+    }
+    
+    
+
+== eid 16517: PS disassembly TAIL (export code) ==
+  (550 lines total; frag_color mentions at [32, 82, 530, 532, 534, 536])
+                f32_id _500 = _487 * _499;
+                f32_id _501 = _500 + 1.0000;
+                u32_id _502 = Bitcast(_501);
+                f32_id _503 = Bitcast(_471);
+                f32_id _504 = _487 * _503;
+                u32_id _505 = Bitcast(_504);
+                f32_id _506 = Bitcast(_470);
+                f32_id _507 = _487 * _506;
+                u32_id _508 = Bitcast(_507);
+                f32_id _509 = Bitcast(_472);
+                f32_id _510 = _487 * _509;
+                u32_id _511 = Bitcast(_510);
+              }
+    
+              u32_id _512 = Phi(_508, _470);
+              u32_id _513 = Phi(_505, _471);
+              u32_id _514 = Phi(_511, _472);
+              u32_id _515 = Phi(_502, _491);
+            }
+    
+            u32_id _516 = Phi(_512, _470);
+            u32_id _517 = Phi(_513, _471);
+            u32_id _518 = Phi(_514, _472);
+            u32_id _519 = Phi(_515, _491);
+            
+            if(_494) {
+              f32_id _520 = Bitcast(_519);
+              f32_id _521 = 1.0000 - _520;
+              u32_id _522 = Bitcast(_521);
+              f32_id _523 = Bitcast(_517);
+              f32_id _524 = _487 * _523;
+              u32_id _525 = Bitcast(_524);
+              f32_id _526 = Bitcast(_516);
+              f32_id _527 = _487 * _526;
+              u32_id _528 = Bitcast(_527);
+              f32_id _529 = Bitcast(_518);
+              f32_id _530 = _487 * _529;
+              u32_id _531 = Bitcast(_530);
+            }
+    
+            u32_id _532 = Phi(_525, _517);
+            u32_id _533 = Phi(_522, _519);
+            u32_id _534 = Phi(_531, _518);
+            u32_id _535 = Phi(_528, _516);
+            f32_id _536 = Bitcast(_535);
+            f32_id _537 = Bitcast(_534);
+            f32_id _538 = Bitcast(_533);
+            f32_id _539 = Bitcast(_532);
+            bool_id _540 = !_255;
+            
+            if(_540) {
+              DemoteToHelperInvocation();
+            }
+    
+            output_f32 _543 = &frag_color0.x;
+            *_543 = _539;
+            output_f32 _544 = &frag_color0.y;
+            *_544 = _536;
+            output_f32 _545 = &frag_color0.z;
+            *_545 = _537;
+            output_f32 _546 = &frag_color0.w;
+            *_546 = _538;
+            return;
+          }
+    
+        }
+    
+      }
+    
+      DemoteToHelperInvocation();
+      return;
+    }
+    
+    
+
+== eid 11196: PS disassembly TAIL (export code) ==
+  (4078 lines total; frag_color mentions at [116, 117, 4062, 4064, 4066, 4068, 4070, 4072])
+                                    f32_id _4170 = _4169 - _4167;
+                                    f32_id _4171 = GLSL.std.450::Fma(_4170, _231, _4167);
+                                    f32_id _4172 = 1.0000 / _4159;
+                                    input_f32 _4173 = &fs_in_attr7_p[0].w;
+                                    f32_id _4174 = *_4173;
+                                    input_f32 _4175 = &fs_in_attr7_p[2].w;
+                                    f32_id _4176 = *_4175;
+                                    f32_id _4177 = _4176 - _4174;
+                                    f32_id _4178 = GLSL.std.450::Fma(_4177, _233, _4165);
+                                    input_f32 _4179 = &fs_in_attr7_p[0].z;
+                                    f32_id _4180 = *_4179;
+                                    input_f32 _4181 = &fs_in_attr7_p[2].z;
+                                    f32_id _4182 = *_4181;
+                                    f32_id _4183 = _4182 - _4180;
+                                    f32_id _4184 = GLSL.std.450::Fma(_4183, _233, _4171);
+                                    f32_id _4185 = Bitcast(_4117);
+                                    f32_id _4186 = Bitcast(_4132);
+                                    f32_id _4187 = _4186 * _4185;
+                                    f32_id _4188 = Bitcast(_4116);
+                                    f32_id _4189 = Bitcast(_4128);
+                                    f32_id _4190 = _4189 * _4188;
+                                    f32_id _4191 = Bitcast(_4115);
+                                    f32_id _4192 = Bitcast(_4136);
+                                    f32_id _4193 = _4192 * _4191;
+                                    f32_id _4194 = Bitcast(_4145);
+                                    f32_id _4195 = Bitcast(_4153);
+                                    f32_id _4196 = _4194 * _237;
+                                    f32_id _4197 = _4196 + _4195;
+                                    f32_id _4198 = Bitcast(_4141);
+                                    f32_id _4199 = Bitcast(_4149);
+                                    f32_id _4200 = _4198 * _235;
+                                    f32_id _4201 = _4200 + _4199;
+                                    f32_id _4203 = GLSL.std.450::FMax(65000.0000, _4187);
+                                    f32_id _4204 = GLSL.std.450::FMin(_4203, 0.0000);
+                                    f32_id _4205 = GLSL.std.450::FMin(65000.0000, _4187);
+                                    f32_id _4206 = GLSL.std.450::FMax(_4205, _4204);
+                                    f32_id _4207 = GLSL.std.450::FMax(65000.0000, _4190);
+                                    f32_id _4208 = GLSL.std.450::FMin(_4207, 0.0000);
+                                    f32_id _4209 = GLSL.std.450::FMin(65000.0000, _4190);
+                                    f32_id _4210 = GLSL.std.450::FMax(_4209, _4208);
+                                    f32_id _4211 = -_4178;
+                                    f32_id _4212 = _4211 * _4172;
+                                    f32_id _4213 = _4212 + _4197;
+                                    f32_id _4214 = GLSL.std.450::FMax(65000.0000, _4193);
+                                    f32_id _4215 = GLSL.std.450::FMin(_4214, 0.0000);
+                                    f32_id _4216 = GLSL.std.450::FMin(65000.0000, _4193);
+                                    f32_id _4217 = GLSL.std.450::FMax(_4216, _4215);
+                                    f32_id _4218 = -_4184;
+                                    f32_id _4219 = _4218 * _4172;
+                                    f32_id _4220 = _4219 + _4201;
+                                    output_f32 _4221 = &frag_color1.x;
+                                    *_4221 = _4220;
+                                    output_f32 _4222 = &frag_color1.y;
+                                    *_4222 = _4213;
+                                    output_f32 _4223 = &frag_color0.x;
+                                    *_4223 = _4210;
+                                    output_f32 _4224 = &frag_color0.y;
+                                    *_4224 = _4206;
+                                    output_f32 _4225 = &frag_color0.z;
+                                    *_4225 = _4217;
+                                    output_f32 _4226 = &frag_color0.w;
+                                    *_4226 = _2279;
+                                    return;
+    }
+    
+    
+
+== resolve verbatim check: 94395 (s0) vs 137655 at same coords ==
+  (100,100) src=(0.0, 0.0, 0.0, 1.0) dst=(0.0, 0.0, 0.0, 1.0)
+  (260,240) src=(0.0, 0.0, 0.0, 1.0) dst=(0.0, 0.0, 0.0, 1.0)
+  (150,300) src=(0.0, 0.0, 0.0, 1.0) dst=(0.0, 0.0, 0.0, 1.0)
+  (400,120) src=(0.0, 0.0, 0.0, 1.0) dst=(0.0, 0.0, 0.0, 1.0)
+  (330,400) src=(0.0, 0.0, 0.0, 1.0) dst=(0.0, 0.0, 0.0, 1.0)
+
+saved tex_94395_msaa_preview.png

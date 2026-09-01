@@ -1,0 +1,16 @@
+[
+    {
+        "codename": "Local",
+        "date": "2026-08-17",
+        "name": "0.17.0",
+        "path": "C:/Users/Νίκος/Desktop/shadps4-win64-sdl-0.17.0/shadPS4.exe",
+        "type": 2
+    },
+    {
+        "codename": "Local",
+        "date": "2026-08-17",
+        "name": "pre release",
+        "path": "C:/Users/Νίκος/Desktop/Pre-release/shadPS4.exe",
+        "type": 2
+    }
+]

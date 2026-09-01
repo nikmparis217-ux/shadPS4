@@ -1,0 +1,1883 @@
+USAGE  ResourceId::170 [Swapchain Image 0]
+
+=== eid 5886 vkCmdResolveImage() ===
+ACTION copySource=ResourceId::140659
+ACTION copyDestination=ResourceId::99288
+ACTION outputs=(ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::0
+ACTION flags=ActionFlags.Resolve
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64512 64512 64512 1)
+pipeline ResourceId::99287 [Graphics Pipeline fs_0x0000000079f85779,vs_0x000000002971025b]
+fragment shader ResourceId::37330 [fs_0x0000000079f85779_0] entry=main
+disassembly targets: SPIR-V (RenderDoc), KHR_pipeline_executable_properties, AMDIL, GCN (gfx804), GCN (gfx900), GCN (gfx902), GCN (gfx906), RDNA (gfx1010), RDNA (gfx1012), RDNA2 (gfx1030), RDNA2 (gfx1031), RDNA2 (gfx1032), RDNA2 (gfx1034), RDNA2 (gfx1035)
+--- fragment disassembly (SPIR-V (RenderDoc)) ---
+SPIR-V 1.6 module, <id> bound of 447
+
+Generator: rdcspv::Generator(0)
+Generator Version: 0
+
+Capability(Shader);
+Capability(Image1D);
+Capability(Int64);
+Capability(Sampled1D);
+Capability(UniformAndStorageBuffer8BitAccess);
+Capability(ImageQuery);
+Capability(Int8);
+Capability(Int16);
+Capability(UniformAndStorageBuffer16BitAccess);
+Capability(FragmentBarycentricKHR);
+Capability(SignedZeroInfNanPreserve);
+
+Extension("SPV_KHR_float_controls");
+Extension("SPV_KHR_fragment_shader_barycentric");
+
+
+MemoryModel(Logical, GLSL450);
+
+EntryPoint(Fragment, _69, "main", {
+    push_data, 
+    _48, 
+    fs_in_attr0_p, 
+    frag_color0, 
+    ssbo_1, 
+    fs_img0, 
+    fs_sampsgpr:8
+  });
+
+ExecutionMode(_69, OriginUpperLeft);
+ExecutionMode(_69, SignedZeroInfNanPreserve(32));
+
+
+
+
+
+struct full_result_i32x2 {
+  i32_id _child0;
+  i32_id _child1;
+}
+struct full_result_u32x2 {
+  u32_id _child0;
+  u32_id _child1;
+}
+struct frexp_result_f32 {
+  f32_id _child0;
+  i32_id _child1;
+}
+struct AuxData : [[Block]] {
+  f32_id xoffset : [[Offset(0)]];
+  f32_id yoffset : [[Offset(4)]];
+  f32_id xscale : [[Offset(8)]];
+  f32_id yscale : [[Offset(12)]];
+  u32vec4_id ud_regs0 : [[Offset(16)]];
+  u32vec4_id ud_regs1 : [[Offset(32)]];
+  u32vec4_id ud_regs2 : [[Offset(48)]];
+  u32vec4_id ud_regs3 : [[Offset(64)]];
+  u32vec4_id buf_offsets0 : [[Offset(80)]];
+  u32vec4_id buf_offsets1 : [[Offset(96)]];
+  u32vec2_id buf_offsets2 : [[Offset(112)]];
+}
+struct _57 : [[Block]] {
+  u32_id[] data : [[Offset(0)]] : [[ArrayStride(4)]];
+}
+PushConstant AuxData* push_data;
+Input f32vec3_id* _48 : [[BuiltIn(BaryCoordKHR)]];
+Input f32vec4_id[3]* fs_in_attr0_p : [[Location(0), PerVertexKHR]];
+Output f32vec4_id* frag_color0 : [[Location(0)]];
+StorageBuffer struct57* ssbo_1 : [[DescriptorSet(0), Binding(0), NonWritable]];
+UniformConstant Image<float, 2D>* fs_img0 : [[DescriptorSet(0), Binding(1)]];
+UniformConstant sampler* fs_sampsgpr:8 : [[DescriptorSet(0), Binding(2)]];
+
+void_id _69() {
+  u32_id* _80 = &push_data.buf_offsets0.x;
+  u32_id _81 = *_80;
+  u32_id buf0_off = BitFieldUExtract(_81, 0, 8);
+  u32_id buf0_dword_off = buf0_off >> 2;
+  input_f32 _85 = &_48.y;
+  f32_id _86 = *_85;
+  input_f32 _87 = &_48.z;
+  f32_id _88 = *_87;
+  input_f32 _89 = &fs_in_attr0_p[0].x;
+  f32_id _90 = *_89;
+  input_f32 _91 = &fs_in_attr0_p[1].x;
+  f32_id _92 = *_91;
+  f32_id _93 = _92 - _90;
+  f32_id _95 = GLSL.std.450::Fma(_93, _86, _90);
+  u32_id _97 = 12 + buf0_dword_off;
+  u32_id* _98 = &ssbo_1.data[_97];
+  u32_id _99 = *_98;
+  u32_id _101 = 13 + buf0_dword_off;
+  u32_id* _102 = &ssbo_1.data[_101];
+  u32_id _103 = *_102;
+  u32_id _105 = 14 + buf0_dword_off;
+  u32_id* _106 = &ssbo_1.data[_105];
+  u32_id _107 = *_106;
+  u32_id _109 = 16 + buf0_dword_off;
+  u32_id* _110 = &ssbo_1.data[_109];
+  u32_id _111 = *_110;
+  u32_id _113 = 17 + buf0_dword_off;
+  u32_id* _114 = &ssbo_1.data[_113];
+  u32_id _115 = *_114;
+  u32_id _117 = 18 + buf0_dword_off;
+  u32_id* _118 = &ssbo_1.data[_117];
+  u32_id _119 = *_118;
+  input_f32 _120 = &fs_in_attr0_p[0].x;
+  f32_id _121 = *_120;
+  input_f32 _122 = &fs_in_attr0_p[2].x;
+  f32_id _123 = *_122;
+  f32_id _124 = _123 - _121;
+  f32_id _125 = GLSL.std.450::Fma(_124, _88, _95);
+  input_f32 _126 = &fs_in_attr0_p[0].y;
+  f32_id _127 = *_126;
+  input_f32 _128 = &fs_in_attr0_p[1].y;
+  f32_id _129 = *_128;
+  f32_id _130 = _129 - _127;
+  f32_id _131 = GLSL.std.450::Fma(_130, _86, _127);
+  f32_id _132 = Bitcast(_99);
+  f32_id _133 = _125 - _132;
+  input_f32 _134 = &fs_in_attr0_p[0].y;
+  f32_id _135 = *_134;
+  input_f32 _136 = &fs_in_attr0_p[2].y;
+  f32_id _137 = *_136;
+  f32_id _138 = _137 - _135;
+  f32_id _139 = GLSL.std.450::Fma(_138, _88, _131);
+  input_f32 _140 = &fs_in_attr0_p[0].z;
+  f32_id _141 = *_140;
+  input_f32 _142 = &fs_in_attr0_p[1].z;
+  f32_id _143 = *_142;
+  f32_id _144 = _143 - _141;
+  f32_id _145 = GLSL.std.450::Fma(_144, _86, _141);
+  f32_id _146 = Bitcast(_103);
+  f32_id _147 = _139 - _146;
+  input_f32 _148 = &fs_in_attr0_p[0].z;
+  f32_id _149 = *_148;
+  input_f32 _150 = &fs_in_attr0_p[2].z;
+  f32_id _151 = *_150;
+  f32_id _152 = _151 - _149;
+  f32_id _153 = GLSL.std.450::Fma(_152, _88, _145);
+  f32_id _154 = _133 * _133;
+  f32_id _155 = Bitcast(_107);
+  f32_id _156 = _153 - _155;
+  f32_id _157 = _147 * _147;
+  f32_id _158 = _157 + _154;
+  f32_id _159 = _156 * _156;
+  f32_id _160 = _159 + _158;
+  f32_id _161 = GLSL.std.450::InverseSqrt(_160);
+  f32_id _162 = _161 * _133;
+  f32_id _163 = _161 * _156;
+  f32_id _164 = GLSL.std.450::FAbs(_163);
+  f32_id _165 = GLSL.std.450::FAbs(_162);
+  f32_id _166 = GLSL.std.450::FMax(_164, _165);
+  f32_id _168 = 1.0000 / _166;
+  f32_id _169 = GLSL.std.450::FAbs(_163);
+  f32_id _170 = GLSL.std.450::FAbs(_162);
+  f32_id _171 = GLSL.std.450::FMin(_169, _170);
+  f32_id _172 = _168 * _171;
+  f32_id _173 = _172 * _172;
+  f32_id _176 = GLSL.std.450::Fma(0.0208, _173, -0.0851);
+  f32_id _177 = GLSL.std.450::FAbs(_161);
+  f32_id _178 = -_177;
+  f32_id _179 = GLSL.std.450::FAbs(_147);
+  f32_id _180 = _178 * _179;
+  f32_id _181 = _180 + 1.0000;
+  f32_id _183 = GLSL.std.450::Fma(_176, _173, 0.1801);
+  f32_id _184 = _181 * _181;
+  f32_id _186 = GLSL.std.450::Fma(_183, _173, -0.3303);
+  f32_id _187 = _181 * _184;
+  f32_id _189 = -0.0010 * _184;
+  f32_id _191 = -0.1179 * _181;
+  f32_id _193 = GLSL.std.450::Fma(_186, _173, 0.9999);
+  f32_id _195 = _187 * -0.0004;
+  f32_id _196 = _195 + _189;
+  f32_id _197 = _184 * _184;
+  f32_id _199 = _184 * -0.0265;
+  f32_id _200 = _199 + _191;
+  f32_id _201 = _172 * _193;
+  f32_id _203 = _197 * -0.0002;
+  f32_id _204 = _203 + _196;
+  f32_id _206 = _197 * -0.0027;
+  f32_id _207 = _206 + _200;
+  f32_id _210 = GLSL.std.450::Fma(-2.0000, _201, 1.5708);
+  f32_id _211 = GLSL.std.450::FAbs(_162);
+  f32_id _212 = GLSL.std.450::FAbs(_163);
+  bool_id _213 = _211 < _212;
+  bool_id _214 = 0.0000 > _162;
+  f32_id _215 = GLSL.std.450::FMin(_133, _156);
+  f32_id _216 = GLSL.std.450::FMax(_133, _156);
+  f32_id _218 = -0.0079 + _204;
+  f32_id _220 = -1.4142 + _207;
+  f32_id _221 = Select(_213, _210, 0.0000);
+  f32_id _223 = Select(_214, -3.1416, 0.0000);
+  f32_id _224 = _161 * _215;
+  f32_id _225 = _161 * _216;
+  f32_id _226 = GLSL.std.450::Sqrt(_181);
+  f32_id _227 = _161 * _147;
+  f32_id _228 = _218 * _187;
+  f32_id _229 = _228 + _220;
+  f32_id _230 = _221 + _223;
+  f32_id _231 = -_224;
+  bool_id _232 = _224 < _231;
+  f32_id _233 = -_225;
+  bool_id _234 = _225 >= _233;
+  f32_id _236 = GLSL.std.450::Fma(_226, _229, 3.1416);
+  f32_id _237 = _226 * _229;
+  bool_id _238 = 0.0000 >= _227;
+  f32_id _239 = _193 * _172;
+  f32_id _240 = _239 + _230;
+  f32_id _241 = -_237;
+  f32_id _242 = Select(_238, _236, _241);
+  f32_id _244 = 0.3183 * _242;
+  u32_id _245 = 0 + buf0_dword_off;
+  u32_id* _246 = &ssbo_1.data[_245];
+  u32_id _247 = *_246;
+  u32_id _248 = 1 + buf0_dword_off;
+  u32_id* _249 = &ssbo_1.data[_248];
+  u32_id _250 = *_249;
+  u32_id _251 = 2 + buf0_dword_off;
+  u32_id* _252 = &ssbo_1.data[_251];
+  u32_id _253 = *_252;
+  u32_id _254 = 3 + buf0_dword_off;
+  u32_id* _255 = &ssbo_1.data[_254];
+  u32_id _256 = *_255;
+  u32_id _258 = 6 + buf0_dword_off;
+  u32_id* _259 = &ssbo_1.data[_258];
+  u32_id _260 = *_259;
+  u32_id _262 = 7 + buf0_dword_off;
+  u32_id* _263 = &ssbo_1.data[_262];
+  u32_id _264 = *_263;
+  bool_id _265 = _232 && _234;
+  f32_id _266 = -_240;
+  f32_id _267 = Select(_265, _266, _240);
+  f32_id _268 = Bitcast(_250);
+  f32_id _269 = GLSL.std.450::FMin(_268, _244);
+  f32_id _270 = Bitcast(_247);
+  f32_id _272 = 0.1592 * _267;
+  f32_id _273 = _272 + _270;
+  f32_id _274 = Bitcast(_260);
+  f32_id _275 = _274 * _273;
+  f32_id _276 = Bitcast(_253);
+  f32_id _277 = _276 * _269;
+  f32vec2_id _278 = CompositeConstruct({_275, _277});
+  Image<float, 2D> _279 = *fs_img0;
+  sampler _280 = *fs_sampsgpr:8;
+  SampledImage<float, 2D> _281 = SampledImage(_279, _280);
+  f32vec4_id _282 = ImageSampleExplicitLod(_281, _278, Lod(0.0000));
+  f32_id _283 = _282.x;
+  f32_id _284 = _282.y;
+  f32_id _285 = _282.z;
+  f32_id _286 = Bitcast(_264);
+  bool_id _287 = 0.0000 != _286;
+  f32_id _288 = Bitcast(_111);
+  f32_id _289 = _288 * _283;
+  f32_id _290 = Bitcast(_115);
+  f32_id _291 = _290 * _284;
+  f32_id _292 = Bitcast(_119);
+  f32_id _293 = _292 * _285;
+  f32_id _294 = Bitcast(_256);
+  f32_id _295 = _294 * _289;
+  u32_id _296 = Bitcast(_295);
+  f32_id _297 = Bitcast(_256);
+  f32_id _298 = _297 * _291;
+  u32_id _299 = Bitcast(_298);
+  f32_id _300 = Bitcast(_256);
+  f32_id _301 = _300 * _293;
+  u32_id _302 = Bitcast(_301);
+  
+  if(_287) {
+    f32_id _304 = 12.9898 * _242;
+    f32_id _306 = _267 * 78.2330;
+    f32_id _307 = _306 + _304;
+    f32_id _308 = 0.1592 * _307;
+    f32_id _309 = GLSL.std.450::Fract(_308);
+    f32_id _310 = 6.2832 * _309;
+    f32_id _311 = GLSL.std.450::Sin(_310);
+    f32_id _313 = 43758.5469 * _311;
+    f32_id _315 = 0.2627 * _295;
+    f32_id _316 = GLSL.std.450::Fract(_313);
+    f32_id _318 = _298 * 0.6780;
+    f32_id _319 = _318 + _315;
+    f32_id _321 = 2.0000 * _316;
+    f32_id _323 = _321 + -1.0000;
+    f32_id _325 = _301 * 0.0593;
+    f32_id _326 = _325 + _319;
+    f32_id _327 = _326 * _323;
+    f32_id _328 = GLSL.std.450::FMin(_295, _298);
+    f32_id _329 = GLSL.std.450::FMin(_328, _301);
+    f32_id _330 = GLSL.std.450::FMin(_327, _329);
+    f32_id _331 = GLSL.std.450::FMin(_295, _298);
+    f32_id _332 = GLSL.std.450::FMin(_301, _331);
+    f32_id _333 = -_332;
+    f32_id _334 = GLSL.std.450::FMax(_333, _330);
+    f32_id _335 = Bitcast(_264);
+    f32_id _336 = _335 * _334;
+    f32_id _337 = _336 + _295;
+    f32_id _338 = Bitcast(_264);
+    f32_id _339 = _338 * _334;
+    f32_id _340 = _339 + _298;
+    f32_id _341 = Bitcast(_264);
+    f32_id _342 = _341 * _334;
+    f32_id _343 = _342 + _301;
+    f32_id _344 = GLSL.std.450::FMax(0.0000, _337);
+    u32_id _345 = Bitcast(_344);
+    f32_id _346 = GLSL.std.450::FMax(0.0000, _340);
+    u32_id _347 = Bitcast(_346);
+    f32_id _348 = GLSL.std.450::FMax(0.0000, _343);
+    u32_id _349 = Bitcast(_348);
+  }
+
+  u32_id _350 = Phi(_349, _302);
+  u32_id _351 = Phi(_347, _299);
+  u32_id _352 = Phi(_345, _296);
+  u32_id _354 = 24 + buf0_dword_off;
+  u32_id* _355 = &ssbo_1.data[_354];
+  u32_id _356 = *_355;
+  u32_id _358 = 25 + buf0_dword_off;
+  u32_id* _359 = &ssbo_1.data[_358];
+  u32_id _360 = *_359;
+  u32_id _362 = 26 + buf0_dword_off;
+  u32_id* _363 = &ssbo_1.data[_362];
+  u32_id _364 = *_363;
+  u32_id _366 = 27 + buf0_dword_off;
+  u32_id* _367 = &ssbo_1.data[_366];
+  u32_id _368 = *_367;
+  f32_id _369 = Bitcast(_368);
+  bool_id _370 = _369 <= _227;
+  
+  if(_370) {
+    u32_id _372 = 20 + buf0_dword_off;
+    u32_id* _373 = &ssbo_1.data[_372];
+    u32_id _374 = *_373;
+    u32_id _376 = 21 + buf0_dword_off;
+    u32_id* _377 = &ssbo_1.data[_376];
+    u32_id _378 = *_377;
+    u32_id _380 = 22 + buf0_dword_off;
+    u32_id* _381 = &ssbo_1.data[_380];
+    u32_id _382 = *_381;
+    u32_id _384 = 28 + buf0_dword_off;
+    u32_id* _385 = &ssbo_1.data[_384];
+    u32_id _386 = *_385;
+    u32_id _388 = 29 + buf0_dword_off;
+    u32_id* _389 = &ssbo_1.data[_388];
+    u32_id _390 = *_389;
+    u32_id _392 = 30 + buf0_dword_off;
+    u32_id* _393 = &ssbo_1.data[_392];
+    u32_id _394 = *_393;
+    u32_id _396 = 31 + buf0_dword_off;
+    u32_id* _397 = &ssbo_1.data[_396];
+    u32_id _398 = *_397;
+    f32_id _399 = Bitcast(_374);
+    f32_id _400 = _399 * _162;
+    f32_id _401 = Bitcast(_378);
+    f32_id _402 = _401 * _227;
+    f32_id _403 = _402 + _400;
+    f32_id _404 = Bitcast(_382);
+    f32_id _405 = _404 * _163;
+    f32_id _406 = _405 + _403;
+    f32_id _407 = Bitcast(_386);
+    bool_id _408 = _407 <= _406;
+    bool_id _409 = _370 && _408;
+    
+    if(_409) {
+      f32_id _410 = Bitcast(_390);
+      f32_id _411 = Bitcast(_394);
+      f32_id _412 = _410 * _406;
+      f32_id _413 = _412 + _411;
+      f32_id _414 = GLSL.std.450::FClamp(_413, 0.0000, 1.0000);
+      f32_id _415 = GLSL.std.450::Log2(_414);
+      f32_id _416 = Bitcast(_398);
+      f32_id _417 = _416 * _415;
+      f32_id _418 = GLSL.std.450::Exp2(_417);
+      f32_id _419 = Bitcast(_356);
+      f32_id _420 = Bitcast(_352);
+      f32_id _421 = _419 * _418;
+      f32_id _422 = _421 + _420;
+      u32_id _423 = Bitcast(_422);
+      f32_id _424 = Bitcast(_360);
+      f32_id _425 = Bitcast(_351);
+      f32_id _426 = _424 * _418;
+      f32_id _427 = _426 + _425;
+      u32_id _428 = Bitcast(_427);
+      f32_id _429 = Bitcast(_364);
+      f32_id _430 = Bitcast(_350);
+      f32_id _431 = _429 * _418;
+      f32_id _432 = _431 + _430;
+      u32_id _433 = Bitcast(_432);
+    }
+
+    u32_id _434 = Phi(_433, _350);
+    u32_id _435 = Phi(_428, _351);
+    u32_id _436 = Phi(_423, _352);
+  }
+
+  u32_id _437 = Phi(_434, _350);
+  u32_id _438 = Phi(_436, _352);
+  u32_id _439 = Phi(_435, _351);
+  f32_id _440 = Bitcast(_439);
+  f32_id _441 = Bitcast(_438);
+  f32_id _442 = Bitcast(_437);
+  output_f32 _443 = &frag_color0.x;
+  *_443 = _441;
+  output_f32 _444 = &frag_color0.y;
+  *_444 = _440;
+  output_f32 _445 = &frag_color0.z;
+  *_445 = _442;
+  output_f32 _446 = &frag_color0.w;
+  *_446 = 1.0000;
+  return;
+}
+
+
+
+--- end fragment disassembly ---
+vertex shader ResourceId::37331 [vs_0x000000002971025b_0] entry=main
+--- vertex disassembly (SPIR-V (RenderDoc)) ---
+SPIR-V 1.6 module, <id> bound of 193
+
+Generator: rdcspv::Generator(0)
+Generator Version: 0
+
+Capability(Shader);
+Capability(Image1D);
+Capability(Int64);
+Capability(Sampled1D);
+Capability(UniformAndStorageBuffer8BitAccess);
+Capability(ImageQuery);
+Capability(Int8);
+Capability(Int16);
+Capability(UniformAndStorageBuffer16BitAccess);
+Capability(DrawParameters);
+Capability(ShaderLayer);
+Capability(SignedZeroInfNanPreserve);
+
+Extension("SPV_KHR_float_controls");
+Extension("SPV_KHR_shader_draw_parameters");
+
+
+MemoryModel(Logical, GLSL450);
+
+EntryPoint(Vertex, _69, "main", {
+    push_data, 
+    _47, 
+    _48, 
+    _49, 
+    vs_in_attr0, 
+    vs_in_attr1, 
+    _54, 
+    _55, 
+    out_attr0, 
+    ssbo_2, 
+    clip_planes
+  });
+
+ExecutionMode(_69, SignedZeroInfNanPreserve(32));
+
+
+
+
+
+struct full_result_i32x2 {
+  i32_id _child0;
+  i32_id _child1;
+}
+struct full_result_u32x2 {
+  u32_id _child0;
+  u32_id _child1;
+}
+struct frexp_result_f32 {
+  f32_id _child0;
+  i32_id _child1;
+}
+struct AuxData : [[Block]] {
+  f32_id xoffset : [[Offset(0)]];
+  f32_id yoffset : [[Offset(4)]];
+  f32_id xscale : [[Offset(8)]];
+  f32_id yscale : [[Offset(12)]];
+  u32vec4_id ud_regs0 : [[Offset(16)]];
+  u32vec4_id ud_regs1 : [[Offset(32)]];
+  u32vec4_id ud_regs2 : [[Offset(48)]];
+  u32vec4_id ud_regs3 : [[Offset(64)]];
+  u32vec4_id buf_offsets0 : [[Offset(80)]];
+  u32vec4_id buf_offsets1 : [[Offset(96)]];
+  u32vec2_id buf_offsets2 : [[Offset(112)]];
+}
+struct _59 : [[Block]] {
+  u32_id[] data : [[Offset(0)]] : [[ArrayStride(4)]];
+}
+struct _64 : [[Block]] {
+  f32_id[] data : [[Offset(0)]] : [[ArrayStride(4)]];
+}
+PushConstant AuxData* push_data;
+Input input_u32 _47 : [[BuiltIn(VertexIndex)]];
+Input input_u32 _48 : [[BuiltIn(BaseVertex)]];
+Input input_u32 _49 : [[BuiltIn(InstanceIndex)]];
+Input f32vec4_id* vs_in_attr0 : [[Location(0)]];
+Input f32vec4_id* vs_in_attr1 : [[Location(1)]];
+Output f32vec4_id* _54 : [[BuiltIn(Position)]];
+Output output_u32 _55 : [[BuiltIn(Layer)]];
+Output f32vec4_id* out_attr0 : [[Location(0)]];
+StorageBuffer struct59* ssbo_2 : [[DescriptorSet(0), Binding(3), NonWritable]];
+StorageBuffer struct64* clip_planes : [[DescriptorSet(0), Binding(4), NonWritable]];
+
+void_id _69() {
+  u32_id* _74 = &push_data.buf_offsets0.x;
+  u32_id _75 = *_74;
+  u32_id buf1_off = BitFieldUExtract(_75, 8, 8);
+  u32_id buf1_dword_off = buf1_off >> 2;
+  input_f32 _80 = &vs_in_attr0.w;
+  f32_id _81 = *_80;
+  input_f32 _82 = &vs_in_attr0.z;
+  f32_id _83 = *_82;
+  input_f32 _84 = &vs_in_attr0.y;
+  f32_id _85 = *_84;
+  input_f32 _86 = &vs_in_attr0.x;
+  f32_id _87 = *_86;
+  f32vec4_id _88 = CompositeConstruct({_87, _85, _83, _81});
+  f32vec4_id _91 = f32vec4_id(_88.x, _88.y, _88.z, {0.0000, 1.0000, 0.0000, 0.0000}.y);
+  f32_id _92 = _91.x;
+  f32_id _93 = _91.y;
+  f32_id _94 = _91.z;
+  input_f32 _95 = &vs_in_attr1.w;
+  f32_id _96 = *_95;
+  input_f32 _97 = &vs_in_attr1.z;
+  f32_id _98 = *_97;
+  input_f32 _99 = &vs_in_attr1.y;
+  f32_id _100 = *_99;
+  input_f32 _101 = &vs_in_attr1.x;
+  f32_id _102 = *_101;
+  f32vec4_id _103 = CompositeConstruct({_102, _100, _98, _96});
+  f32vec4_id _104 = f32vec4_id(_103.x, _103.y, _103.z, _103.w);
+  f32_id _105 = _104.w;
+  u32_id _106 = ConvertFToU(_105);
+  f32_id _107 = Bitcast(_106);
+  u32_id _108 = Bitcast(_107);
+  *_55 = _108;
+  output_f32 _109 = &_54.x;
+  *_109 = _92;
+  output_f32 _110 = &_54.y;
+  *_110 = _93;
+  output_f32 _111 = &_54.z;
+  *_111 = _94;
+  output_f32 _112 = &_54.w;
+  *_112 = 1.0000;
+  u32_id _114 = 12 + buf1_dword_off;
+  u32_id* _115 = &ssbo_2.data[_114];
+  u32_id _116 = *_115;
+  u32_id _118 = 13 + buf1_dword_off;
+  u32_id* _119 = &ssbo_2.data[_118];
+  u32_id _120 = *_119;
+  u32_id _122 = 14 + buf1_dword_off;
+  u32_id* _123 = &ssbo_2.data[_122];
+  u32_id _124 = *_123;
+  u32_id _126 = 15 + buf1_dword_off;
+  u32_id* _127 = &ssbo_2.data[_126];
+  u32_id _128 = *_127;
+  u32_id _129 = 0 + buf1_dword_off;
+  u32_id* _130 = &ssbo_2.data[_129];
+  u32_id _131 = *_130;
+  u32_id _132 = 1 + buf1_dword_off;
+  u32_id* _133 = &ssbo_2.data[_132];
+  u32_id _134 = *_133;
+  u32_id _135 = 2 + buf1_dword_off;
+  u32_id* _136 = &ssbo_2.data[_135];
+  u32_id _137 = *_136;
+  u32_id _138 = 3 + buf1_dword_off;
+  u32_id* _139 = &ssbo_2.data[_138];
+  u32_id _140 = *_139;
+  u32_id _142 = 4 + buf1_dword_off;
+  u32_id* _143 = &ssbo_2.data[_142];
+  u32_id _144 = *_143;
+  u32_id _146 = 5 + buf1_dword_off;
+  u32_id* _147 = &ssbo_2.data[_146];
+  u32_id _148 = *_147;
+  u32_id _150 = 6 + buf1_dword_off;
+  u32_id* _151 = &ssbo_2.data[_150];
+  u32_id _152 = *_151;
+  u32_id _154 = 7 + buf1_dword_off;
+  u32_id* _155 = &ssbo_2.data[_154];
+  u32_id _156 = *_155;
+  f32_id _157 = Bitcast(_131);
+  f32_id _158 = _157 * _92;
+  f32_id _159 = Bitcast(_137);
+  f32_id _160 = _159 * _92;
+  f32_id _161 = Bitcast(_134);
+  f32_id _162 = _161 * _92;
+  f32_id _163 = Bitcast(_140);
+  f32_id _164 = Bitcast(_128);
+  f32_id _165 = _163 * _92;
+  f32_id _166 = _165 + _164;
+  f32_id _167 = Bitcast(_156);
+  f32_id _168 = _167 * _93;
+  f32_id _169 = _168 + _166;
+  f32_id _170 = Bitcast(_144);
+  f32_id _171 = _170 * _93;
+  f32_id _172 = _171 + _158;
+  f32_id _173 = Bitcast(_152);
+  f32_id _174 = _173 * _93;
+  f32_id _175 = _174 + _160;
+  f32_id _176 = Bitcast(_148);
+  f32_id _177 = _176 * _93;
+  f32_id _178 = _177 + _162;
+  f32_id _179 = 1.0000 / _169;
+  f32_id _180 = Bitcast(_116);
+  f32_id _181 = _180 + _172;
+  f32_id _182 = Bitcast(_124);
+  f32_id _183 = _182 + _175;
+  f32_id _184 = Bitcast(_120);
+  f32_id _185 = _184 + _178;
+  f32_id _186 = _179 * _181;
+  f32_id _187 = _179 * _183;
+  f32_id _188 = _179 * _185;
+  output_f32 _189 = &out_attr0.x;
+  *_189 = _186;
+  output_f32 _190 = &out_attr0.y;
+  *_190 = _188;
+  output_f32 _191 = &out_attr0.z;
+  *_191 = _187;
+  output_f32 _192 = &out_attr0.w;
+  *_192 = 0.0000;
+  return;
+}
+
+
+
+--- end vertex disassembly ---
+color blends state: [<Swig Object of type 'ColorBlend *' at 0x00000291282C1230>, <Swig Object of type 'ColorBlend *' at 0x00000291282C12B0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C12F0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C1330>, <Swig Object of type 'ColorBlend *' at 0x00000291282C1370>, <Swig Object of type 'ColorBlend *' at 0x00000291282C13F0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C1430>, <Swig Object of type 'ColorBlend *' at 0x00000291282C1470>]
+TEX ResourceId::38717 8192x2048x1 BC6_SFLOAT [Image 8192x2048x1 Thin1DThin Bc6HSfloatBlock 0x10af4ca600:0x1000000 L:1 M:1 S:1] min(0.0200958 0.0290833 0.0632324 1) max(9.60938 8.88281 7.83594 1)
+vertex buffers: 10
+  VB0 ResourceId::127499 [Buffer 0x201424000:0x13160000] off=35564544 stride=12 size=4294967295
+  VB0 ResourceId::127499 off=35564544 bytes=256
+    dw000 bf800000 3f800000 00000000 bf800000 bf800000 00000000 3f800000 bf800000 | -1 1 0 -1 -1 0 1 -1
+    dw008 00000000 3f800000 3f800000 00000000 00000000 00000000 3f6576bd 3f657129 | 0 1 1 0 0 0 0.896343 0.896258
+    dw016 00000000 00000000 00000000 00000000 00000000 00000480 00fff000 08f00000 | 0 0 0 0 0 1.6143e-42 2.35041e-38 1.44445e-33
+    dw024 00000000 00000680 00fff000 08f00000 00000000 0000a002 00000000 00000000 | 0 2.33176e-42 2.35041e-38 1.44445e-33 0 5.74e-41 0 0
+    dw032 0360ec00 000c0002 00000004 2006f3ac 0360ec40 00000002 00000010 20077fac | 6.60986e-37 1.10203e-39 5.60519e-45 1.14309e-19 6.60989e-37 2.8026e-45 2.24208e-44 1.14772e-19
+    dw040 3fb0894c 00340010 0000098d 20049fac 3fb08930 00340010 0000098d 2006f3ac | 1.37919 4.77547e-39 3.42617e-42 1.12337e-19 1.37919 4.77547e-39 3.42617e-42 1.14309e-19
+    dw048 be792886 00000000 be2e2c39 00000000 00000000 3e980000 00000000 00000000 | -0.243319 0 -0.170091 0 0 0.296875 0 0
+    dw056 3e2e2c39 00000000 be792886 00000000 445d4e7f 4284867c c454e78f 3f800000 | 0.170091 0 -0.243319 0 885.227 66.2627 -851.618 1
+  VB1 ResourceId::127499 [Buffer 0x201424000:0x13160000] off=35564608 stride=0 size=4294967295
+  VB1 ResourceId::127499 off=35564608 bytes=256
+    dw000 00000000 00000000 00000000 00000000 00000000 00000480 00fff000 08f00000 | 0 0 0 0 0 1.6143e-42 2.35041e-38 1.44445e-33
+    dw008 00000000 00000680 00fff000 08f00000 00000000 0000a002 00000000 00000000 | 0 2.33176e-42 2.35041e-38 1.44445e-33 0 5.74e-41 0 0
+    dw016 0360ec00 000c0002 00000004 2006f3ac 0360ec40 00000002 00000010 20077fac | 6.60986e-37 1.10203e-39 5.60519e-45 1.14309e-19 6.60989e-37 2.8026e-45 2.24208e-44 1.14772e-19
+    dw024 3fb0894c 00340010 0000098d 20049fac 3fb08930 00340010 0000098d 2006f3ac | 1.37919 4.77547e-39 3.42617e-42 1.12337e-19 1.37919 4.77547e-39 3.42617e-42 1.14309e-19
+    dw032 be792886 00000000 be2e2c39 00000000 00000000 3e980000 00000000 00000000 | -0.243319 0 -0.170091 0 0 0.296875 0 0
+    dw040 3e2e2c39 00000000 be792886 00000000 445d4e7f 4284867c c454e78f 3f800000 | 0.170091 0 -0.243319 0 885.227 66.2627 -851.618 1
+    dw048 be792886 00000000 be2e2c39 00000000 00000000 3e980000 00000000 00000000 | -0.243319 0 -0.170091 0 0 0.296875 0 0
+    dw056 3e2e2c39 00000000 be792886 00000000 445d4e7f 4284867c c454e78f 3f800000 | 0.170091 0 -0.243319 0 885.227 66.2627 -851.618 1
+  VB2 ResourceId::228 [StreamBuffer(Stream):0x4000000] off=35025176 stride=36 size=4294967295
+  VB2 ResourceId::228 off=35025176 bytes=256
+    dw000 fe6ba7ff 3f800000 c007fc00 c40c7f43 426935a2 4401ed46 007fe6e6 86c28331 | nan/inf 1 -2.12476 -561.988 58.3024 519.707 1.17459e-38 -7.31675e-35
+    dw008 21cbc16e c3acbb90 3f800000 c007fc00 43a71dee 426935a2 449d15b2 007fe0e0 | 1.3807e-18 -345.465 1 -2.12476 334.234 58.3024 1256.68 1.17438e-38
+    dw016 7cbf841d 21cb7966 c7bcb412 3f800000 c007fc00 c40c7f43 426935a2 c3d273d5 | nan/inf 1.37879e-18 -96616.1 1 -2.12476 -561.988 58.3024 -420.905
+    dw024 007fe6e6 8ac08728 23cc6986 fcbbcb66 3f800000 c007fc00 44b8dea5 426935a2 | 1.17459e-38 -1.85398e-32 2.21624e-17 nan/inf 1 -2.12476 1478.96 58.3024
+    dw032 426beb83 007fdddd 7e89cc0a 288d019b c19b3c9d 3f800000 c007fc00 43f204c5 | 58.98 1.17427e-38 nan/inf 1.56548e-14 -19.4046 1 -2.12476 484.037
+    dw040 426935a2 c4bfea14 007fdada 3d9f890d 268ce996 f8ab23cc 3f800000 c007fc00 | 58.3024 -1535.31 1.17416e-38 0.0778981 9.77777e-16 nan/inf 1 -2.12476
+    dw048 4493a1b7 426935a2 c4bfea14 007fdada 5b95ad0f 2a0db9b0 f96b1866 3f800000 | 1181.05 58.3024 -1535.31 1.17416e-38 8.42601e+16 1.25877e-13 nan/inf 1
+    dw056 c007fc00 00000000 00010000 00000002 00010003 00020000 00000004 00030005 | -2.12476 0 9.18355e-41 2.8026e-45 9.18397e-41 1.83671e-40 5.60519e-45 2.75513e-40
+  VB3 ResourceId::228 [StreamBuffer(Stream):0x4000000] off=35025180 stride=36 size=4294967295
+  VB3 ResourceId::228 off=35025180 bytes=256
+    dw000 3f800000 c007fc00 c40c7f43 426935a2 4401ed46 007fe6e6 86c28331 21cbc16e | 1 -2.12476 -561.988 58.3024 519.707 1.17459e-38 -7.31675e-35 1.3807e-18
+    dw008 c3acbb90 3f800000 c007fc00 43a71dee 426935a2 449d15b2 007fe0e0 7cbf841d | -345.465 1 -2.12476 334.234 58.3024 1256.68 1.17438e-38 nan/inf
+    dw016 21cb7966 c7bcb412 3f800000 c007fc00 c40c7f43 426935a2 c3d273d5 007fe6e6 | 1.37879e-18 -96616.1 1 -2.12476 -561.988 58.3024 -420.905 1.17459e-38
+    dw024 8ac08728 23cc6986 fcbbcb66 3f800000 c007fc00 44b8dea5 426935a2 426beb83 | -1.85398e-32 2.21624e-17 nan/inf 1 -2.12476 1478.96 58.3024 58.98
+    dw032 007fdddd 7e89cc0a 288d019b c19b3c9d 3f800000 c007fc00 43f204c5 426935a2 | 1.17427e-38 nan/inf 1.56548e-14 -19.4046 1 -2.12476 484.037 58.3024
+    dw040 c4bfea14 007fdada 3d9f890d 268ce996 f8ab23cc 3f800000 c007fc00 4493a1b7 | -1535.31 1.17416e-38 0.0778981 9.77777e-16 nan/inf 1 -2.12476 1181.05
+    dw048 426935a2 c4bfea14 007fdada 5b95ad0f 2a0db9b0 f96b1866 3f800000 c007fc00 | 58.3024 -1535.31 1.17416e-38 8.42601e+16 1.25877e-13 nan/inf 1 -2.12476
+    dw056 00000000 00010000 00000002 00010003 00020000 00000004 00030005 00040000 | 0 9.18355e-41 2.8026e-45 9.18397e-41 1.83671e-40 5.60519e-45 2.75513e-40 3.67342e-40
+  VB4 ResourceId::228 [StreamBuffer(Stream):0x4000000] off=35025164 stride=36 size=4294967295
+  VB4 ResourceId::228 off=35025164 bytes=256
+    dw000 007fd9d9 7fba8b1e 264cb190 fe6ba7ff 3f800000 c007fc00 c40c7f43 426935a2 | 1.17413e-38 nan/inf 7.10174e-16 nan/inf 1 -2.12476 -561.988 58.3024
+    dw008 4401ed46 007fe6e6 86c28331 21cbc16e c3acbb90 3f800000 c007fc00 43a71dee | 519.707 1.17459e-38 -7.31675e-35 1.3807e-18 -345.465 1 -2.12476 334.234
+    dw016 426935a2 449d15b2 007fe0e0 7cbf841d 21cb7966 c7bcb412 3f800000 c007fc00 | 58.3024 1256.68 1.17438e-38 nan/inf 1.37879e-18 -96616.1 1 -2.12476
+    dw024 c40c7f43 426935a2 c3d273d5 007fe6e6 8ac08728 23cc6986 fcbbcb66 3f800000 | -561.988 58.3024 -420.905 1.17459e-38 -1.85398e-32 2.21624e-17 nan/inf 1
+    dw032 c007fc00 44b8dea5 426935a2 426beb83 007fdddd 7e89cc0a 288d019b c19b3c9d | -2.12476 1478.96 58.3024 58.98 1.17427e-38 nan/inf 1.56548e-14 -19.4046
+    dw040 3f800000 c007fc00 43f204c5 426935a2 c4bfea14 007fdada 3d9f890d 268ce996 | 1 -2.12476 484.037 58.3024 -1535.31 1.17416e-38 0.0778981 9.77777e-16
+    dw048 f8ab23cc 3f800000 c007fc00 4493a1b7 426935a2 c4bfea14 007fdada 5b95ad0f | nan/inf 1 -2.12476 1181.05 58.3024 -1535.31 1.17416e-38 8.42601e+16
+    dw056 2a0db9b0 f96b1866 3f800000 c007fc00 00000000 00010000 00000002 00010003 | 1.25877e-13 nan/inf 1 -2.12476 0 9.18355e-41 2.8026e-45 9.18397e-41
+  VB5 ResourceId::228 [StreamBuffer(Stream):0x4000000] off=35025184 stride=36 size=4294967295
+  VB5 ResourceId::228 off=35025184 bytes=256
+    dw000 c007fc00 c40c7f43 426935a2 4401ed46 007fe6e6 86c28331 21cbc16e c3acbb90 | -2.12476 -561.988 58.3024 519.707 1.17459e-38 -7.31675e-35 1.3807e-18 -345.465
+    dw008 3f800000 c007fc00 43a71dee 426935a2 449d15b2 007fe0e0 7cbf841d 21cb7966 | 1 -2.12476 334.234 58.3024 1256.68 1.17438e-38 nan/inf 1.37879e-18
+    dw016 c7bcb412 3f800000 c007fc00 c40c7f43 426935a2 c3d273d5 007fe6e6 8ac08728 | -96616.1 1 -2.12476 -561.988 58.3024 -420.905 1.17459e-38 -1.85398e-32
+    dw024 23cc6986 fcbbcb66 3f800000 c007fc00 44b8dea5 426935a2 426beb83 007fdddd | 2.21624e-17 nan/inf 1 -2.12476 1478.96 58.3024 58.98 1.17427e-38
+    dw032 7e89cc0a 288d019b c19b3c9d 3f800000 c007fc00 43f204c5 426935a2 c4bfea14 | nan/inf 1.56548e-14 -19.4046 1 -2.12476 484.037 58.3024 -1535.31
+    dw040 007fdada 3d9f890d 268ce996 f8ab23cc 3f800000 c007fc00 4493a1b7 426935a2 | 1.17416e-38 0.0778981 9.77777e-16 nan/inf 1 -2.12476 1181.05 58.3024
+    dw048 c4bfea14 007fdada 5b95ad0f 2a0db9b0 f96b1866 3f800000 c007fc00 00000000 | -1535.31 1.17416e-38 8.42601e+16 1.25877e-13 nan/inf 1 -2.12476 0
+    dw056 00010000 00000002 00010003 00020000 00000004 00030005 00040000 00000000 | 9.18355e-41 2.8026e-45 9.18397e-41 1.83671e-40 5.60519e-45 2.75513e-40 3.67342e-40 0
+  VB6 ResourceId::228 [StreamBuffer(Stream):0x4000000] off=35025152 stride=36 size=4294967295
+  VB6 ResourceId::228 off=35025152 bytes=256
+    dw000 43f8b708 426935a2 c32bce29 007fd9d9 7fba8b1e 264cb190 fe6ba7ff 3f800000 | 497.43 58.3024 -171.805 1.17413e-38 nan/inf 7.10174e-16 nan/inf 1
+    dw008 c007fc00 c40c7f43 426935a2 4401ed46 007fe6e6 86c28331 21cbc16e c3acbb90 | -2.12476 -561.988 58.3024 519.707 1.17459e-38 -7.31675e-35 1.3807e-18 -345.465
+    dw016 3f800000 c007fc00 43a71dee 426935a2 449d15b2 007fe0e0 7cbf841d 21cb7966 | 1 -2.12476 334.234 58.3024 1256.68 1.17438e-38 nan/inf 1.37879e-18
+    dw024 c7bcb412 3f800000 c007fc00 c40c7f43 426935a2 c3d273d5 007fe6e6 8ac08728 | -96616.1 1 -2.12476 -561.988 58.3024 -420.905 1.17459e-38 -1.85398e-32
+    dw032 23cc6986 fcbbcb66 3f800000 c007fc00 44b8dea5 426935a2 426beb83 007fdddd | 2.21624e-17 nan/inf 1 -2.12476 1478.96 58.3024 58.98 1.17427e-38
+    dw040 7e89cc0a 288d019b c19b3c9d 3f800000 c007fc00 43f204c5 426935a2 c4bfea14 | nan/inf 1.56548e-14 -19.4046 1 -2.12476 484.037 58.3024 -1535.31
+    dw048 007fdada 3d9f890d 268ce996 f8ab23cc 3f800000 c007fc00 4493a1b7 426935a2 | 1.17416e-38 0.0778981 9.77777e-16 nan/inf 1 -2.12476 1181.05 58.3024
+    dw056 c4bfea14 007fdada 5b95ad0f 2a0db9b0 f96b1866 3f800000 c007fc00 00000000 | -1535.31 1.17416e-38 8.42601e+16 1.25877e-13 nan/inf 1 -2.12476 0
+  VB7 ResourceId::228 [StreamBuffer(Stream):0x4000000] off=34550968 stride=68 size=4294967295
+  VB7 ResourceId::228 off=34550968 bytes=256
+    dw000 c067fffc 8168ffb8 f80d7fa7 44361d1d 42770049 c42e9cfe 3f800000 40f80000 | -3.625 -4.27951e-38 nan/inf 728.455 61.7503 -698.453 1 7.75
+    dw008 3f800000 3f0ee4de 420c8ac8 390f3c00 00003c00 007f7e7d 84ce8296 2409c938 | 1 0.55818 35.1355 0.000136599 2.15239e-41 1.17085e-38 -4.85503e-36 2.98776e-17
+    dw016 c5843881 c067fffc 8168ffb8 f9a57fa7 44366381 427725cf c42f2ef4 3f800000 | -4231.06 -3.625 -4.27951e-38 nan/inf 729.555 61.7869 -700.734 1
+    dw024 40f1ccd0 00000000 3f12269a 420c9bd5 35303c00 00003c00 007f7e7d 82ce8496 | 7.55625 0 0.570902 35.1522 6.56524e-07 2.15239e-41 1.17085e-38 -3.03451e-37
+    dw032 2349812f c6b43873 c067fffc 8168ffb8 f82b93a7 44367884 427725e6 c42f2054 | 1.09236e-17 -23068.2 -3.625 -4.27951e-38 nan/inf 729.883 61.787 -700.505
+    dw040 3f800000 40f1ccd0 3f800000 3f0ed909 420c9bd2 35913c00 00003c00 007f7e7d | 1 7.55625 1 0.557999 35.1522 1.08208e-06 2.15239e-41 1.17085e-38
+    dw048 82cd8396 22895127 c8340095 c067fffc 8168ffb8 f9c293a7 4436bee9 42774c00 | -3.01976e-37 3.72198e-18 -184322 -3.625 -4.27951e-38 nan/inf 730.983 61.8242
+    dw056 c42fb246 3f800000 40eb999c 00000000 3f121b27 420cace0 33d63c00 00003c00 | -702.786 1 7.3625 0 0.570727 35.1688 9.97607e-08 2.15239e-41
+  VB8 ResourceId::228 [StreamBuffer(Stream):0x4000000] off=34550976 stride=68 size=4294967295
+  VB8 ResourceId::228 off=34550976 bytes=256
+    dw000 f80d7fa7 44361d1d 42770049 c42e9cfe 3f800000 40f80000 3f800000 3f0ee4de | nan/inf 728.455 61.7503 -698.453 1 7.75 1 0.55818
+    dw008 420c8ac8 390f3c00 00003c00 007f7e7d 84ce8296 2409c938 c5843881 c067fffc | 35.1355 0.000136599 2.15239e-41 1.17085e-38 -4.85503e-36 2.98776e-17 -4231.06 -3.625
+    dw016 8168ffb8 f9a57fa7 44366381 427725cf c42f2ef4 3f800000 40f1ccd0 00000000 | -4.27951e-38 nan/inf 729.555 61.7869 -700.734 1 7.55625 0
+    dw024 3f12269a 420c9bd5 35303c00 00003c00 007f7e7d 82ce8496 2349812f c6b43873 | 0.570902 35.1522 6.56524e-07 2.15239e-41 1.17085e-38 -3.03451e-37 1.09236e-17 -23068.2
+    dw032 c067fffc 8168ffb8 f82b93a7 44367884 427725e6 c42f2054 3f800000 40f1ccd0 | -3.625 -4.27951e-38 nan/inf 729.883 61.787 -700.505 1 7.55625
+    dw040 3f800000 3f0ed909 420c9bd2 35913c00 00003c00 007f7e7d 82cd8396 22895127 | 1 0.557999 35.1522 1.08208e-06 2.15239e-41 1.17085e-38 -3.01976e-37 3.72198e-18
+    dw048 c8340095 c067fffc 8168ffb8 f9c293a7 4436bee9 42774c00 c42fb246 3f800000 | -184322 -3.625 -4.27951e-38 nan/inf 730.983 61.8242 -702.786 1
+    dw056 40eb999c 00000000 3f121b27 420cace0 33d63c00 00003c00 007f7d7e 82cd8396 | 7.3625 0 0.570727 35.1688 9.97607e-08 2.15239e-41 1.17081e-38 -3.01976e-37
+  VB9 ResourceId::114404 [Buffer 0x106ef38000:0x20000] off=11424 stride=84 size=4294967295
+  VB9 ResourceId::114404 off=11424 bytes=256
+    dw000 a8890400 443d6ba8 4282419d c44146e3 3f800000 3e5bffd0 3f76c161 3e13e9e8 | -1.52118e-14 757.682 65.1282 -773.108 1 0.214843 0.963888 0.144447
+    dw008 3ddbffcc bc00bc00 0000bc00 007fc1c1 00000000 c0000000 5054b292 f6412d89 | 0.107421 -0.00785732 6.74417e-41 1.17326e-38 0 -2 1.42739e+10 nan/inf
+    dw016 82d37c83 3c0fa9f2 fe74bfd3 c207f41c 7fb80a99 b0c5db47 443dc84a 428256ad | -3.10751e-37 0.00876855 nan/inf -33.9884 nan/inf -1.4396e-09 759.13 65.1693
+    dw024 c441cb88 3f800000 3e5bffd0 3f7a12b6 3dbda930 3ddbffcc bc00bc00 0000bc00 | -775.18 1 0.214843 0.976848 0.0926079 0.107421 -0.00785732 6.74417e-41
+    dw032 007fbfc1 00000000 c0000000 57967acf f2c1916b 81d37b82 3e102a04 c0d4dbf6 | 1.17319e-38 0 -2 3.30908e+14 nan/inf -7.76864e-38 0.140785 -6.65185
+    dw040 c067fc0b 7fb80398 b0d10400 443d4535 42818534 c43fd78d 3f800000 00000000 | -3.62476 nan/inf -1.52079e-09 757.081 64.7602 -767.368 1 0
+    dw048 3f701eb7 3e7e1484 3aa28ed7 bc00bc00 0000bc00 007fc1c1 00000000 c0000000 | 0.937969 0.248125 0.00124022 -0.00785732 6.74417e-41 1.17326e-38 0 -2
+    dw056 4f93e253 ef10c130 7dcc7b7e 3a4eb9d4 fcc4f3df c077fffb 7fb80098 bbe7c8a9 | 4.96217e+09 -4.47994e+28 nan/inf 0.000788597 nan/inf -3.875 nan/inf -0.00707348
+vertex inputs: 2
+  <Swig Object of type 'VertexInputAttribute *' at 0x00000291282C1570>
+    name=vs_in_attr0 vertexBuffer=0 byteOffset=0 perInstance=False instanceRate=1 format=R32G32B32_FLOAT
+  <Swig Object of type 'VertexInputAttribute *' at 0x00000291282C1630>
+    name=vs_in_attr1 vertexBuffer=1 byteOffset=0 perInstance=False instanceRate=1 format=R32G32B32A32_FLOAT
+
+=== eid 6000 vkCmdDraw() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::99288, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::0
+ACTION flags=ActionFlags.Instanced|Drawcall
+WATCH 0x100a540000 ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64000 64000 63488 1)
+pipeline ResourceId::99436 [Graphics Pipeline fs_0x00000000698cf958,vs_0x000000003a8debf7]
+fragment shader ResourceId::99433 [fs_0x00000000698cf958_1] entry=main
+disassembly targets: SPIR-V (RenderDoc), KHR_pipeline_executable_properties, AMDIL, GCN (gfx804), GCN (gfx900), GCN (gfx902), GCN (gfx906), RDNA (gfx1010), RDNA (gfx1012), RDNA2 (gfx1030), RDNA2 (gfx1031), RDNA2 (gfx1032), RDNA2 (gfx1034), RDNA2 (gfx1035)
+--- fragment disassembly (SPIR-V (RenderDoc)) ---
+SPIR-V 1.6 module, <id> bound of 923
+
+Generator: rdcspv::Generator(0)
+Generator Version: 0
+
+Capability(Shader);
+Capability(DemoteToHelperInvocation);
+Capability(Image1D);
+Capability(Int64);
+Capability(Sampled1D);
+Capability(ImageQuery);
+Capability(Int8);
+Capability(Int16);
+Capability(UniformAndStorageBuffer8BitAccess);
+Capability(UniformAndStorageBuffer16BitAccess);
+Capability(FragmentBarycentricKHR);
+Capability(SignedZeroInfNanPreserve);
+
+Extension("SPV_KHR_float_controls");
+Extension("SPV_KHR_fragment_shader_barycentric");
+
+
+MemoryModel(Logical, GLSL450);
+
+EntryPoint(Fragment, _81, "main", {
+    push_data, 
+    _48, 
+    fs_in_attr0_p, 
+    fs_in_attr1_p, 
+    frag_color0, 
+    ssbo_1, 
+    fs_img32, 
+    fs_img24, 
+    fs_img0, 
+    fs_img16, 
+    fs_img40, 
+    fs_sampsgpr:8, 
+    fs_sampinline:0xfff00000008012:0x1000000
+  });
+
+ExecutionMode(_81, OriginUpperLeft);
+ExecutionMode(_81, SignedZeroInfNanPreserve(32));
+
+
+
+
+
+struct full_result_i32x2 {
+  i32_id _child0;
+  i32_id _child1;
+}
+struct full_result_u32x2 {
+  u32_id _child0;
+  u32_id _child1;
+}
+struct frexp_result_f32 {
+  f32_id _child0;
+  i32_id _child1;
+}
+struct AuxData : [[Block]] {
+  f32_id xoffset : [[Offset(0)]];
+  f32_id yoffset : [[Offset(4)]];
+  f32_id xscale : [[Offset(8)]];
+  f32_id yscale : [[Offset(12)]];
+  u32vec4_id ud_regs0 : [[Offset(16)]];
+  u32vec4_id ud_regs1 : [[Offset(32)]];
+  u32vec4_id ud_regs2 : [[Offset(48)]];
+  u32vec4_id ud_regs3 : [[Offset(64)]];
+  u32vec4_id buf_offsets0 : [[Offset(80)]];
+  u32vec4_id buf_offsets1 : [[Offset(96)]];
+  u32vec2_id buf_offsets2 : [[Offset(112)]];
+}
+struct _58 : [[Block]] {
+  u32_id[] data : [[Offset(0)]] : [[ArrayStride(4)]];
+}
+PushConstant AuxData* push_data;
+Input f32vec3_id* _48 : [[BuiltIn(BaryCoordKHR)]];
+Input f32vec4_id[3]* fs_in_attr0_p : [[Location(0), PerVertexKHR]];
+Input f32vec4_id[3]* fs_in_attr1_p : [[Location(1), PerVertexKHR]];
+Output f32vec4_id* frag_color0 : [[Location(0)]];
+StorageBuffer struct58* ssbo_1 : [[DescriptorSet(0), Binding(0), NonWritable]];
+UniformConstant Image<float, 2DMS>* fs_img32 : [[DescriptorSet(0), Binding(1)]];
+UniformConstant Image<float, 2D>* fs_img24 : [[DescriptorSet(0), Binding(2)]];
+UniformConstant Image<float, 3D>* fs_img0 : [[DescriptorSet(0), Binding(3)]];
+UniformConstant Image<float, 3D>* fs_img16 : [[DescriptorSet(0), Binding(4)]];
+UniformConstant Image<float, 2D>* fs_img40 : [[DescriptorSet(0), Binding(5)]];
+UniformConstant sampler* fs_sampsgpr:8 : [[DescriptorSet(0), Binding(6)]];
+UniformConstant sampler* fs_sampinline:0xfff00000008012:0x1000000 : [[DescriptorSet(0), Binding(7)]];
+
+void_id _81() {
+  u32_id* _110 = &push_data.buf_offsets0.x;
+  u32_id _111 = *_110;
+  u32_id buf0_off = BitFieldUExtract(_111, 0, 8);
+  u32_id buf0_dword_off = buf0_off >> 2;
+  input_f32 _115 = &_48.y;
+  f32_id _116 = *_115;
+  input_f32 _117 = &_48.z;
+  f32_id _118 = *_117;
+  u32_id _120 = 32 + buf0_dword_off;
+  u32_id* _121 = &ssbo_1.data[_120];
+  u32_id _122 = *_121;
+  u32_id _124 = 33 + buf0_dword_off;
+  u32_id* _125 = &ssbo_1.data[_124];
+  u32_id _126 = *_125;
+  u32_id _128 = 34 + buf0_dword_off;
+  u32_id* _129 = &ssbo_1.data[_128];
+  u32_id _130 = *_129;
+  u32_id _132 = 35 + buf0_dword_off;
+  u32_id* _133 = &ssbo_1.data[_132];
+  u32_id _134 = *_133;
+  u32_id _136 = 37 + buf0_dword_off;
+  u32_id* _137 = &ssbo_1.data[_136];
+  u32_id _138 = *_137;
+  input_f32 _139 = &fs_in_attr0_p[0].w;
+  f32_id _140 = *_139;
+  input_f32 _141 = &fs_in_attr0_p[1].w;
+  f32_id _142 = *_141;
+  f32_id _143 = _142 - _140;
+  f32_id _145 = GLSL.std.450::Fma(_143, _116, _140);
+  input_f32 _146 = &fs_in_attr1_p[0].x;
+  f32_id _147 = *_146;
+  input_f32 _148 = &fs_in_attr1_p[1].x;
+  f32_id _149 = *_148;
+  f32_id _150 = _149 - _147;
+  f32_id _151 = GLSL.std.450::Fma(_150, _116, _147);
+  input_f32 _152 = &fs_in_attr0_p[0].w;
+  f32_id _153 = *_152;
+  input_f32 _154 = &fs_in_attr0_p[2].w;
+  f32_id _155 = *_154;
+  f32_id _156 = _155 - _153;
+  f32_id _157 = GLSL.std.450::Fma(_156, _118, _145);
+  input_f32 _158 = &fs_in_attr1_p[0].x;
+  f32_id _159 = *_158;
+  input_f32 _160 = &fs_in_attr1_p[2].x;
+  f32_id _161 = *_160;
+  f32_id _162 = _161 - _159;
+  f32_id _163 = GLSL.std.450::Fma(_162, _118, _151);
+  f32_id _164 = Bitcast(_138);
+  bool_id _165 = _164 > 0.0000;
+  f32_id _166 = Bitcast(_130);
+  f32_id _167 = Bitcast(_122);
+  f32_id _168 = _166 * _157;
+  f32_id _169 = _168 + _167;
+  f32_id _170 = Bitcast(_134);
+  f32_id _171 = Bitcast(_126);
+  f32_id _172 = _170 * _163;
+  f32_id _173 = _172 + _171;
+  bool_id _174 = !_165;
+  
+  if(_165) {
+    u32_id _175 = ConvertFToS(_169);
+    u32_id _176 = ConvertFToS(_173);
+    u32vec2_id _177 = CompositeConstruct({_175, _176});
+    Image<float, 2DMS> _178 = *fs_img32;
+    f32vec4_id _179 = ImageFetch(_178, _177, Sample(0));
+    f32_id _180 = _179.x;
+    u32_id _181 = Bitcast(_180);
+  }
+
+  u32_id _182 = Phi(_181, u32_id(Undef));
+  
+  if(_174) {
+    u32_id _183 = ConvertFToS(_169);
+    u32_id _184 = ConvertFToS(_173);
+    u32vec2_id _185 = CompositeConstruct({_183, _184});
+    Image<float, 2D> _186 = *fs_img24;
+    f32vec4_id _187 = ImageFetch(_186, _185, );
+    f32_id _188 = _187.x;
+    u32_id _189 = Bitcast(_188);
+  }
+
+  u32_id _190 = Phi(_189, _182);
+  u32_id _192 = 41 + buf0_dword_off;
+  u32_id* _193 = &ssbo_1.data[_192];
+  u32_id _194 = *_193;
+  u32_id _196 = 44 + buf0_dword_off;
+  u32_id* _197 = &ssbo_1.data[_196];
+  u32_id _198 = *_197;
+  u32_id _200 = 45 + buf0_dword_off;
+  u32_id* _201 = &ssbo_1.data[_200];
+  u32_id _202 = *_201;
+  u32_id _204 = 46 + buf0_dword_off;
+  u32_id* _205 = &ssbo_1.data[_204];
+  u32_id _206 = *_205;
+  u32_id _208 = 47 + buf0_dword_off;
+  u32_id* _209 = &ssbo_1.data[_208];
+  u32_id _210 = *_209;
+  u32_id _212 = 48 + buf0_dword_off;
+  u32_id* _213 = &ssbo_1.data[_212];
+  u32_id _214 = *_213;
+  u32_id _216 = 49 + buf0_dword_off;
+  u32_id* _217 = &ssbo_1.data[_216];
+  u32_id _218 = *_217;
+  u32_id _220 = 50 + buf0_dword_off;
+  u32_id* _221 = &ssbo_1.data[_220];
+  u32_id _222 = *_221;
+  u32_id _224 = 51 + buf0_dword_off;
+  u32_id* _225 = &ssbo_1.data[_224];
+  u32_id _226 = *_225;
+  u32_id _228 = 52 + buf0_dword_off;
+  u32_id* _229 = &ssbo_1.data[_228];
+  u32_id _230 = *_229;
+  u32_id _232 = 53 + buf0_dword_off;
+  u32_id* _233 = &ssbo_1.data[_232];
+  u32_id _234 = *_233;
+  u32_id _236 = 54 + buf0_dword_off;
+  u32_id* _237 = &ssbo_1.data[_236];
+  u32_id _238 = *_237;
+  u32_id _240 = 55 + buf0_dword_off;
+  u32_id* _241 = &ssbo_1.data[_240];
+  u32_id _242 = *_241;
+  f32_id _243 = Bitcast(_194);
+  f32_id _244 = Bitcast(_190);
+  bool_id _245 = _243 >= _244;
+  bool_id _246 = !_245;
+  bool_id _247 = !_245;
+  
+  if(_247) {
+    u32_id _249 = 56 + buf0_dword_off;
+    u32_id* _250 = &ssbo_1.data[_249];
+    u32_id _251 = *_250;
+    u32_id _253 = 57 + buf0_dword_off;
+    u32_id* _254 = &ssbo_1.data[_253];
+    u32_id _255 = *_254;
+    u32_id _257 = 58 + buf0_dword_off;
+    u32_id* _258 = &ssbo_1.data[_257];
+    u32_id _259 = *_258;
+    u32_id _261 = 59 + buf0_dword_off;
+    u32_id* _262 = &ssbo_1.data[_261];
+    u32_id _263 = *_262;
+    f32_id _265 = 2.0000 * _157;
+    f32_id _267 = _265 + -1.0000;
+    f32_id _268 = 2.0000 * _163;
+    f32_id _269 = _268 + -1.0000;
+    f32_id _270 = Bitcast(_202);
+    f32_id _271 = _270 * _267;
+    f32_id _272 = Bitcast(_210);
+    f32_id _273 = Bitcast(_263);
+    f32_id _274 = _272 * _267;
+    f32_id _275 = _274 + _273;
+    f32_id _276 = Bitcast(_226);
+    f32_id _277 = _276 * _269;
+    f32_id _278 = _277 + _275;
+    f32_id _279 = Bitcast(_218);
+    f32_id _280 = _279 * _269;
+    f32_id _281 = _280 + _271;
+    f32_id _282 = Bitcast(_198);
+    f32_id _283 = _282 * _267;
+    u32_id _285 = 30 + buf0_dword_off;
+    u32_id* _286 = &ssbo_1.data[_285];
+    u32_id _287 = *_286;
+    u32_id _289 = 31 + buf0_dword_off;
+    u32_id* _290 = &ssbo_1.data[_289];
+    u32_id _291 = *_290;
+    f32_id _292 = Bitcast(_206);
+    f32_id _293 = _292 * _267;
+    f32_id _294 = Bitcast(_287);
+    f32_id _295 = Bitcast(_190);
+    f32_id _296 = Bitcast(_291);
+    f32_id _297 = _294 * _295;
+    f32_id _298 = _297 + _296;
+    f32_id _299 = Bitcast(_222);
+    f32_id _300 = _299 * _269;
+    f32_id _301 = _300 + _293;
+    f32_id _302 = Bitcast(_242);
+    f32_id _303 = _302 * _298;
+    f32_id _304 = _303 + _278;
+    f32_id _305 = Bitcast(_234);
+    f32_id _306 = _305 * _298;
+    f32_id _307 = _306 + _281;
+    f32_id _309 = 1.0000 / _304;
+    f32_id _310 = Bitcast(_214);
+    f32_id _311 = _310 * _269;
+    f32_id _312 = _311 + _283;
+    f32_id _313 = Bitcast(_238);
+    f32_id _314 = _313 * _298;
+    f32_id _315 = _314 + _301;
+    f32_id _316 = Bitcast(_255);
+    f32_id _317 = _316 + _307;
+    f32_id _318 = Bitcast(_259);
+    f32_id _319 = _318 + _315;
+    f32_id _320 = _309 * _317;
+    f32_id _321 = Bitcast(_230);
+    f32_id _322 = _321 * _298;
+    f32_id _323 = _322 + _312;
+    f32_id _324 = Bitcast(_251);
+    f32_id _325 = _324 + _323;
+    f32_id _326 = _309 * _325;
+    f32_id _327 = _309 * _319;
+    f32_id _328 = _326 * _326;
+    u32_id _330 = 79 + buf0_dword_off;
+    u32_id* _331 = &ssbo_1.data[_330];
+    u32_id _332 = *_331;
+    f32_id _333 = _320 * _320;
+    f32_id _334 = _333 + _328;
+    input_f32 _335 = &fs_in_attr0_p[0].y;
+    f32_id _336 = *_335;
+    input_f32 _337 = &fs_in_attr0_p[1].y;
+    f32_id _338 = *_337;
+    f32_id _339 = _338 - _336;
+    f32_id _340 = GLSL.std.450::Fma(_339, _116, _336);
+    input_f32 _341 = &fs_in_attr0_p[0].y;
+    f32_id _342 = *_341;
+    input_f32 _343 = &fs_in_attr0_p[2].y;
+    f32_id _344 = *_343;
+    f32_id _345 = _344 - _342;
+    f32_id _346 = GLSL.std.450::Fma(_345, _118, _340);
+    bool_id _347 = _332 > 0;
+    f32_id _348 = _327 * _327;
+    f32_id _349 = _348 + _334;
+    input_f32 _350 = &fs_in_attr0_p[0].x;
+    f32_id _351 = *_350;
+    input_f32 _352 = &fs_in_attr0_p[1].x;
+    f32_id _353 = *_352;
+    f32_id _354 = _353 - _351;
+    f32_id _355 = GLSL.std.450::Fma(_354, _116, _351);
+    input_f32 _356 = &fs_in_attr0_p[0].x;
+    f32_id _357 = *_356;
+    input_f32 _358 = &fs_in_attr0_p[2].x;
+    f32_id _359 = *_358;
+    f32_id _360 = _359 - _357;
+    f32_id _361 = GLSL.std.450::Fma(_360, _118, _355);
+    input_f32 _362 = &fs_in_attr0_p[0].z;
+    f32_id _363 = *_362;
+    input_f32 _364 = &fs_in_attr0_p[1].z;
+    f32_id _365 = *_364;
+    f32_id _366 = _365 - _363;
+    f32_id _367 = GLSL.std.450::Fma(_366, _116, _363);
+    input_f32 _368 = &fs_in_attr0_p[0].z;
+    f32_id _369 = *_368;
+    input_f32 _370 = &fs_in_attr0_p[2].z;
+    f32_id _371 = *_370;
+    f32_id _372 = _371 - _369;
+    f32_id _373 = GLSL.std.450::Fma(_372, _118, _367);
+    f32_id _374 = _361 * _361;
+    f32_id _375 = _346 * _346;
+    f32_id _376 = _375 + _374;
+    f32_id _377 = _373 * _373;
+    f32_id _378 = _377 + _376;
+    f32_id _379 = GLSL.std.450::InverseSqrt(_378);
+    f32_id _380 = GLSL.std.450::Sqrt(_349);
+    u32_id _381 = Bitcast(_380);
+    f32_id _382 = _361 * _379;
+    f32_id _383 = _373 * _379;
+    f32_id _384 = _346 * _379;
+    
+    if(_347) {
+      u32_id _386 = 68 + buf0_dword_off;
+      u32_id* _387 = &ssbo_1.data[_386];
+      u32_id _388 = *_387;
+      u32_id _390 = 69 + buf0_dword_off;
+      u32_id* _391 = &ssbo_1.data[_390];
+      u32_id _392 = *_391;
+      u32_id _394 = 70 + buf0_dword_off;
+      u32_id* _395 = &ssbo_1.data[_394];
+      u32_id _396 = *_395;
+      u32_id _398 = 71 + buf0_dword_off;
+      u32_id* _399 = &ssbo_1.data[_398];
+      u32_id _400 = *_399;
+      u32_id _402 = 72 + buf0_dword_off;
+      u32_id* _403 = &ssbo_1.data[_402];
+      u32_id _404 = *_403;
+      u32_id _406 = 73 + buf0_dword_off;
+      u32_id* _407 = &ssbo_1.data[_406];
+      u32_id _408 = *_407;
+      u32_id _410 = 74 + buf0_dword_off;
+      u32_id* _411 = &ssbo_1.data[_410];
+      u32_id _412 = *_411;
+      u32_id _414 = 75 + buf0_dword_off;
+      u32_id* _415 = &ssbo_1.data[_414];
+      u32_id _416 = *_415;
+      u32_id _418 = 76 + buf0_dword_off;
+      u32_id* _419 = &ssbo_1.data[_418];
+      u32_id _420 = *_419;
+      u32_id _422 = 77 + buf0_dword_off;
+      u32_id* _423 = &ssbo_1.data[_422];
+      u32_id _424 = *_423;
+      u32_id _426 = 78 + buf0_dword_off;
+      u32_id* _427 = &ssbo_1.data[_426];
+      u32_id _428 = *_427;
+      f32_id _429 = Bitcast(_404);
+      f32_id _430 = _429 * _382;
+      f32_id _431 = Bitcast(_404);
+      f32_id _432 = Bitcast(_420);
+      f32_id _433 = _432 * _431;
+      f32_id _434 = Bitcast(_408);
+      f32_id _435 = _434 * _384;
+      f32_id _436 = _435 + _430;
+      f32_id _437 = Bitcast(_388);
+      f32_id _438 = _437 * _382;
+      f32_id _439 = Bitcast(_412);
+      f32_id _440 = _439 * _383;
+      f32_id _441 = _440 + _436;
+      f32_id _442 = Bitcast(_424);
+      f32_id _443 = Bitcast(_408);
+      f32_id _444 = _442 * _443;
+      f32_id _445 = _444 + _433;
+      f32_id _447 = GLSL.std.450::FMin(-0.0000, _441);
+      f32_id _448 = Bitcast(_428);
+      f32_id _449 = Bitcast(_412);
+      f32_id _450 = _448 * _449;
+      f32_id _451 = _450 + _445;
+      f32_id _452 = Bitcast(_392);
+      f32_id _453 = _452 * _384;
+      f32_id _454 = _453 + _438;
+      f32_id _455 = 1.0000 / _447;
+      f32_id _456 = Bitcast(_416);
+      f32_id _457 = -_456;
+      f32_id _458 = -_451;
+      f32_id _459 = _457 + _458;
+      f32_id _460 = Bitcast(_396);
+      f32_id _461 = _460 * _383;
+      f32_id _462 = _461 + _454;
+      f32_id _463 = Bitcast(_388);
+      f32_id _464 = Bitcast(_420);
+      f32_id _465 = Bitcast(_400);
+      f32_id _466 = _463 * _464;
+      f32_id _467 = _466 + _465;
+      f32_id _468 = _455 * _459;
+      f32_id _469 = GLSL.std.450::FMin(-0.0000, _462);
+      f32_id _470 = Bitcast(_424);
+      f32_id _471 = Bitcast(_392);
+      f32_id _472 = _470 * _471;
+      f32_id _473 = _472 + _467;
+      f32_id _474 = GLSL.std.450::FMin(_380, _468);
+      f32_id _475 = 1.0000 / _469;
+      f32_id _476 = Bitcast(_428);
+      f32_id _477 = Bitcast(_396);
+      f32_id _478 = _476 * _477;
+      f32_id _479 = _478 + _473;
+      f32_id _480 = _479 * _475;
+      f32_id _481 = _480 + _474;
+      f32_id _482 = GLSL.std.450::FMax(0.0000, _481);
+      f32_id _483 = _380 - _482;
+      f32_id _484 = GLSL.std.450::FMax(0.0000, _483);
+      u32_id _485 = Bitcast(_484);
+    }
+
+    u32_id _486 = Phi(_485, _381);
+    u32_id _488 = 5 + buf0_dword_off;
+    u32_id* _489 = &ssbo_1.data[_488];
+    u32_id _490 = *_489;
+    u32_id _492 = 6 + buf0_dword_off;
+    u32_id* _493 = &ssbo_1.data[_492];
+    u32_id _494 = *_493;
+    u32_id _496 = 7 + buf0_dword_off;
+    u32_id* _497 = &ssbo_1.data[_496];
+    u32_id _498 = *_497;
+    f32_id _499 = Bitcast(_486);
+    f32_id _500 = Bitcast(_490);
+    bool_id _501 = _499 >= _500;
+    bool_id _502 = _246 && _501;
+    
+    if(_502) {
+      u32_id _504 = 12 + buf0_dword_off;
+      u32_id* _505 = &ssbo_1.data[_504];
+      u32_id _506 = *_505;
+      u32_id _508 = 13 + buf0_dword_off;
+      u32_id* _509 = &ssbo_1.data[_508];
+      u32_id _510 = *_509;
+      u32_id _512 = 14 + buf0_dword_off;
+      u32_id* _513 = &ssbo_1.data[_512];
+      u32_id _514 = *_513;
+      u32_id _516 = 15 + buf0_dword_off;
+      u32_id* _517 = &ssbo_1.data[_516];
+      u32_id _518 = *_517;
+      u32_id _520 = 16 + buf0_dword_off;
+      u32_id* _521 = &ssbo_1.data[_520];
+      u32_id _522 = *_521;
+      u32_id _524 = 17 + buf0_dword_off;
+      u32_id* _525 = &ssbo_1.data[_524];
+      u32_id _526 = *_525;
+      u32_id _528 = 18 + buf0_dword_off;
+      u32_id* _529 = &ssbo_1.data[_528];
+      u32_id _530 = *_529;
+      u32_id _532 = 19 + buf0_dword_off;
+      u32_id* _533 = &ssbo_1.data[_532];
+      u32_id _534 = *_533;
+      u32_id _536 = 20 + buf0_dword_off;
+      u32_id* _537 = &ssbo_1.data[_536];
+      u32_id _538 = *_537;
+      u32_id _540 = 21 + buf0_dword_off;
+      u32_id* _541 = &ssbo_1.data[_540];
+      u32_id _542 = *_541;
+      u32_id _544 = 22 + buf0_dword_off;
+      u32_id* _545 = &ssbo_1.data[_544];
+      u32_id _546 = *_545;
+      u32_id _548 = 23 + buf0_dword_off;
+      u32_id* _549 = &ssbo_1.data[_548];
+      u32_id _550 = *_549;
+      u32_id _552 = 24 + buf0_dword_off;
+      u32_id* _553 = &ssbo_1.data[_552];
+      u32_id _554 = *_553;
+      f32_id _555 = Bitcast(_522);
+      f32_id _556 = _555 * _382;
+      f32_id _557 = Bitcast(_534);
+      f32_id _558 = _557 * _382;
+      f32_id _559 = Bitcast(_526);
+      f32_id _560 = _559 * _384;
+      f32_id _561 = _560 + _556;
+      f32_id _562 = Bitcast(_538);
+      f32_id _563 = _562 * _384;
+      f32_id _564 = _563 + _558;
+      f32_id _565 = Bitcast(_546);
+      f32_id _566 = _565 * _382;
+      f32_id _567 = Bitcast(_530);
+      f32_id _568 = _567 * _383;
+      f32_id _569 = _568 + _561;
+      f32_id _570 = _569 * _569;
+      f32_id _571 = Bitcast(_542);
+      f32_id _572 = _571 * _383;
+      f32_id _573 = _572 + _564;
+      f32_id _574 = Bitcast(_550);
+      f32_id _575 = _574 * _384;
+      f32_id _576 = _575 + _566;
+      f32_id _577 = _573 * _573;
+      f32_id _578 = _577 + _570;
+      f32_id _579 = Bitcast(_554);
+      f32_id _580 = _579 * _383;
+      f32_id _581 = _580 + _576;
+      f32_id _582 = _581 * _581;
+      f32_id _583 = _582 + _578;
+      f32_id _584 = GLSL.std.450::InverseSqrt(_583);
+      f32_id _585 = GLSL.std.450::FAbs(_584);
+      f32_id _586 = -_585;
+      f32_id _587 = GLSL.std.450::FAbs(_573);
+      f32_id _588 = _586 * _587;
+      f32_id _589 = _588 + 1.0000;
+      f32_id _590 = _589 * _589;
+      f32_id _591 = _589 * _590;
+      f32_id _593 = -0.0010 * _590;
+      f32_id _595 = -0.1179 * _589;
+      f32_id _597 = _591 * -0.0004;
+      f32_id _598 = _597 + _593;
+      f32_id _599 = _590 * _590;
+      f32_id _601 = _590 * -0.0265;
+      f32_id _602 = _601 + _595;
+      f32_id _604 = _599 * -0.0002;
+      f32_id _605 = _604 + _598;
+      f32_id _607 = _599 * -0.0027;
+      f32_id _608 = _607 + _602;
+      f32_id _610 = -0.0079 + _605;
+      f32_id _612 = -1.4142 + _608;
+      f32_id _613 = GLSL.std.450::Sqrt(_589);
+      f32_id _614 = _584 * _573;
+      f32_id _615 = _610 * _591;
+      f32_id _616 = _615 + _612;
+      f32_id _618 = GLSL.std.450::Fma(_613, _616, 3.1416);
+      f32_id _619 = _613 * _616;
+      bool_id _620 = 0.0000 >= _614;
+      f32_id _621 = -_619;
+      f32_id _622 = Select(_620, _618, _621);
+      f32_id _623 = Bitcast(_498);
+      f32_id _624 = GLSL.std.450::FMax(_623, _622);
+      f32_id _625 = Bitcast(_506);
+      bool_id _626 = _625 > 0.0000;
+      f32_id _628 = 0.3183 * _624;
+      u32_id _629 = Bitcast(_628);
+      bool_id _631 = 1.5708 > _624;
+      
+      if(_626) {
+        bool_id _632 = _502 && _631;
+        
+        if(_632) {
+          f32_id _633 = -_628;
+          f32_id _634 = _633 * _628;
+          f32_id _636 = _634 + 0.2500;
+          f32_id _637 = GLSL.std.450::Sqrt(_636);
+          f32_id _639 = 0.5000 - _637;
+          u32_id _640 = Bitcast(_639);
+        }
+
+        u32_id _641 = Phi(_640, _629);
+        bool_id _642 = !_632;
+        bool_id _643 = _502 && _642;
+        
+        if(_643) {
+          f32_id _644 = Bitcast(_641);
+          f32_id _645 = -1.0000 + _644;
+          f32_id _646 = -_645;
+          f32_id _647 = _646 * _645;
+          f32_id _648 = _647 + 0.2500;
+          f32_id _649 = GLSL.std.450::Sqrt(_648);
+          f32_id _650 = 0.5000 + _649;
+          u32_id _651 = Bitcast(_650);
+        }
+
+        u32_id _652 = Phi(_651, _641);
+      }
+
+      u32_id _653 = Phi(_652, _629);
+      f32_id _654 = Bitcast(_510);
+      bool_id _655 = _654 <= 0.0000;
+      bool_id _656 = !_655;
+      
+      if(_656) {
+        u32_id _658 = 65 + buf0_dword_off;
+        u32_id* _659 = &ssbo_1.data[_658];
+        u32_id _660 = *_659;
+        f32_id _661 = Bitcast(_486);
+        f32_id _662 = Bitcast(_660);
+        f32_id _663 = _661 * _384;
+        f32_id _664 = _663 + _662;
+        f32_id _665 = Bitcast(_514);
+        f32_id _666 = Bitcast(_518);
+        f32_id _667 = _665 * _664;
+        f32_id _668 = _667 + _666;
+        f32_id _669 = GLSL.std.450::FMax(0.0000, _668);
+        f32_id _671 = -1.4427 * _669;
+        f32_id _672 = GLSL.std.450::Exp2(_671);
+        u32_id _673 = Bitcast(_672);
+      }
+
+      u32_id _674 = Phi(_673, 1065353216);
+      f32_id _675 = _584 * _569;
+      f32_id _676 = _584 * _581;
+      f32_id _677 = GLSL.std.450::FAbs(_676);
+      f32_id _678 = GLSL.std.450::FAbs(_675);
+      f32_id _679 = GLSL.std.450::FMax(_677, _678);
+      f32_id _680 = 1.0000 / _679;
+      f32_id _681 = GLSL.std.450::FAbs(_676);
+      f32_id _682 = GLSL.std.450::FAbs(_675);
+      f32_id _683 = GLSL.std.450::FMin(_681, _682);
+      f32_id _684 = _680 * _683;
+      f32_id _685 = _684 * _684;
+      f32_id _688 = GLSL.std.450::Fma(0.0208, _685, -0.0851);
+      f32_id _690 = GLSL.std.450::Fma(_688, _685, 0.1801);
+      f32_id _692 = GLSL.std.450::Fma(_690, _685, -0.3303);
+      f32_id _694 = GLSL.std.450::Fma(_692, _685, 0.9999);
+      u32_id _695 = 8 + buf0_dword_off;
+      u32_id* _696 = &ssbo_1.data[_695];
+      u32_id _697 = *_696;
+      u32_id _699 = 9 + buf0_dword_off;
+      u32_id* _700 = &ssbo_1.data[_699];
+      u32_id _701 = *_700;
+      u32_id _703 = 10 + buf0_dword_off;
+      u32_id* _704 = &ssbo_1.data[_703];
+      u32_id _705 = *_704;
+      u32_id _707 = 11 + buf0_dword_off;
+      u32_id* _708 = &ssbo_1.data[_707];
+      u32_id _709 = *_708;
+      f32_id _710 = _684 * _694;
+      f32_id _712 = GLSL.std.450::Fma(-2.0000, _710, 1.5708);
+      f32_id _713 = GLSL.std.450::FAbs(_675);
+      f32_id _714 = GLSL.std.450::FAbs(_676);
+      bool_id _715 = _713 < _714;
+      bool_id _716 = 0.0000 > _675;
+      f32_id _717 = GLSL.std.450::FMin(_569, _581);
+      f32_id _718 = GLSL.std.450::FMax(_569, _581);
+      f32_id _719 = Bitcast(_697);
+      f32_id _720 = Bitcast(_486);
+      f32_id _721 = _719 + _720;
+      f32_id _722 = Select(_715, _712, 0.0000);
+      f32_id _724 = Select(_716, -3.1416, 0.0000);
+      f32_id _725 = _584 * _717;
+      f32_id _726 = _584 * _718;
+      f32_id _727 = Bitcast(_705);
+      f32_id _728 = _721 - _727;
+      f32_id _729 = Bitcast(_709);
+      f32_id _730 = 1.0000 / _729;
+      f32_id _731 = _722 + _724;
+      f32_id _732 = -_725;
+      bool_id _733 = _725 < _732;
+      f32_id _734 = -_726;
+      bool_id _735 = _726 >= _734;
+      f32_id _736 = _730 * _728;
+      f32_id _737 = GLSL.std.450::FClamp(_736, 0.0000, 1.0000);
+      f32_id _738 = GLSL.std.450::Log2(_737);
+      f32_id _739 = Bitcast(_701);
+      f32_id _740 = 1.0000 / _739;
+      f32_id _741 = _694 * _684;
+      f32_id _742 = _741 + _731;
+      bool_id _743 = _733 && _735;
+      f32_id _744 = -_742;
+      f32_id _745 = Select(_743, _744, _742);
+      f32_id _746 = _738 * _740;
+      f32_id _748 = 0.1592 * _745;
+      f32_id _749 = GLSL.std.450::Exp2(_746);
+      f32_id _750 = Bitcast(_653);
+      f32vec3_id _751 = CompositeConstruct({_748, _750, _749});
+      Image<float, 3D> _752 = *fs_img0;
+      sampler _753 = *fs_sampsgpr:8;
+      SampledImage<float, 3D> _754 = SampledImage(_752, _753);
+      f32vec4_id _755 = ImageSampleExplicitLod(_754, _751, Lod(0.0000));
+      f32_id _756 = _755.x;
+      f32_id _757 = _755.y;
+      f32_id _758 = _755.z;
+      f32_id _759 = Bitcast(_653);
+      f32vec3_id _760 = CompositeConstruct({_748, _759, _749});
+      Image<float, 3D> _761 = *fs_img16;
+      sampler _762 = *fs_sampsgpr:8;
+      SampledImage<float, 3D> _763 = SampledImage(_761, _762);
+      f32vec4_id _764 = ImageSampleExplicitLod(_763, _760, Lod(0.0000));
+      f32_id _765 = _764.x;
+      f32_id _766 = _764.y;
+      f32_id _767 = _764.z;
+      f32_id _768 = Bitcast(_494);
+      f32_id _769 = Bitcast(_490);
+      f32_id _770 = _768 - _769;
+      f32_id _771 = 1.0000 / _770;
+      f32_id _772 = Bitcast(_490);
+      f32_id _773 = Bitcast(_486);
+      f32_id _774 = _773 - _772;
+      u32_id _775 = 3 + buf0_dword_off;
+      u32_id* _776 = &ssbo_1.data[_775];
+      u32_id _777 = *_776;
+      u32_id _779 = 60 + buf0_dword_off;
+      u32_id* _780 = &ssbo_1.data[_779];
+      u32_id _781 = *_780;
+      u32_id _783 = 61 + buf0_dword_off;
+      u32_id* _784 = &ssbo_1.data[_783];
+      u32_id _785 = *_784;
+      u32_id _787 = 62 + buf0_dword_off;
+      u32_id* _788 = &ssbo_1.data[_787];
+      u32_id _789 = *_788;
+      f32_id _790 = _771 * _774;
+      f32_id _791 = GLSL.std.450::FMax(1.0000, _790);
+      f32_id _792 = GLSL.std.450::FMin(_791, 0.0000);
+      f32_id _793 = GLSL.std.450::FMin(1.0000, _790);
+      f32_id _794 = GLSL.std.450::FMax(_793, _792);
+      f32_id _795 = GLSL.std.450::FClamp(_794, 0.0000, 1.0000);
+      f32_id _796 = Bitcast(_777);
+      f32_id _797 = Bitcast(_781);
+      f32_id _798 = _797 * _796;
+      f32_id _799 = Bitcast(_777);
+      f32_id _800 = Bitcast(_785);
+      f32_id _801 = _800 * _799;
+      f32_id _802 = Bitcast(_777);
+      f32_id _803 = Bitcast(_789);
+      f32_id _804 = _803 * _802;
+      f32_id _806 = GLSL.std.450::Fma(-2.0000, _795, 3.0000);
+      f32_id _807 = _795 * _795;
+      f32_id _808 = _807 * _806;
+      u32_id _809 = Bitcast(_808);
+      f32_id _810 = Bitcast(_674);
+      f32_id _811 = _756 * _810;
+      f32_id _812 = Bitcast(_674);
+      f32_id _813 = _812 * _757;
+      f32_id _814 = Bitcast(_674);
+      f32_id _815 = _814 * _758;
+      f32_id _816 = _811 * _798;
+      u32_id _817 = Bitcast(_816);
+      f32_id _818 = _813 * _801;
+      u32_id _819 = Bitcast(_818);
+      f32_id _820 = _815 * _804;
+      u32_id _821 = Bitcast(_820);
+      f32_id _822 = Bitcast(_674);
+      f32_id _823 = _765 * _822;
+      f32_id _824 = GLSL.std.450::FClamp(_823, 0.0000, 1.0000);
+      u32_id _825 = Bitcast(_824);
+      f32_id _826 = Bitcast(_674);
+      f32_id _827 = _826 * _766;
+      f32_id _828 = GLSL.std.450::FClamp(_827, 0.0000, 1.0000);
+      u32_id _829 = Bitcast(_828);
+      f32_id _830 = Bitcast(_674);
+      f32_id _831 = _830 * _767;
+      f32_id _832 = GLSL.std.450::FClamp(_831, 0.0000, 1.0000);
+      u32_id _833 = Bitcast(_832);
+    }
+
+    u32_id _834 = Phi(_829, 1065353216);
+    u32_id _835 = Phi(_825, 1065353216);
+    u32_id _836 = Phi(_821, 0);
+    u32_id _837 = Phi(_809, 0);
+    u32_id _838 = Phi(_819, 0);
+    u32_id _839 = Phi(_817, 0);
+    u32_id _840 = Phi(_833, 1065353216);
+    u32_id _841 = Phi(0, 1);
+    bool_id _842 = 0 == _841;
+    bool_id _843 = _246 && _842;
+    
+    if(_843) {
+      f32_id _844 = Bitcast(_837);
+      f32_id _845 = 1.0000 - _844;
+      f32_id _846 = Bitcast(_837);
+      f32_id _847 = Bitcast(_835);
+      f32_id _848 = _846 * _847;
+      f32_id _849 = _848 + _845;
+      u32_id _850 = Bitcast(_849);
+      f32_id _851 = Bitcast(_837);
+      f32_id _852 = Bitcast(_834);
+      f32_id _853 = _851 * _852;
+      f32_id _854 = _853 + _845;
+      u32_id _855 = Bitcast(_854);
+      f32_id _856 = Bitcast(_839);
+      f32_id _857 = Bitcast(_837);
+      f32_id _858 = _857 * _856;
+      u32_id _859 = Bitcast(_858);
+      f32_id _860 = Bitcast(_838);
+      f32_id _861 = Bitcast(_837);
+      f32_id _862 = _861 * _860;
+      u32_id _863 = Bitcast(_862);
+      f32_id _864 = Bitcast(_836);
+      f32_id _865 = Bitcast(_837);
+      f32_id _866 = _865 * _864;
+      u32_id _867 = Bitcast(_866);
+      f32_id _868 = Bitcast(_840);
+      f32_id _869 = Bitcast(_837);
+      f32_id _870 = _868 * _869;
+      f32_id _871 = _870 + _845;
+      u32_id _872 = Bitcast(_871);
+    }
+
+    u32_id _873 = Phi(_859, 0);
+    u32_id _874 = Phi(_850, 1065353216);
+    u32_id _875 = Phi(_863, 0);
+    u32_id _876 = Phi(_872, 1065353216);
+    u32_id _877 = Phi(_855, 1065353216);
+    u32_id _878 = Phi(_867, 0);
+    u32_id _879 = Phi(_486, 3212836864);
+    f32_id _880 = Bitcast(_879);
+    bool_id _881 = 0.0000 > _880;
+    bool_id _882 = !_881;
+    bool_id _883 = _246 && _882;
+    
+    if(_883) {
+      Image<float, 2D> _884 = *fs_img40;
+      u32vec2_id _885 = ImageQuerySizeLod(_884, 0);
+      u32vec4_id _886 = CompositeConstruct({_885, 0, 0});
+      u32_id _887 = _886.y;
+      f32_id _888 = ConvertUToF(_887);
+      f32_id _889 = _173 / _888;
+      u32_id _890 = _886.x;
+      f32_id _891 = ConvertUToF(_890);
+      f32_id _892 = _169 / _891;
+      f32vec2_id _893 = CompositeConstruct({_892, _889});
+      Image<float, 2D> _894 = *fs_img40;
+      sampler _895 = *fs_sampinline:0xfff00000008012:0x1000000;
+      SampledImage<float, 2D> _896 = SampledImage(_894, _895);
+      f32vec4_id _897 = ImageSampleExplicitLod(_896, _893, Lod(0.0000));
+      f32_id _898 = _897.x;
+      f32_id _899 = _897.y;
+      f32_id _900 = _897.z;
+      f32_id _901 = _897.w;
+      f32_id _902 = Bitcast(_874);
+      f32_id _903 = Bitcast(_873);
+      f32_id _904 = _902 * _898;
+      f32_id _905 = _904 + _903;
+      f32_id _906 = Bitcast(_877);
+      f32_id _907 = Bitcast(_875);
+      f32_id _908 = _906 * _899;
+      f32_id _909 = _908 + _907;
+      f32_id _910 = Bitcast(_876);
+      f32_id _911 = Bitcast(_878);
+      f32_id _912 = _910 * _900;
+      f32_id _913 = _912 + _911;
+      bool_id _914 = !_883;
+      
+      if(_914) {
+        DemoteToHelperInvocation();
+      }
+
+      output_f32 _917 = &frag_color0.x;
+      *_917 = _905;
+      output_f32 _918 = &frag_color0.y;
+      *_918 = _909;
+      output_f32 _919 = &frag_color0.z;
+      *_919 = _913;
+      output_f32 _920 = &frag_color0.w;
+      *_920 = _901;
+      return;
+    }
+
+  }
+
+  DemoteToHelperInvocation();
+  return;
+}
+
+
+
+--- end fragment disassembly ---
+vertex shader ResourceId::37362 [vs_0x000000003a8debf7_0] entry=main
+--- vertex disassembly (SPIR-V (RenderDoc)) ---
+SPIR-V 1.6 module, <id> bound of 195
+
+Generator: rdcspv::Generator(0)
+Generator Version: 0
+
+Capability(Shader);
+Capability(Image1D);
+Capability(Int64);
+Capability(Sampled1D);
+Capability(UniformAndStorageBuffer8BitAccess);
+Capability(ImageQuery);
+Capability(Int8);
+Capability(Int16);
+Capability(UniformAndStorageBuffer16BitAccess);
+Capability(DrawParameters);
+Capability(SignedZeroInfNanPreserve);
+
+Extension("SPV_KHR_float_controls");
+Extension("SPV_KHR_shader_draw_parameters");
+
+
+MemoryModel(Logical, GLSL450);
+
+EntryPoint(Vertex, _69, "main", {
+    push_data, 
+    _47, 
+    _48, 
+    _49, 
+    vs_in_attr0, 
+    vs_in_attr1, 
+    _54, 
+    out_attr0, 
+    out_attr1, 
+    ssbo_2, 
+    clip_planes
+  });
+
+ExecutionMode(_69, SignedZeroInfNanPreserve(32));
+
+
+
+
+
+struct full_result_i32x2 {
+  i32_id _child0;
+  i32_id _child1;
+}
+struct full_result_u32x2 {
+  u32_id _child0;
+  u32_id _child1;
+}
+struct frexp_result_f32 {
+  f32_id _child0;
+  i32_id _child1;
+}
+struct AuxData : [[Block]] {
+  f32_id xoffset : [[Offset(0)]];
+  f32_id yoffset : [[Offset(4)]];
+  f32_id xscale : [[Offset(8)]];
+  f32_id yscale : [[Offset(12)]];
+  u32vec4_id ud_regs0 : [[Offset(16)]];
+  u32vec4_id ud_regs1 : [[Offset(32)]];
+  u32vec4_id ud_regs2 : [[Offset(48)]];
+  u32vec4_id ud_regs3 : [[Offset(64)]];
+  u32vec4_id buf_offsets0 : [[Offset(80)]];
+  u32vec4_id buf_offsets1 : [[Offset(96)]];
+  u32vec2_id buf_offsets2 : [[Offset(112)]];
+}
+struct _59 : [[Block]] {
+  u32_id[] data : [[Offset(0)]] : [[ArrayStride(4)]];
+}
+struct _64 : [[Block]] {
+  f32_id[] data : [[Offset(0)]] : [[ArrayStride(4)]];
+}
+PushConstant AuxData* push_data;
+Input input_u32 _47 : [[BuiltIn(VertexIndex)]];
+Input input_u32 _48 : [[BuiltIn(BaseVertex)]];
+Input input_u32 _49 : [[BuiltIn(InstanceIndex)]];
+Input f32vec4_id* vs_in_attr0 : [[Location(0)]];
+Input f32vec4_id* vs_in_attr1 : [[Location(1)]];
+Output f32vec4_id* _54 : [[BuiltIn(Position)]];
+Output f32vec4_id* out_attr0 : [[Location(0)]];
+Output f32vec4_id* out_attr1 : [[Location(1)]];
+StorageBuffer struct59* ssbo_2 : [[DescriptorSet(0), Binding(8), NonWritable]];
+StorageBuffer struct64* clip_planes : [[DescriptorSet(0), Binding(9), NonWritable]];
+
+void_id _69() {
+  u32_id* _74 = &push_data.buf_offsets0.x;
+  u32_id _75 = *_74;
+  u32_id buf1_off = BitFieldUExtract(_75, 8, 8);
+  u32_id buf1_dword_off = buf1_off >> 2;
+  input_f32 _80 = &vs_in_attr0.w;
+  f32_id _81 = *_80;
+  input_f32 _82 = &vs_in_attr0.z;
+  f32_id _83 = *_82;
+  input_f32 _84 = &vs_in_attr0.y;
+  f32_id _85 = *_84;
+  input_f32 _86 = &vs_in_attr0.x;
+  f32_id _87 = *_86;
+  f32vec4_id _88 = CompositeConstruct({_87, _85, _83, _81});
+  f32vec4_id _91 = f32vec4_id(_88.x, _88.y, _88.z, {0.0000, 1.0000, 0.0000, 0.0000}.y);
+  f32_id _92 = _91.x;
+  f32_id _93 = _91.y;
+  f32_id _94 = _91.z;
+  input_f32 _95 = &vs_in_attr1.w;
+  f32_id _96 = *_95;
+  input_f32 _97 = &vs_in_attr1.z;
+  f32_id _98 = *_97;
+  input_f32 _99 = &vs_in_attr1.y;
+  f32_id _100 = *_99;
+  input_f32 _101 = &vs_in_attr1.x;
+  f32_id _102 = *_101;
+  f32vec4_id _103 = CompositeConstruct({_102, _100, _98, _96});
+  f32vec4_id _104 = f32vec4_id(_103.x, _103.y, {0.0000, 1.0000, 0.0000, 0.0000}.x, {0.0000, 1.0000, 0.0000, 0.0000}.y);
+  f32_id _105 = _104.x;
+  f32_id _106 = _104.y;
+  output_f32 _107 = &_54.x;
+  *_107 = _92;
+  output_f32 _108 = &_54.y;
+  *_108 = _93;
+  output_f32 _109 = &_54.z;
+  *_109 = _94;
+  output_f32 _110 = &_54.w;
+  *_110 = 1.0000;
+  u32_id _112 = 12 + buf1_dword_off;
+  u32_id* _113 = &ssbo_2.data[_112];
+  u32_id _114 = *_113;
+  u32_id _116 = 13 + buf1_dword_off;
+  u32_id* _117 = &ssbo_2.data[_116];
+  u32_id _118 = *_117;
+  u32_id _120 = 14 + buf1_dword_off;
+  u32_id* _121 = &ssbo_2.data[_120];
+  u32_id _122 = *_121;
+  u32_id _124 = 15 + buf1_dword_off;
+  u32_id* _125 = &ssbo_2.data[_124];
+  u32_id _126 = *_125;
+  u32_id _127 = 0 + buf1_dword_off;
+  u32_id* _128 = &ssbo_2.data[_127];
+  u32_id _129 = *_128;
+  u32_id _130 = 1 + buf1_dword_off;
+  u32_id* _131 = &ssbo_2.data[_130];
+  u32_id _132 = *_131;
+  u32_id _133 = 2 + buf1_dword_off;
+  u32_id* _134 = &ssbo_2.data[_133];
+  u32_id _135 = *_134;
+  u32_id _136 = 3 + buf1_dword_off;
+  u32_id* _137 = &ssbo_2.data[_136];
+  u32_id _138 = *_137;
+  u32_id _140 = 4 + buf1_dword_off;
+  u32_id* _141 = &ssbo_2.data[_140];
+  u32_id _142 = *_141;
+  u32_id _144 = 5 + buf1_dword_off;
+  u32_id* _145 = &ssbo_2.data[_144];
+  u32_id _146 = *_145;
+  u32_id _148 = 6 + buf1_dword_off;
+  u32_id* _149 = &ssbo_2.data[_148];
+  u32_id _150 = *_149;
+  u32_id _152 = 7 + buf1_dword_off;
+  u32_id* _153 = &ssbo_2.data[_152];
+  u32_id _154 = *_153;
+  f32_id _155 = Bitcast(_129);
+  f32_id _156 = _155 * _92;
+  f32_id _157 = Bitcast(_135);
+  f32_id _158 = _157 * _92;
+  f32_id _159 = Bitcast(_132);
+  f32_id _160 = _159 * _92;
+  f32_id _161 = Bitcast(_138);
+  f32_id _162 = Bitcast(_126);
+  f32_id _163 = _161 * _92;
+  f32_id _164 = _163 + _162;
+  f32_id _165 = Bitcast(_154);
+  f32_id _166 = _165 * _93;
+  f32_id _167 = _166 + _164;
+  f32_id _168 = Bitcast(_142);
+  f32_id _169 = _168 * _93;
+  f32_id _170 = _169 + _156;
+  f32_id _171 = Bitcast(_150);
+  f32_id _172 = _171 * _93;
+  f32_id _173 = _172 + _158;
+  f32_id _174 = Bitcast(_146);
+  f32_id _175 = _174 * _93;
+  f32_id _176 = _175 + _160;
+  f32_id _177 = 1.0000 / _167;
+  f32_id _178 = Bitcast(_114);
+  f32_id _179 = _178 + _170;
+  f32_id _180 = Bitcast(_122);
+  f32_id _181 = _180 + _173;
+  f32_id _182 = Bitcast(_118);
+  f32_id _183 = _182 + _176;
+  f32_id _184 = _177 * _179;
+  f32_id _185 = _177 * _181;
+  f32_id _186 = _177 * _183;
+  output_f32 _187 = &out_attr1.x;
+  *_187 = _106;
+  output_f32 _188 = &out_attr1.y;
+  *_188 = 0.0000;
+  output_f32 _189 = &out_attr1.z;
+  *_189 = 0.0000;
+  output_f32 _190 = &out_attr1.w;
+  *_190 = 0.0000;
+  output_f32 _191 = &out_attr0.x;
+  *_191 = _184;
+  output_f32 _192 = &out_attr0.y;
+  *_192 = _186;
+  output_f32 _193 = &out_attr0.z;
+  *_193 = _185;
+  output_f32 _194 = &out_attr0.w;
+  *_194 = _105;
+  return;
+}
+
+
+
+--- end vertex disassembly ---
+color blends state: [<Swig Object of type 'ColorBlend *' at 0x00000291282C14F0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C11F0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C15F0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C1570>, <Swig Object of type 'ColorBlend *' at 0x00000291282C14B0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C1670>, <Swig Object of type 'ColorBlend *' at 0x00000291282C16B0>, <Swig Object of type 'ColorBlend *' at 0x00000291282C16F0>]
+OUT ResourceId::99288 [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64000 64000 63488 1)
+TEX ResourceId::103286 1024x256x1 D32S8 [Image 1024x256x1 Depth2DThin128 D32SfloatS8Uint 0x100a2b8000:0x200000 L:1 M:1 S:2] min(0 0 0 1) max(0.0015236 0 0 1)
+TEX ResourceId::21517 1x1x1 R8_UNORM [Image 1x1x1 DisplayLinearAligned R8Unorm 0x1000e33200:0x600 L:6 M:1 S:1] min(0 0 0 1) max(0 0 0 1)
+TEX ResourceId::18769 80x32x40 R11G11B10_FLOAT [Image 80x32x40 Thick1DThick B10G11R11UfloatPack32 0x10b0fede00:0x64000 L:1 M:1 S:1] min(0 0 0 1) max(0 0 0 1)
+TEX ResourceId::18768 80x32x40 R11G11B10_FLOAT [Image 80x32x40 Thick1DThick B10G11R11UfloatPack32 0x10b1051e00:0x64000 L:1 M:1 S:1] min(0.984375 0.984375 0.96875 1) max(0.992188 0.992188 0.984375 1)
+TEX ResourceId::99288 1024x256x1 R11G11B10_FLOAT [Image 1024x256x1 Thin2DThin B10G11R11UfloatPack32 0x100a540000:0x100000 L:1 M:1 S:1] min(0 0 0 1) max(64000 64000 63488 1)
+vertex buffers: 2
+  VB0 ResourceId::127499 [Buffer 0x201424000:0x13160000] off=35602560 stride=20 size=4294967295
+  VB0 ResourceId::127499 off=35602560 bytes=256
+    dw000 bf800000 40400000 00000000 00000000 bf800000 bf800000 bf800000 00000000 | -1 3 0 0 -1 -1 -1 0
+    dw008 00000000 3f800000 40400000 bf800000 00000000 40000000 3f800000 42d04505 | 0 1 3 -1 0 2 1 104.135
+    dw016 00000000 3f9337b3 00000000 00000000 00000000 00000000 bc5bbd4a 00000000 | 0 1.15014 0 0 0 0 -0.0134118 0
+    dw024 bf73ccd4 3ef6137c 3f000000 3f800000 404cc0cc 3fdc2b75 3fe50c83 40650c83 | -0.952344 0.480617 0.5 1 3.19927 1.72008 1.78944 3.57889
+    dw032 00000000 3f1974fe 00000000 00000000 00000000 00000000 bdab3549 00000000 | 0 0.599441 0 0 0 0 -0.0835977 0
+    dw040 be0733e8 3f009dbd 3f000000 3f800000 41aa3b55 415380f9 41527d94 41d27d94 | -0.132034 0.502407 0.5 1 21.279 13.219 13.1557 26.3113
+    dw048 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 | 0 0 0 0 0 0 0 0
+    dw056 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 | 0 0 0 0 0 0 0 0
+  VB1 ResourceId::127499 [Buffer 0x201424000:0x13160000] off=35602572 stride=20 size=4294967295
+  VB1 ResourceId::127499 off=35602572 bytes=256
+    dw000 00000000 bf800000 bf800000 bf800000 00000000 00000000 3f800000 40400000 | 0 -1 -1 -1 0 0 1 3
+    dw008 bf800000 00000000 40000000 3f800000 42d04505 00000000 3f9337b3 00000000 | -1 0 2 1 104.135 0 1.15014 0
+    dw016 00000000 00000000 00000000 bc5bbd4a 00000000 bf73ccd4 3ef6137c 3f000000 | 0 0 0 -0.0134118 0 -0.952344 0.480617 0.5
+    dw024 3f800000 404cc0cc 3fdc2b75 3fe50c83 40650c83 00000000 3f1974fe 00000000 | 1 3.19927 1.72008 1.78944 3.57889 0 0.599441 0
+    dw032 00000000 00000000 00000000 bdab3549 00000000 be0733e8 3f009dbd 3f000000 | 0 0 0 -0.0835977 0 -0.132034 0.502407 0.5
+    dw040 3f800000 41aa3b55 415380f9 41527d94 41d27d94 00000000 00000000 00000000 | 1 21.279 13.219 13.1557 26.3113 0 0 0
+    dw048 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 | 0 0 0 0 0 0 0 0
+    dw056 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000 | 0 0 0 0 0 0 0 0
+vertex inputs: 2
+  <Swig Object of type 'VertexInputAttribute *' at 0x00000291282C1AF0>
+    name=vs_in_attr0 vertexBuffer=0 byteOffset=0 perInstance=False instanceRate=1 format=R32G32B32_FLOAT
+  <Swig Object of type 'VertexInputAttribute *' at 0x00000291282C1AB0>
+    name=vs_in_attr1 vertexBuffer=1 byteOffset=0 perInstance=False instanceRate=1 format=R32G32_FLOAT

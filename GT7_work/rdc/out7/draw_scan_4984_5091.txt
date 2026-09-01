@@ -1,0 +1,16 @@
+SCAN EIDS 4984..5091
+  DRAW eid 4984 fs=ResourceId::36964 [fs_0x000000004404896c_0] numIndices=1674 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 4994 fs=ResourceId::36964 [fs_0x000000004404896c_0] numIndices=339 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5004 fs=ResourceId::36964 [fs_0x000000004404896c_0] numIndices=3276 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5011 fs=ResourceId::102288 [fs_0x00000000244c54fa_0] numIndices=2982 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5018 fs=ResourceId::102297 [fs_0x00000000be60ba8f_0] numIndices=1902 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5025 fs=ResourceId::102313 [fs_0x00000000f6118d11_0] numIndices=4614 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5032 fs=ResourceId::37097 [fs_0x000000005c637f9d_0] numIndices=180 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5039 fs=ResourceId::37097 [fs_0x000000005c637f9d_0] numIndices=144 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5049 fs=ResourceId::37120 [fs_0x0000000014d639aa_0] numIndices=792 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5056 fs=ResourceId::37161 [fs_0x0000000092126594_0] numIndices=8682 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5063 fs=ResourceId::37161 [fs_0x0000000092126594_0] numIndices=2964 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5070 fs=ResourceId::37161 [fs_0x0000000092126594_0] numIndices=1548 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5077 fs=ResourceId::37161 [fs_0x0000000092126594_0] numIndices=624 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5084 fs=ResourceId::37161 [fs_0x0000000092126594_0] numIndices=4980 numInstances=1 indexOffset=0 vertexOffset=0
+  DRAW eid 5091 fs=ResourceId::37161 [fs_0x0000000092126594_0] numIndices=270 numInstances=1 indexOffset=0 vertexOffset=0

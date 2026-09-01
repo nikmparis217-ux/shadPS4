@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "C:/Users/3E30~1/AppData/Local/Temp/claude/c--GTNikos/fea3dcca-edb7-4564-9821-abd29ed72fa8/scratchpad/msaa_persample.py", line 139, in <module>
+    run()
+  File "C:/Users/3E30~1/AppData/Local/Temp/claude/c--GTNikos/fea3dcca-edb7-4564-9821-abd29ed72fa8/scratchpad/msaa_persample.py", line 84, in run
+    raise RuntimeError("OpenFile failed")
+RuntimeError: OpenFile failed

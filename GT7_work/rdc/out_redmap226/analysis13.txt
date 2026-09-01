@@ -1,0 +1,301 @@
+total actions: 5071, last eid: 21255
+swapchain textures: ['170', '171', '172']
+
+== action window eid 15150..15500 ==
+eid 15153 Dispatch                 out=[] | vkCmdDispatch()
+eid 15154 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137571)
+eid 15158 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137572)
+eid 15179 BeginPass|PassBoundary   out=[] | vkCmdBeginRendering(-)
+eid 15181 Instanced|Drawcall       out=[] | vkCmdDraw()
+eid 15182 EndPass|PassBoundary     out=[] | vkCmdEndRendering(-)
+eid 15190 BeginPass|PassBoundary   out=['43223'] | vkCmdBeginRendering(Load)
+eid 15192 Instanced|Drawcall       out=['43223'] | vkCmdDraw() <<<
+eid 15193 EndPass|PassBoundary     out=['43223'] | vkCmdEndRendering(Store)
+eid 15194 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137572)
+eid 15200 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137573)
+eid 15204 Dispatch                 out=[] | vkCmdDispatch()
+eid 15205 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137573)
+eid 15209 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137574)
+eid 15211 ClearColor|Clear         out=[] copy 0 -> 137575 720x540 R16G16B16A16_FLOAT | vkCmdClearColorImage()
+eid 15215 Dispatch                 out=[] | vkCmdDispatch()
+eid 15217 Copy                     out=[] copy 137577 -> 137575 720x540 R16G16B16A16_FLOAT | vkCmdCopyBufferToImage()
+eid 15243 BeginPass|PassBoundary   out=['13728'] | vkCmdBeginRendering(C=Load, DS=Load)
+eid 15245 Instanced|Drawcall       out=['13728'] | vkCmdDraw() <<<
+eid 15252 EndPass|PassBoundary     out=['13728'] | vkCmdEndRendering(C=Store, DS=Store)
+eid 15253 BeginPass|PassBoundary   out=[] | vkCmdBeginRendering(-)
+eid 15255 Instanced|Drawcall       out=[] | vkCmdDraw()
+eid 15256 EndPass|PassBoundary     out=[] | vkCmdEndRendering(-)
+eid 15257 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137574)
+eid 15263 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137579)
+eid 15268 Dispatch                 out=[] | vkCmdDispatch()
+eid 15269 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137579)
+eid 15273 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137580)
+eid 15277 Dispatch                 out=[] | vkCmdDispatch()
+eid 15278 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137580)
+eid 15282 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137581)
+eid 15287 Dispatch                 out=[] | vkCmdDispatch()
+eid 15288 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137581)
+eid 15292 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137582)
+eid 15297 Dispatch                 out=[] | vkCmdDispatch()
+eid 15298 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137582)
+eid 15303 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137583)
+eid 15305 Copy                     out=[] copy 226 -> 20492 | vkCmdCopyBuffer()
+eid 15308 Copy                     out=[] copy 226 -> 20492 | vkCmdCopyBuffer()
+eid 15314 Dispatch                 out=[] | vkCmdDispatch()
+eid 15315 CommandBufferBoundary|EndPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkEndCommandBuffer(ResourceId::137583)
+eid 15319 CommandBufferBoundary|BeginPass|PassBoundary out=[] | => vkQueueSubmit(1)[0]: vkBeginCommandBuffer(ResourceId::137584)
+eid 15345 BeginPass|PassBoundary   out=['13746', '42974'] | vkCmdBeginRendering(Load)
+eid 15347 Instanced|Drawcall       out=['13746', '42974'] | vkCmdDraw()
+eid 15348 EndPass|PassBoundary     out=['13746', '42974'] | vkCmdEndRendering(Store)
+eid 15350 ClearColor|Clear         out=[] copy 0 -> 137585 1920x1080 R16_FLOAT | vkCmdClearColorImage() <<<
+eid 15353 Dispatch                 out=[] | vkCmdDispatch()
+eid 15355 Copy                     out=[] copy 137587 -> 137585 1920x1080 R16_FLOAT | vkCmdCopyBufferToImage() <<<
+eid 15370 BeginPass|PassBoundary   out=['137585'] | vkCmdBeginRendering(C=Load, DS=Load)
+eid 15372 Instanced|Drawcall       out=['137585'] | vkCmdDraw() <<<
+eid 15379 Instanced|Drawcall       out=['137585'] | vkCmdDraw() <<<
+eid 15380 EndPass|PassBoundary     out=['137585'] | vkCmdEndRendering(C=Store, DS=Store)
+eid 15382 ClearColor|Clear         out=[] copy 0 -> 137589 960x540 R16G16_FLOAT | vkCmdClearColorImage()
+eid 15390 Dispatch                 out=[] | vkCmdDispatch()
+eid 15392 Copy                     out=[] copy 137592 -> 137589 960x540 R16G16_FLOAT | vkCmdCopyBufferToImage()
+eid 15405 BeginPass|PassBoundary   out=['43939', '43941', '137589', '43945'] | vkCmdBeginRendering(Load)
+eid 15407 Instanced|Drawcall       out=['43939', '43941', '137589', '43945'] | vkCmdDraw() <<<
+eid 15408 EndPass|PassBoundary     out=['43939', '43941', '137589', '43945'] | vkCmdEndRendering(Store)
+eid 15410 ClearColor|Clear         out=[] copy 0 -> 137594 48x1080 R16G16_FLOAT | vkCmdClearColorImage()
+eid 15413 Dispatch                 out=[] | vkCmdDispatch()
+eid 15415 Copy                     out=[] copy 137595 -> 137594 48x1080 R16G16_FLOAT | vkCmdCopyBufferToImage()
+eid 15426 BeginPass|PassBoundary   out=['137594'] | vkCmdBeginRendering(Load)
+eid 15428 Instanced|Drawcall       out=['137594'] | vkCmdDraw()
+eid 15429 EndPass|PassBoundary     out=['137594'] | vkCmdEndRendering(Store)
+eid 15438 BeginPass|PassBoundary   out=['43960'] | vkCmdBeginRendering(Load)
+eid 15440 Instanced|Drawcall       out=['43960'] | vkCmdDraw()
+eid 15441 EndPass|PassBoundary     out=['43960'] | vkCmdEndRendering(Store)
+eid 15448 BeginPass|PassBoundary   out=['43964'] | vkCmdBeginRendering(Load)
+eid 15450 Instanced|Drawcall       out=['43964'] | vkCmdDraw()
+eid 15451 EndPass|PassBoundary     out=['43964'] | vkCmdEndRendering(Store)
+eid 15464 BeginPass|PassBoundary   out=['43968'] | vkCmdBeginRendering(Load)
+eid 15466 Instanced|Drawcall       out=['43968'] | vkCmdDraw() <<<
+eid 15467 EndPass|PassBoundary     out=['43968'] | vkCmdEndRendering(Store)
+eid 15469 ClearColor|Clear         out=[] copy 0 -> 137599 960x540 R16G16B16A16_FLOAT | vkCmdClearColorImage()
+eid 15473 Dispatch                 out=[] | vkCmdDispatch()
+eid 15475 Copy                     out=[] copy 137601 -> 137599 960x540 R16G16B16A16_FLOAT | vkCmdCopyBufferToImage()
+eid 15483 BeginPass|PassBoundary   out=['137599'] | vkCmdBeginRendering(Load)
+eid 15485 Instanced|Drawcall       out=['137599'] | vkCmdDraw()
+eid 15486 EndPass|PassBoundary     out=['137599'] | vkCmdEndRendering(Store)
+eid 15495 BeginPass|PassBoundary   out=['42974'] | vkCmdBeginRendering(Load)
+eid 15497 Instanced|Drawcall       out=['42974'] | vkCmdDraw()
+eid 15498 EndPass|PassBoundary     out=['42974'] | vkCmdEndRendering(Store)
+eid 15500 ClearColor|Clear         out=[] copy 0 -> 137604 128x128 R16G16_FLOAT | vkCmdClearColorImage()
+
+== deep state at focus eids ==
+
+-- eid 15192 (R16F chain) --
+  viewport: 0,540 720x-540
+  out: 43223 720x540 R16_FLOAT
+  ps: 1157 entry=main
+    ps_tex 14685 1920x1080 D32S8 swz=RedRedRedRed min(1 0 0 1) max(1 0 0 1)
+
+-- eid 15245 (R16F chain) --
+  viewport: 0,1080 1920x-1080
+  out: 13728 1920x1080 R11G11B10_FLOAT
+  ps: 3441 entry=main
+    ps_tex 43243 8x2 R8G8B8A8_UNORM swz=RedGreenBlueAlpha min(0.376 0.376 0.502 0.502) max(0.502 0.502 0.627 0.627)
+    ps_tex 43244 8x2 R8G8B8A8_UNORM swz=RedGreenBlueAlpha min(0.376 0.502 0.376 0.502) max(0.502 0.627 0.502 0.627)
+    ps_tex 137575 720x540 R16G16B16A16_FLOAT swz=AlphaBlueGreenRed min(0 0 0 0) max(0 0 0 0)
+    ps_tex 14685 1920x1080 D32S8 swz=RedRedRedRed min(1 0 0 1) max(1 0 0 1)
+    ps_tex 43223 720x540 R16_FLOAT swz=RedZeroZeroZero min(-0.00883 0 0 1) max(-0.00883 0 0 1)
+    ps_tex 43247 8x2 R8G8B8A8_UNORM swz=RedGreenBlueAlpha min(0.0118 0.0118 0.0118 0.0118) max(0.702 0.702 0.702 0.702)
+
+-- eid 15372 (R16F chain) --
+  viewport: 0,1080 1920x-1080
+  out: 137585 1920x1080 R16_FLOAT
+  ps: 1811 entry=main
+
+-- eid 15379 (R16F chain) --
+  viewport: 0,1080 1920x-1080
+  out: 137585 1920x1080 R16_FLOAT
+  ps: 1811 entry=main
+
+-- eid 15407 (R16F chain) --
+  viewport: 0,540 960x-540
+  out: 43939 960x540 R11G11B10_FLOAT
+  out: 43941 960x540 R16G16_FLOAT
+  out: 137589 960x540 R16G16_FLOAT
+  out: 43945 960x540 R16_FLOAT
+  ps: 1066 entry=main
+    ps_tex 14685 1920x1080 D32S8 swz=RedRedRedRed min(1 0 0 1) max(1 0 0 1)
+    ps_tex 14079 1920x1080 R16G16_FLOAT swz=RedGreenZeroZero min(-3.44 -0.0697 0 1) max(0.0179 0.926 0 1)
+    ps_tex 137585 1920x1080 R16_FLOAT swz=RedZeroZeroZero min(1 0 0 1) max(1 0 0 1)
+    ps_tex 42974 1920x1080 R11G11B10_FLOAT swz=RedGreenBlueOne min(0 0 0 1) max(6.5e+04 6.5e+04 6.45e+04 1)
+
+-- eid 15466 (R16F chain) --
+  viewport: 0,540 960x-540
+  out: 43968 960x540 R16G16B16A16_FLOAT
+  ps: 855 entry=main
+    ps_tex 137589 960x540 R16G16_FLOAT swz=RedGreenZeroZero min(-40 -8.52 0 1) max(3.95 1.03 0 1)
+    ps_tex 43964 48x27 R16G16_FLOAT swz=RedGreenZeroZero min(-40 -8.52 0 1) max(2.18 1 0 1)
+    ps_tex 43939 960x540 R11G11B10_FLOAT swz=RedGreenBlueOne min(0 0 0 1) max(6.5e+04 6.5e+04 6.45e+04 1)
+    ps_tex 43941 960x540 R16G16_FLOAT swz=RedGreenZeroZero min(0 0.00883 0 1) max(40.9 0.00883 0 1)
+    ps_tex 43945 960x540 R16_FLOAT swz=RedZeroZeroZero min(1 0 0 1) max(1 0 0 1)
+
+== frame tail: last 40 draws, PS inputs ==
+
+eid 20095 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94584 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20100 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94596 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20105 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94590 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20110 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94596 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20115 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94634 64x24 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20120 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94590 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20125 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94574 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20130 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94598 64x24 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20135 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94616 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20140 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94596 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20145 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94566 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20150 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94620 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20155 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94584 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20160 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94600 64x8 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20165 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94636 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20170 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94590 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20175 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94592 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20180 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94596 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20185 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94584 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20190 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94572 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20195 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94568 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20200 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94588 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20205 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94614 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20210 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94590 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20215 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94596 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20220 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94586 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20225 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94588 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20230 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94584 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20235 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94582 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20240 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94590 64x16 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20245 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94574 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20250 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94598 64x24 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20255 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 94638 64x20 R8_UNORM swz=OneOneOneRed min(0 0 0 1) max(1 0 0 1)
+
+eid 20262 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 95076 48x60 BC7_UNORM swz=RedGreenBlueAlpha min(0 0 0 0) max(1 1 1 1)
+
+eid 20269 out=['4883'] | vkCmdDraw()
+    ps_tex 25697 1x1 R8_UNORM swz=ZeroZeroZeroZero min(0 0 0 1) max(0 0 0 1)
+    ps_tex 78973 48x60 BC7_UNORM swz=RedGreenBlueAlpha min(0 0 0 0) max(1 1 1 1)
+
+eid 20296 out=['4747'] | vkCmdDraw()
+    ps_tex 4883 1920x1080 R10G10B10A2_UNORM swz=RedGreenBlueOne min(0 0 0 1) max(1 1 1 1)
+
+eid 20337 out=['172'] | vkCmdDrawIndexed()
+    ps_tex 208 4096x7194 R8G8B8A8_UNORM swz=RedGreenBlueAlpha min(1 1 1 0) max(1 1 1 1)
+
+eid 20340 out=['172'] | vkCmdDrawIndexed()
+    ps_tex 4747 1920x1080 B8G8R8A8_UNORM swz=RedGreenBlueAlpha min(0 0 0 1) max(1 1 1 1)
+
+eid 20343 out=['172'] | vkCmdDrawIndexed()
+    ps_tex 208 4096x7194 R8G8B8A8_UNORM swz=RedGreenBlueAlpha min(1 1 1 0) max(1 1 1 1)
+
+eid 20346 out=['172'] | vkCmdDrawIndexed()
+    ps_tex 208 4096x7194 R8G8B8A8_UNORM swz=RedGreenBlueAlpha min(1 1 1 0) max(1 1 1 1)
+
+== accumulator readers (13740 / 13746) ==
+  13740: eid 15323 Barrier
+  13740: eid 15347 PS_Resource
+  13746: eid 15324 Barrier
+  13746: eid 15347 ColorTarget

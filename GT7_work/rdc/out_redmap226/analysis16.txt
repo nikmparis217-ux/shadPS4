@@ -1,0 +1,268 @@
+== action window 16478..16525 ==
+eid 16481 ActionFlags.EndPass|PassBoundary out=['94395'] | vkCmdEndRendering(C=Store, DS=Store)
+eid 16482 ActionFlags.BeginPass|PassBoundary out=['94395'] | vkCmdBeginRendering(Load)
+eid 16484 ActionFlags.Instanced|Drawcall out=['94395'] | vkCmdDraw()
+eid 16490 ActionFlags.Instanced|Drawcall out=['94395'] | vkCmdDraw()
+eid 16499 ActionFlags.Instanced|Indexed|Drawcall out=['94395'] | vkCmdDrawIndexed()
+eid 16500 ActionFlags.EndPass|PassBoundary out=['94395'] | vkCmdEndRendering(Store)
+eid 16502 ActionFlags.ClearColor|Clear out=[] | vkCmdClearColorImage()
+eid 16505 ActionFlags.Resolve out=[] | vkCmdResolveImage()
+eid 16515 ActionFlags.BeginPass|PassBoundary out=['4883'] | vkCmdBeginRendering(Load)
+eid 16517 ActionFlags.Instanced|Drawcall out=['4883'] | vkCmdDraw()
+eid 16523 ActionFlags.Instanced|Drawcall out=['4883'] | vkCmdDraw()
+
+== GetUsage(137655) ==
+  16501: ResourceUsage.Barrier
+  16501: ResourceUsage.Discard
+  16502: ResourceUsage.Clear
+  16504: ResourceUsage.Barrier
+  16505: ResourceUsage.ResolveDst
+  16506: ResourceUsage.Barrier
+  16517: ResourceUsage.PS_Resource
+
+== all 520x480 textures ==
+  94390 520x480 fmt=D32S8 samples=2 | Image 520x480x1 Depth2DThin128 D32SfloatS8Uint 0x100a4d8000:0x280000 L:1 M:1 S:2
+  94395 520x480 fmt=R8G8B8A8_UNORM samples=2 | Image 520x480x1 Thin2DThin R8G8B8A8Unorm 0x100a1f0000:0x280000 L:1 M:1 S:2
+  137655 520x480 fmt=R8G8B8A8_UNORM samples=1 | Image 520x480x1 Thin2DThin R8G8B8A8Unorm 0x100a0b0000:0x140000 L:1 M:1 S:1
+
+== GetUsage(94395) [R8G8B8A8_UNORM s2] ==
+  16386: ResourceUsage.Barrier
+  16400: ResourceUsage.Clear
+  16402: ResourceUsage.ColorTarget
+  16411: ResourceUsage.ColorTarget
+  16423: ResourceUsage.ColorTarget
+  16433: ResourceUsage.ColorTarget
+  16442: ResourceUsage.ColorTarget
+  16452: ResourceUsage.ColorTarget
+  16463: ResourceUsage.ColorTarget
+  16469: ResourceUsage.ColorTarget
+  16475: ResourceUsage.ColorTarget
+  16484: ResourceUsage.ColorTarget
+  16490: ResourceUsage.ColorTarget
+  16499: ResourceUsage.ColorTarget
+  16503: ResourceUsage.Barrier
+  16505: ResourceUsage.ResolveSrc
+
+== deep state at eid 16502 ==
+  viewport: x=0.0 y=480.0 w=520.0 h=-480.0 minD=0.0 maxD=1.0
+  blend[0] en=True src=BlendMultiplier.SrcAlpha dst=BlendMultiplier.InvSrcAlpha op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.InvSrcAlpha opA=BlendOperation.Add mask=0xf
+  blend[1] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[2] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[3] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[4] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[5] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[6] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[7] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  ps_tex: <'renderdoc.PipeState' object has no attribute 'GetBindpointMapping'>
+  -- PS disasm (221 lines, head 60) --
+    SPIR-V 1.6 module, <id> bound of 203
+    
+    Generator: rdcspv::Generator(0)
+    Generator Version: 0
+    
+    Capability(Shader);
+    Capability(DemoteToHelperInvocation);
+    Capability(Image1D);
+    Capability(Int64);
+    Capability(Sampled1D);
+    Capability(ImageQuery);
+    Capability(Int8);
+    Capability(Int16);
+    Capability(UniformAndStorageBuffer8BitAccess);
+    Capability(UniformAndStorageBuffer16BitAccess);
+    Capability(FragmentBarycentricKHR);
+    Capability(SignedZeroInfNanPreserve);
+    
+    Extension("SPV_KHR_float_controls");
+    Extension("SPV_KHR_fragment_shader_barycentric");
+    
+    
+    MemoryModel(Logical, GLSL450);
+    
+    EntryPoint(Fragment, _57, "main", {
+        push_data, 
+        _48, 
+        fs_in_attr0_p, 
+        fs_in_attr1_p, 
+        frag_color0
+      });
+    
+    ExecutionMode(_57, OriginUpperLeft);
+    ExecutionMode(_57, SignedZeroInfNanPreserve(32));
+    
+    
+    
+    
+    
+    struct full_result_i32x2 {
+      i32_id _child0;
+      i32_id _child1;
+    }
+    struct full_result_u32x2 {
+      u32_id _child0;
+      u32_id _child1;
+    }
+    struct frexp_result_f32 {
+      f32_id _child0;
+      i32_id _child1;
+    }
+    struct AuxData : [[Block]] {
+      f32_id xoffset : [[Offset(0)]];
+      f32_id yoffset : [[Offset(4)]];
+      f32_id xscale : [[Offset(8)]];
+      f32_id yscale : [[Offset(12)]];
+      u32vec4_id ud_regs0 : [[Offset(16)]];
+      u32vec4_id ud_regs1 : [[Offset(32)]];
+      u32vec4_id ud_regs2 : [[Offset(48)]];
+      u32vec4_id ud_regs3 : [[Offset(64)]];
+
+== deep state at eid 16505 ==
+  viewport: x=0.0 y=480.0 w=520.0 h=-480.0 minD=0.0 maxD=1.0
+  blend[0] en=True src=BlendMultiplier.SrcAlpha dst=BlendMultiplier.InvSrcAlpha op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.InvSrcAlpha opA=BlendOperation.Add mask=0xf
+  blend[1] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[2] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[3] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[4] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[5] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[6] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[7] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  ps_tex: <'renderdoc.PipeState' object has no attribute 'GetBindpointMapping'>
+  -- PS disasm (221 lines, head 60) --
+    SPIR-V 1.6 module, <id> bound of 203
+    
+    Generator: rdcspv::Generator(0)
+    Generator Version: 0
+    
+    Capability(Shader);
+    Capability(DemoteToHelperInvocation);
+    Capability(Image1D);
+    Capability(Int64);
+    Capability(Sampled1D);
+    Capability(ImageQuery);
+    Capability(Int8);
+    Capability(Int16);
+    Capability(UniformAndStorageBuffer8BitAccess);
+    Capability(UniformAndStorageBuffer16BitAccess);
+    Capability(FragmentBarycentricKHR);
+    Capability(SignedZeroInfNanPreserve);
+    
+    Extension("SPV_KHR_float_controls");
+    Extension("SPV_KHR_fragment_shader_barycentric");
+    
+    
+    MemoryModel(Logical, GLSL450);
+    
+    EntryPoint(Fragment, _57, "main", {
+        push_data, 
+        _48, 
+        fs_in_attr0_p, 
+        fs_in_attr1_p, 
+        frag_color0
+      });
+    
+    ExecutionMode(_57, OriginUpperLeft);
+    ExecutionMode(_57, SignedZeroInfNanPreserve(32));
+    
+    
+    
+    
+    
+    struct full_result_i32x2 {
+      i32_id _child0;
+      i32_id _child1;
+    }
+    struct full_result_u32x2 {
+      u32_id _child0;
+      u32_id _child1;
+    }
+    struct frexp_result_f32 {
+      f32_id _child0;
+      i32_id _child1;
+    }
+    struct AuxData : [[Block]] {
+      f32_id xoffset : [[Offset(0)]];
+      f32_id yoffset : [[Offset(4)]];
+      f32_id xscale : [[Offset(8)]];
+      f32_id yscale : [[Offset(12)]];
+      u32vec4_id ud_regs0 : [[Offset(16)]];
+      u32vec4_id ud_regs1 : [[Offset(32)]];
+      u32vec4_id ud_regs2 : [[Offset(48)]];
+      u32vec4_id ud_regs3 : [[Offset(64)]];
+
+== deep state at eid 16517 ==
+  viewport: x=0.0 y=1080.0 w=1920.0 h=-1080.0 minD=0.0 maxD=1.0
+  fb att[0]: 4883 R10G10B10A2_UNORM samples=1
+  blend[0] en=True src=BlendMultiplier.One dst=BlendMultiplier.SrcAlpha op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.One opA=BlendOperation.Add mask=0xf
+  blend[1] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[2] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[3] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[4] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[5] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[6] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  blend[7] en=False src=BlendMultiplier.Zero dst=BlendMultiplier.Zero op=BlendOperation.Add srcA=BlendMultiplier.Zero dstA=BlendMultiplier.Zero opA=BlendOperation.Add mask=0x0
+  ps_tex: <'renderdoc.PipeState' object has no attribute 'GetBindpointMapping'>
+  -- PS disasm (550 lines, head 60) --
+    SPIR-V 1.6 module, <id> bound of 547
+    
+    Generator: rdcspv::Generator(0)
+    Generator Version: 0
+    
+    Capability(Shader);
+    Capability(DemoteToHelperInvocation);
+    Capability(Image1D);
+    Capability(Int64);
+    Capability(Sampled1D);
+    Capability(ImageQuery);
+    Capability(Int8);
+    Capability(Int16);
+    Capability(UniformAndStorageBuffer8BitAccess);
+    Capability(UniformAndStorageBuffer16BitAccess);
+    Capability(FragmentBarycentricKHR);
+    Capability(SignedZeroInfNanPreserve);
+    
+    Extension("SPV_KHR_float_controls");
+    Extension("SPV_KHR_fragment_shader_barycentric");
+    
+    
+    MemoryModel(Logical, GLSL450);
+    
+    EntryPoint(Fragment, _75, "main", {
+        push_data, 
+        _48, 
+        _49, 
+        fs_in_attr0_p, 
+        fs_in_attr1_p, 
+        fs_in_attr2_p, 
+        fs_in_attr3_p, 
+        frag_color0, 
+        ssbo_1, 
+        fs_img16, 
+        fs_img0, 
+        fs_sampsgpr:24, 
+        fs_sampsgpr:8
+      });
+    
+    ExecutionMode(_75, OriginUpperLeft);
+    ExecutionMode(_75, SignedZeroInfNanPreserve(32));
+    
+    
+    
+    
+    
+    struct full_result_i32x2 {
+      i32_id _child0;
+      i32_id _child1;
+    }
+    struct full_result_u32x2 {
+      u32_id _child0;
+      u32_id _child1;
+    }
+    struct frexp_result_f32 {
+      f32_id _child0;
+      i32_id _child1;
+    }
+    struct AuxData : [[Block]] {
+
+panel(137655) at (100,100) = (0.0, 0.0, 0.0, 1.0)
+panel(137655) at (260,240) = (0.0, 0.0, 0.0, 1.0)
+

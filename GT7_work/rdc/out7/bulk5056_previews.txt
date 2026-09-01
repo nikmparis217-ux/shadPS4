@@ -1,0 +1,20 @@
+
+=== eid 5049 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+STATS id:140659 ResourceId::140659 R11G11B10_FLOAT 1024x256x1 bytes=1048576
+  pixels=262144
+  >=60000   rgb=108/108/108 pct=0.04120/0.04120/0.04120
+
+=== eid 5056 vkCmdDrawIndexed() ===
+ACTION copySource=ResourceId::0
+ACTION copyDestination=ResourceId::0
+ACTION outputs=(ResourceId::140659, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0, ResourceId::0)
+ACTION depthOut=ResourceId::103286
+ACTION flags=ActionFlags.Instanced|Indexed|Drawcall
+STATS id:140659 ResourceId::140659 R11G11B10_FLOAT 1024x256x1 bytes=1048576
+  pixels=262144
+  >=60000   rgb=10671/10671/10671 pct=4.07066/4.07066/4.07066

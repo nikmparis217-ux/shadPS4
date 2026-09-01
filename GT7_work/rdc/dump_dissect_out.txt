@@ -1,0 +1,2385 @@
+ERROR:root:PEB parsing error!
+Traceback (most recent call last):
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpfile.py", line 86, in _parse
+    self.__parse_peb()
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpfile.py", line 235, in __parse_peb
+    self.peb = PEB.from_minidump(self)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\structures\peb.py", line 85, in from_minidump
+    buff_reader.move(minidumpfile.threads.threads[0].Teb + PEB_OFFSETS[offset_index]["peb"])
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpreader.py", line 136, in move
+    self._select_segment(address)
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpreader.py", line 104, in _select_segment
+    raise Exception('Memory address 0x%08x is not in process memory space' % requested_position)
+Exception: Memory address 0x0038a060 is not in process memory space
+==============================================================================
+DUMP run170  (C:\Users\Νίκος\Documents\GitHub\shadPS4\GT7_work\logs\run170_guest_crash.dmp, 1212226 bytes)
+==============================================================================
+--- memory ranges in dump (536) ---
+  0x000000010000 - 0x000000010401  (   1025 bytes, file off 0x6c450)
+  0x000000011f17 - 0x000000012000  (    233 bytes, file off 0x6cc51)
+  0x000000020000 - 0x000000020300  (    768 bytes, file off 0x723fe)
+  0x000000021f04 - 0x000000022501  (   1533 bytes, file off 0x72afe)
+  0x000000026d30 - 0x000000027130  (   1024 bytes, file off 0x74321)
+  0x00000002a8ec - 0x00000002acec  (   1024 bytes, file off 0x760c1)
+  0x00000002ff27 - 0x000000030327  (   1024 bytes, file off 0x764c1)
+  0x000000030900 - 0x000000030d00  (   1024 bytes, file off 0x768c5)
+  0x00000003ff46 - 0x000000040346  (   1024 bytes, file off 0x884c5)
+  0x000000040ee0 - 0x0000000412e0  (   1024 bytes, file off 0x888c5)
+  0x000000044d5d - 0x00000004515d  (   1024 bytes, file off 0x89295)
+  0x000000070000 - 0x000000070300  (    768 bytes, file off 0xb9e4d)
+  0x0000000bff00 - 0x0000000c0300  (   1024 bytes, file off 0xd2f53)
+  0x0000000f0000 - 0x0000000f0300  (    768 bytes, file off 0xdee70)
+  0x0000000f4140 - 0x0000000f4540  (   1024 bytes, file off 0xdfefc)
+  0x000000100000 - 0x000000100300  (    768 bytes, file off 0xe11b0)
+  0x000000120000 - 0x00000012060c  (   1548 bytes, file off 0xe79bc)
+  0x000000120bc0 - 0x000000121260  (   1696 bytes, file off 0xe7fc8)
+  0x000000121280 - 0x000000121680  (   1024 bytes, file off 0xe8668)
+  0x000000122d80 - 0x000000123300  (   1408 bytes, file off 0xe8a68)
+  0x000000123d40 - 0x000000124140  (   1024 bytes, file off 0xe9490)
+  0x000000124501 - 0x000000124901  (   1024 bytes, file off 0xeb0dc)
+  0x000000200f40 - 0x000000201340  (   1024 bytes, file off 0x78df5)
+  0x0000002fff00 - 0x000000300330  (   1072 bytes, file off 0xef618)
+  0x000000304000 - 0x000000304300  (    768 bytes, file off 0xf0bcc)
+  0x000000323000 - 0x000000323400  (   1024 bytes, file off 0xf7681)
+  0x000000389000 - 0x000000389690  (   1680 bytes, file off 0x12289d)
+  0x00000039c000 - 0x00000039c300  (    768 bytes, file off 0x6960c)
+  0x0000003a1f00 - 0x0000003a2300  (   1024 bytes, file off 0x6a560)
+  0x0000003a5f00 - 0x0000003a6300  (   1024 bytes, file off 0x6c050)
+  0x0000003bff0a - 0x0000003c033a  (   1072 bytes, file off 0x75621)
+  0x0000003d0200 - 0x0000003d0688  (   1160 bytes, file off 0x791f9)
+  0x000000524800 - 0x000000524c00  (   1024 bytes, file off 0x1118f2)
+  0x00000053434e - 0x00000053474e  (   1024 bytes, file off 0x11803e)
+  0x0000005fe138 - 0x000000600110  (   8152 bytes, file off 0xc7b48)
+  0x0000006e0000 - 0x0000006e0369  (    873 bytes, file off 0x10aa40)
+  0x0000007cfc00 - 0x0000007cfc04  (      4 bytes, file off 0xccefc)
+  0x0000007dfc00 - 0x0000007dfc04  (      4 bytes, file off 0xcf2d8)
+  0x0000007f0000 - 0x0000007f037c  (    892 bytes, file off 0xd3c23)
+  0x0000007f0500 - 0x0000007f0900  (   1024 bytes, file off 0xd3f9f)
+  0x0000007f1980 - 0x0000007f2178  (   2040 bytes, file off 0xd479f)
+  0x0000007f4940 - 0x0000007f4d40  (   1024 bytes, file off 0xd517f)
+  0x0000007f523e - 0x0000007f563e  (   1024 bytes, file off 0xd557f)
+  0x0000007fefb0 - 0x0000007ff440  (   1168 bytes, file off 0xd617f)
+  0x0000007fff00 - 0x000000800301  (   1025 bytes, file off 0xd660f)
+  0x000000803c10 - 0x000000804010  (   1024 bytes, file off 0xd7308)
+  0x0000008046d0 - 0x000000804ad0  (   1024 bytes, file off 0xd7708)
+  0x00000080a6f0 - 0x00000080aaf0  (   1024 bytes, file off 0xd7f0c)
+  0x00000080bf00 - 0x00000080c300  (   1024 bytes, file off 0xd840c)
+  0x00000080c380 - 0x00000080c780  (   1024 bytes, file off 0xd880c)
+  0x00000080e9c0 - 0x00000080edd0  (   1040 bytes, file off 0xd95dc)
+  0x00000080f060 - 0x00000080f460  (   1024 bytes, file off 0xd99f0)
+  0x0000008158a0 - 0x000000815ca0  (   1024 bytes, file off 0xdb210)
+  0x00000082e560 - 0x00000082e970  (   1040 bytes, file off 0xe14b0)
+  0x000000831390 - 0x0000008317a0  (   1040 bytes, file off 0xe2090)
+  0x000000833310 - 0x000000833710  (   1024 bytes, file off 0xe28a4)
+  0x000000856fa0 - 0x0000008573a8  (   1032 bytes, file off 0xec824)
+  0x000000859bd0 - 0x000000859fd0  (   1024 bytes, file off 0xed430)
+  0x000000860c40 - 0x000000861050  (   1040 bytes, file off 0xef200)
+  0x000000863e00 - 0x000000864200  (   1024 bytes, file off 0xefe4c)
+  0x000000864cc0 - 0x0000008650c0  (   1024 bytes, file off 0xf024c)
+  0x000000867d50 - 0x000000868170  (   1056 bytes, file off 0xf0ecc)
+  0x000000870a00 - 0x000000870e00  (   1024 bytes, file off 0xf26f4)
+  0x0000008721b8 - 0x0000008725b8  (   1024 bytes, file off 0xf2ef4)
+  0x0000008743b0 - 0x000000874968  (   1464 bytes, file off 0xf32f8)
+  0x000000874c68 - 0x000000875068  (   1024 bytes, file off 0xf38b0)
+  0x000000887890 - 0x000000887c90  (   1024 bytes, file off 0xf7a81)
+  0x000000887d00 - 0x000000888100  (   1024 bytes, file off 0xf7e81)
+  0x000000888ac0 - 0x000000888ec0  (   1024 bytes, file off 0xf8685)
+  0x00000088a4f0 - 0x00000088a8f0  (   1024 bytes, file off 0xf92b5)
+  0x00000088ae80 - 0x00000088b280  (   1024 bytes, file off 0xf96b5)
+  0x00000088c1a0 - 0x00000088c5a0  (   1024 bytes, file off 0xfb059)
+  0x0000008984d0 - 0x000000898968  (   1176 bytes, file off 0x103283)
+  0x00000089fb20 - 0x00000089ff20  (   1024 bytes, file off 0x106586)
+  0x0000008a02f0 - 0x0000008a0920  (   1584 bytes, file off 0x106986)
+  0x0000008a0b00 - 0x0000008a0f00  (   1024 bytes, file off 0x106fba)
+  0x0000008a7b00 - 0x0000008a8840  (   3392 bytes, file off 0x107fc2)
+  0x0000008a9570 - 0x0000008a99b0  (   1088 bytes, file off 0x1095c0)
+  0x0000008a9ec0 - 0x0000008aa2c0  (   1024 bytes, file off 0x109a00)
+  0x0000008aa400 - 0x0000008aa840  (   1088 bytes, file off 0x109e00)
+  0x0000008ab478 - 0x0000008ab878  (   1024 bytes, file off 0x10a640)
+  0x0000008ad200 - 0x0000008ad9f0  (   2032 bytes, file off 0x10b3b5)
+  0x0000008ae130 - 0x0000008ae530  (   1024 bytes, file off 0x10c3a9)
+  0x0000008b6620 - 0x0000008b6a30  (   1040 bytes, file off 0x10ef0d)
+  0x0000008b88c8 - 0x0000008b8cc8  (   1024 bytes, file off 0x110159)
+  0x0000008b9f00 - 0x0000008ba300  (   1024 bytes, file off 0x110559)
+  0x0000008ba520 - 0x0000008ba930  (   1040 bytes, file off 0x110959)
+  0x0000008bc510 - 0x0000008bc910  (   1024 bytes, file off 0x1120fa)
+  0x0000008be900 - 0x0000008bed28  (   1064 bytes, file off 0x1124fa)
+  0x0000008bf8b0 - 0x0000008bfe30  (   1408 bytes, file off 0x112922)
+  0x0000008c02b0 - 0x0000008c06b0  (   1024 bytes, file off 0x1132a2)
+  0x0000008c0d50 - 0x0000008c1150  (   1024 bytes, file off 0x1136a2)
+  0x0000008c3ca0 - 0x0000008c4280  (   1504 bytes, file off 0x114246)
+  0x0000008c4360 - 0x0000008c4770  (   1040 bytes, file off 0x114826)
+  0x0000008c5fb0 - 0x0000008c63b0  (   1024 bytes, file off 0x1151ae)
+  0x0000008c7040 - 0x0000008c76c0  (   1664 bytes, file off 0x1155ae)
+  0x0000008c7ff0 - 0x0000008c8410  (   1056 bytes, file off 0x115c2e)
+  0x0000008d1220 - 0x0000008d1640  (   1056 bytes, file off 0x11a442)
+  0x0000008d1c10 - 0x0000008d21f0  (   1504 bytes, file off 0x11a862)
+  0x0000008f0000 - 0x0000008f03e8  (   1000 bytes, file off 0x123e7d)
+  0x0000008f1d38 - 0x0000008f2138  (   1024 bytes, file off 0x124f85)
+  0x000000989580 - 0x000000989980  (   1024 bytes, file off 0xbd58f)
+  0x00000098e100 - 0x00000098e500  (   1024 bytes, file off 0xc0544)
+  0x000000990780 - 0x000000990d90  (   1552 bytes, file off 0xc19d0)
+  0x000000992560 - 0x000000992960  (   1024 bytes, file off 0xc3628)
+  0x000000993ec0 - 0x0000009942c0  (   1024 bytes, file off 0xc636c)
+  0x000000996ec0 - 0x0000009972d0  (   1040 bytes, file off 0xcbd88)
+  0x000000997a30 - 0x000000997e30  (   1024 bytes, file off 0xcc198)
+  0x000000997ec0 - 0x0000009982c0  (   1024 bytes, file off 0xcc598)
+  0x000000998ec0 - 0x000000999000  (    320 bytes, file off 0xccdbc)
+  0x000000a60000 - 0x000000a60450  (   1104 bytes, file off 0x100d05)
+  0x000000a60760 - 0x000000a60ba8  (   1096 bytes, file off 0x101155)
+  0x000000a60c08 - 0x000000a61020  (   1048 bytes, file off 0x10159d)
+  0x000000a69cc8 - 0x000000a6a0c8  (   1024 bytes, file off 0x105986)
+  0x000000a6a478 - 0x000000a6a878  (   1024 bytes, file off 0x105d86)
+  0x000000a7ee40 - 0x000000a7f000  (    448 bytes, file off 0x10e30d)
+  0x000000aaff00 - 0x000000ab0300  (   1024 bytes, file off 0x11f015)
+  0x000000abff00 - 0x000000ac0300  (   1024 bytes, file off 0x126831)
+  0x000000c21f6a - 0x000000c2236a  (   1024 bytes, file off 0xf9ab5)
+  0x000000efe2ac - 0x000000efe6ac  (   1024 bytes, file off 0xccf04)
+  0x000003000002 - 0x000003000501  (   1279 bytes, file off 0xf6d82)
+  0x0000042fca40 - 0x0000042fce40  (   1024 bytes, file off 0xbf0b8)
+  0x00000431cfc0 - 0x00000431d3e0  (   1056 bytes, file off 0xcfd08)
+  0x000004783200 - 0x000004783620  (   1056 bytes, file off 0x10d6dd)
+  0x000005000301 - 0x000005000701  (   1024 bytes, file off 0xe2ca4)
+  0x00000699aa80 - 0x00000699ae80  (   1024 bytes, file off 0x10bba9)
+  0x00000699b33c - 0x00000699b73c  (   1024 bytes, file off 0x10c7a9)
+  0x000006b4ff00 - 0x000006b50300  (   1024 bytes, file off 0x102e83)
+  0x0000075cf358 - 0x0000075d0390  (   4152 bytes, file off 0xe9890)
+  0x000007d1af1b - 0x000007d1b31b  (   1024 bytes, file off 0xf1af4)
+  0x000009007f00 - 0x000009008300  (   1024 bytes, file off 0xb9a4d)
+  0x000009d313e0 - 0x000009d31910  (   1328 bytes, file off 0xe30a4)
+  0x000009d3c3d0 - 0x000009d3c7d0  (   1024 bytes, file off 0xe5d94)
+  0x000009d43690 - 0x000009d43aa0  (   1040 bytes, file off 0xe71a0)
+  0x000009d47720 - 0x000009d47b20  (   1024 bytes, file off 0xe75b8)
+  0x000009d4cfa0 - 0x000009d4d528  (   1416 bytes, file off 0xeb4dc)
+  0x000009d4e520 - 0x000009d4eca0  (   1920 bytes, file off 0xeba68)
+  0x000009d4fe28 - 0x000009d50460  (   1592 bytes, file off 0xec1ec)
+  0x000009d54330 - 0x000009d54e18  (   2792 bytes, file off 0xed830)
+  0x000009d54fb0 - 0x000009d55830  (   2176 bytes, file off 0xee580)
+  0x000009d68b40 - 0x000009d68f40  (   1024 bytes, file off 0xf16f4)
+  0x000009d78b00 - 0x000009d79100  (   1536 bytes, file off 0xf50c4)
+  0x000009d7c4c0 - 0x000009d7c8c0  (   1024 bytes, file off 0xf5f5c)
+  0x000009d7ec10 - 0x000009d7f010  (   1024 bytes, file off 0xf7281)
+  0x000009d82f30 - 0x000009d83330  (   1024 bytes, file off 0xf8281)
+  0x000009d86a30 - 0x000009d86e30  (   1024 bytes, file off 0xfb459)
+  0x000009d8c1d0 - 0x000009d8cc40  (   2672 bytes, file off 0xff075)
+  0x000009d8fb00 - 0x000009d8ffa0  (   1184 bytes, file off 0x1019b5)
+  0x000009d95001 - 0x000009d95410  (   1039 bytes, file off 0x10371f)
+  0x000009d96ff0 - 0x000009d97430  (   1088 bytes, file off 0x10432e)
+  0x000009d97d58 - 0x000009d98190  (   1080 bytes, file off 0x104b6e)
+  0x000009d99570 - 0x000009d99970  (   1024 bytes, file off 0x106186)
+  0x000009da9870 - 0x000009da9c70  (   1024 bytes, file off 0x10d2d9)
+  0x000009db5400 - 0x000009db5801  (   1025 bytes, file off 0x110d69)
+  0x000009db5900 - 0x000009db6080  (   1920 bytes, file off 0x11116a)
+  0x000009dc2a00 - 0x000009dc3190  (   1936 bytes, file off 0x116206)
+  0x000009dc6a10 - 0x000009dc6e10  (   1024 bytes, file off 0x11843e)
+  0x000009dc7158 - 0x000009dc7558  (   1024 bytes, file off 0x11883e)
+  0x000009dcc250 - 0x000009dcc9b0  (   1888 bytes, file off 0x11ae42)
+  0x000009dcfc50 - 0x000009dd0050  (   1024 bytes, file off 0x11b9be)
+  0x000009de4550 - 0x000009de4950  (   1024 bytes, file off 0x120bb9)
+  0x000009de4a90 - 0x000009de50a0  (   1552 bytes, file off 0x1211bd)
+  0x000009de5500 - 0x000009de59b0  (   1200 bytes, file off 0x1217cd)
+  0x000009de5b90 - 0x000009de62b0  (   1824 bytes, file off 0x121c7d)
+  0x000009deb6a0 - 0x000009debbc0  (   1312 bytes, file off 0x124665)
+  0x000009dece60 - 0x000009ded260  (   1024 bytes, file off 0x125385)
+  0x000009ded490 - 0x000009dede30  (   2464 bytes, file off 0x125785)
+  0x000009dee810 - 0x000009deec10  (   1024 bytes, file off 0x126c31)
+  0x000009def490 - 0x000009def890  (   1024 bytes, file off 0x127031)
+  0x000009defb70 - 0x000009deff70  (   1024 bytes, file off 0x127431)
+  0x000009df7f20 - 0x000009df8320  (   1024 bytes, file off 0x6920c)
+  0x000009e024e0 - 0x000009e028e0  (   1024 bytes, file off 0x6bc50)
+  0x000009e05780 - 0x000009e05b80  (   1024 bytes, file off 0x6c851)
+  0x000009e06440 - 0x000009e06950  (   1296 bytes, file off 0x6cd3a)
+  0x00000a94f938 - 0x00000a950238  (   2304 bytes, file off 0xc1fe0)
+  0x00000b14fb42 - 0x00000b150168  (   1574 bytes, file off 0x101e55)
+  0x00000ef96527 - 0x00000ef96627  (    256 bytes, file off 0xd830c)
+  0x00007ffe0000 - 0x00007ffe0a80  (   2688 bytes, file off 0x11cdee)
+  0x000080000000 - 0x00008000030d  (    781 bytes, file off 0x127835)
+  0x000200000000 - 0x00020000030c  (    780 bytes, file off 0x126525)
+  0x0002026a0674 - 0x0002026a0d2c  (   1720 bytes, file off 0xdba10)
+  0x000203604800 - 0x000203604c00  (   1024 bytes, file off 0x73f21)
+  0x000203606140 - 0x000203606540  (   1024 bytes, file off 0x74e21)
+  0x0007ffffff00 - 0x000800000398  (   1176 bytes, file off 0x11eb7d)
+  0x001000000000 - 0x001000000310  (    784 bytes, file off 0x117496)
+  0x001013600900 - 0x001013600d00  (   1024 bytes, file off 0xe6598)
+  0x010000000000 - 0x01000000030c  (    780 bytes, file off 0xc28e0)
+  0x01000000ff00 - 0x010000010300  (   1024 bytes, file off 0xce214)
+  0x01010100ff01 - 0x010101010301  (   1024 bytes, file off 0xba559)
+  0x01011a52c510 - 0x01011a52c910  (   1024 bytes, file off 0x12239d)
+  0x0101fffffeff - 0x010200000568  (   1641 bytes, file off 0xbd98f)
+  0x01020000057f - 0x01020000097f  (   1024 bytes, file off 0xbe204)
+  0x010200007f00 - 0x010200008300  (   1024 bytes, file off 0xc3a28)
+  0x010200008700 - 0x010200008b00  (   1024 bytes, file off 0xc3e28)
+  0x0102007fff00 - 0x010200800300  (   1024 bytes, file off 0xfec75)
+  0x0102101ffda8 - 0x010210200000  (    600 bytes, file off 0x7175e)
+  0x0102107ffc30 - 0x0102108000bf  (   1167 bytes, file off 0xd052c)
+  0x010210dffb42 - 0x010210e00168  (   1574 bytes, file off 0xf635c)
+  0x0102123ef320 - 0x0102123f0110  (   3568 bytes, file off 0x11f419)
+  0x0102125efb42 - 0x0102125f0168  (   1574 bytes, file off 0x730fb)
+  0x01021314fca0 - 0x01021315013c  (   1180 bytes, file off 0xd2ab7)
+  0x01021355e6e0 - 0x01021355eae0  (   1024 bytes, file off 0xefa4c)
+  0x010213561490 - 0x010213561a10  (   1408 bytes, file off 0xf064c)
+  0x010213589f50 - 0x01021358a540  (   1520 bytes, file off 0xfe67d)
+  0x0102135bdfb8 - 0x0102135be758  (   1952 bytes, file off 0x113aa2)
+  0x0102135c4e80 - 0x0102135c52e0  (   1120 bytes, file off 0x1177a6)
+  0x0102136c9c10 - 0x0102136ca010  (   1024 bytes, file off 0xd6f08)
+  0x0102136e7b20 - 0x0102136e7f20  (   1024 bytes, file off 0xdf17c)
+  0x010213754250 - 0x010213754b00  (   2224 bytes, file off 0xfcebd)
+  0x0102137d4e50 - 0x0102137d5250  (   1024 bytes, file off 0x706c6)
+  0x01021383c870 - 0x01021383cc70  (   1024 bytes, file off 0xba959)
+  0x01021383dd70 - 0x01021383e170  (   1024 bytes, file off 0xbb315)
+  0x01021387b730 - 0x01021387bd40  (   1552 bytes, file off 0xd24a7)
+  0x0102138a22e8 - 0x0102138a26e8  (   1024 bytes, file off 0xd9df0)
+  0x0102138a6600 - 0x0102138a6a00  (   1024 bytes, file off 0xda5f0)
+  0x010213f7fa60 - 0x010213f80510  (   2736 bytes, file off 0xbe604)
+  0x010214d906d8 - 0x010214da0000  (  63784 bytes, file off 0x89695)
+  0x010214da7000 - 0x010214db3000  (  49152 bytes, file off 0xa86a1)
+  0x0102151eba00 - 0x0102151ec540  (   2880 bytes, file off 0xe3bc4)
+  0x0102151ec640 - 0x0102151ecc48  (   1544 bytes, file off 0xe4704)
+  0x0102151ecd48 - 0x0102151ed1a8  (   1120 bytes, file off 0xe4d0c)
+  0x0102157ef4d8 - 0x0102157ef8d8  (   1024 bytes, file off 0x11dd3d)
+  0x0102157efe48 - 0x0102157f0000  (    440 bytes, file off 0x11e13d)
+  0x01021646fbc8 - 0x010216470000  (   1080 bytes, file off 0x117c06)
+  0x0102190dea10 - 0x0102190dee10  (   1024 bytes, file off 0xed030)
+  0x0102190ef720 - 0x0102190efb20  (   1024 bytes, file off 0xf12f0)
+  0x0102190f5eb0 - 0x0102190f62b0  (   1024 bytes, file off 0xf22f4)
+  0x010219107398 - 0x010219107798  (   1024 bytes, file off 0xf6982)
+  0x010219111070 - 0x010219111a10  (   2464 bytes, file off 0xfa6b9)
+  0x0102191180f0 - 0x010219118670  (   1408 bytes, file off 0xffae5)
+  0x010219119b60 - 0x01021911a000  (   1184 bytes, file off 0x100865)
+  0x01021911c160 - 0x01021911c560  (   1024 bytes, file off 0x10247b)
+  0x01021911c7a0 - 0x01021911cba0  (   1024 bytes, file off 0x10287b)
+  0x010219123180 - 0x010219123590  (   1040 bytes, file off 0x104fa6)
+  0x01021912b360 - 0x01021912b760  (   1024 bytes, file off 0x1073be)
+  0x01021915c570 - 0x01021915c970  (   1024 bytes, file off 0x11c1be)
+  0x01021915d328 - 0x01021915d758  (   1072 bytes, file off 0x11c5be)
+  0x01021915e201 - 0x01021915e6d0  (   1231 bytes, file off 0x11d86e)
+  0x010219165d00 - 0x010219166180  (   1152 bytes, file off 0x11e6fd)
+  0x0102192dac50 - 0x0102192db050  (   1024 bytes, file off 0xf8eb5)
+  0x0102192dbab0 - 0x0102192dbeb0  (   1024 bytes, file off 0xf9eb5)
+  0x0102192dc1e0 - 0x0102192dc5e0  (   1024 bytes, file off 0xfa2b5)
+  0x0102192dde70 - 0x0102192de270  (   1024 bytes, file off 0xfb85d)
+  0x0102192de4d0 - 0x0102192de8d0  (   1024 bytes, file off 0xfc2bd)
+  0x0102192de910 - 0x0102192ded10  (   1024 bytes, file off 0xfd76d)
+  0x0102192df700 - 0x0102192dfbf0  (   1264 bytes, file off 0xfe18d)
+  0x0102193d7ee0 - 0x0102193d8330  (   1104 bytes, file off 0xbc839)
+  0x0102193e42a0 - 0x0102193e4ae0  (   2112 bytes, file off 0xc5b2c)
+  0x0102193e4c60 - 0x0102193e50d8  (   1144 bytes, file off 0xc676c)
+  0x0102194d3dc0 - 0x0102194d41e4  (   1060 bytes, file off 0x10f71d)
+  0x01021956d560 - 0x01021956dbc0  (   1632 bytes, file off 0x99d71)
+  0x01021956f900 - 0x01021956ff88  (   1672 bytes, file off 0xa7691)
+  0x01021957bfe0 - 0x01021957c3e0  (   1024 bytes, file off 0xb5e95)
+  0x01021957cd10 - 0x01021957d580  (   2160 bytes, file off 0xb6cd1)
+  0x01021957d5c0 - 0x01021957d9c0  (   1024 bytes, file off 0xb7541)
+  0x01021957e338 - 0x01021957e768  (   1072 bytes, file off 0xb837d)
+  0x010219a8fb58 - 0x010219a902d8  (   1920 bytes, file off 0x70fde)
+  0x010219d6fd98 - 0x010219d70000  (    616 bytes, file off 0xee318)
+  0x01021a4f0f70 - 0x01021a4f1370  (   1024 bytes, file off 0x10afb5)
+  0x01021a4f1f00 - 0x01021a4f2300  (   1024 bytes, file off 0x10bfa9)
+  0x01021a52c514 - 0x01021a52c91c  (   1032 bytes, file off 0x12060d)
+  0x01021a5343c0 - 0x01021a5347c0  (   1024 bytes, file off 0x124265)
+  0x01021a534f00 - 0x01021a535300  (   1024 bytes, file off 0x124b85)
+  0x01021c37fde8 - 0x01021c380000  (    536 bytes, file off 0x10ff41)
+  0x01021cd7fe18 - 0x01021cd80000  (    488 bytes, file off 0xd4f97)
+  0x01021cf7fe08 - 0x01021cf80000  (    504 bytes, file off 0xe07b4)
+  0x01021d97fcc8 - 0x01021d9801a0  (   1240 bytes, file off 0x7891d)
+  0x01021df7fe08 - 0x01021df80000  (    504 bytes, file off 0xd6d10)
+  0x01021e57fc40 - 0x01021e580210  (   1488 bytes, file off 0x1053b6)
+  0x01021eb7fc40 - 0x01021eb80210  (   1488 bytes, file off 0x88cc5)
+  0x01021f17fc40 - 0x01021f180210  (   1488 bytes, file off 0xd8c0c)
+  0x01021f620980 - 0x01021f620d80  (   1024 bytes, file off 0x71ffe)
+  0x01021f6bad00 - 0x01021f6bb530  (   2096 bytes, file off 0xd09bb)
+  0x01021f6fdd00 - 0x01021f6fe100  (   1024 bytes, file off 0xe09ac)
+  0x01021f6fe148 - 0x01021f6fe548  (   1024 bytes, file off 0xe0dac)
+  0x01021f70cf40 - 0x01021f70d530  (   1520 bytes, file off 0xe35d4)
+  0x01021f70e800 - 0x01021f70ec00  (   1024 bytes, file off 0xe516c)
+  0x01021f70eec0 - 0x01021f70f2c0  (   1024 bytes, file off 0xe556c)
+  0x01021f7a3e40 - 0x01021f7a4240  (   1024 bytes, file off 0x118c3e)
+  0x01021f7a4480 - 0x01021f7a4880  (   1024 bytes, file off 0x11943e)
+  0x01021f7c7e50 - 0x01021f7c8250  (   1024 bytes, file off 0x126125)
+  0x01021f8adfa0 - 0x01021f8ae3a0  (   1024 bytes, file off 0xd91dc)
+  0x01021fa8d3b0 - 0x01021fa8dd30  (   2432 bytes, file off 0xdf57c)
+  0x01021fa9d6b0 - 0x01021fa9dab0  (   1024 bytes, file off 0xe24a0)
+  0x01021fabd890 - 0x01021fabdc90  (   1024 bytes, file off 0xea8c8)
+  0x01021fbc53d0 - 0x01021fbc57d0  (   1024 bytes, file off 0xb46a5)
+  0x01021fc67830 - 0x01021fc68000  (   2000 bytes, file off 0xe18c0)
+  0x01021fc71fb8 - 0x01021fc723d8  (   1056 bytes, file off 0xe596c)
+  0x01021fd24970 - 0x01021fd24f10  (   1440 bytes, file off 0x12308d)
+  0x01021fd269c8 - 0x01021fd26dc8  (   1024 bytes, file off 0x12362d)
+  0x0102203dd240 - 0x0102203dd640  (   1024 bytes, file off 0xf40b8)
+  0x0102203e07f8 - 0x0102203e0bf8  (   1024 bytes, file off 0xf44b8)
+  0x0102203e2c78 - 0x0102203e3078  (   1024 bytes, file off 0xf48bc)
+  0x0102203e47d0 - 0x0102203e4bd0  (   1024 bytes, file off 0xf56c4)
+  0x01022054d550 - 0x01022054d950  (   1024 bytes, file off 0xde670)
+  0x01022098fe48 - 0x010220990000  (    440 bytes, file off 0x11604e)
+  0x010260f8fb68 - 0x010260f90000  (   1176 bytes, file off 0xf5ac4)
+  0x01026168fd28 - 0x0102616901d0  (   1192 bytes, file off 0xe8fe8)
+  0x010261cafbf0 - 0x010261cb0108  (   1304 bytes, file off 0x70ac6)
+  0x010261eafbf0 - 0x010261eb0108  (   1304 bytes, file off 0x98fbd)
+  0x0102620afbf0 - 0x0102620b0108  (   1304 bytes, file off 0xbb715)
+  0x0102622afbf0 - 0x0102622b0108  (   1304 bytes, file off 0xcf2dc)
+  0x01026360fb68 - 0x010263610000  (   1176 bytes, file off 0x994d9)
+  0x010263cbfd48 - 0x010263cc0148  (   1024 bytes, file off 0x11983e)
+  0x010265df9110 - 0x010265df95e0  (   1232 bytes, file off 0xd3353)
+  0x010265e20110 - 0x010265e20930  (   2080 bytes, file off 0xda9f0)
+  0x010265e94080 - 0x010265e944b0  (   1072 bytes, file off 0xf8a85)
+  0x010265e985f0 - 0x010265e989f0  (   1024 bytes, file off 0xfc6bd)
+  0x010266279800 - 0x010266279c00  (   1024 bytes, file off 0x11c9ee)
+  0x01026633a3b0 - 0x01026633a7d0  (   1056 bytes, file off 0xcc99c)
+  0x0102664c9400 - 0x0102664c9800  (   1024 bytes, file off 0xb4aa9)
+  0x010266602140 - 0x010266602680  (   1344 bytes, file off 0x116f56)
+  0x010266607aa0 - 0x010266607ea0  (   1024 bytes, file off 0x11903e)
+  0x010266608070 - 0x010266608470  (   1024 bytes, file off 0x119c3e)
+  0x0102666084c0 - 0x0102666088c0  (   1024 bytes, file off 0x11a03e)
+  0x01026660baf0 - 0x01026660bf00  (   1040 bytes, file off 0x11b5a6)
+  0x0102667d9a80 - 0x0102667d9e80  (   1024 bytes, file off 0x11bdbe)
+  0x010266914150 - 0x010266914550  (   1024 bytes, file off 0xe6198)
+  0x010266962830 - 0x010266962c30  (   1024 bytes, file off 0x100065)
+  0x010266963370 - 0x010266963770  (   1024 bytes, file off 0x100465)
+  0x0102669e9e98 - 0x0102669ea298  (   1024 bytes, file off 0x726fe)
+  0x0102669ecb70 - 0x0102669ecf70  (   1024 bytes, file off 0x73721)
+  0x0102669f0900 - 0x0102669f0d00  (   1024 bytes, file off 0x75221)
+  0x0102669f2420 - 0x0102669f2a90  (   1648 bytes, file off 0x75a51)
+  0x010266a358c0 - 0x010266a35d50  (   1168 bytes, file off 0xb87b1)
+  0x010266c02b70 - 0x010266c032f0  (   1920 bytes, file off 0xb8c45)
+  0x010266c11a80 - 0x010266c12038  (   1464 bytes, file off 0xbad59)
+  0x010266c1bfb0 - 0x010266c1c3b0  (   1024 bytes, file off 0xbc031)
+  0x010266c21910 - 0x010266c21d10  (   1024 bytes, file off 0xbc439)
+  0x010266c3ea40 - 0x010266c3ee40  (   1024 bytes, file off 0xce618)
+  0x01027e19faf0 - 0x01027e1a0000  (   1296 bytes, file off 0xcf7f8)
+  0x01027fffff00 - 0x010280000300  (   1024 bytes, file off 0xbd18f)
+  0x0102906decf0 - 0x0102906df0f0  (   1024 bytes, file off 0xfcabd)
+  0x0102906df130 - 0x0102906df750  (   1568 bytes, file off 0xfdb6d)
+  0x0102906fc7f0 - 0x0102906fcbf0  (   1024 bytes, file off 0x10a240)
+  0x010290823d30 - 0x010290824130  (   1024 bytes, file off 0xd7b08)
+  0x01029092aea0 - 0x01029092b31c  (   1148 bytes, file off 0x7024a)
+  0x010290951040 - 0x010290951440  (   1024 bytes, file off 0x79685)
+  0x010290a85630 - 0x010290a85a30  (   1024 bytes, file off 0x10476e)
+  0x010290b462a0 - 0x010290b46850  (   1456 bytes, file off 0xb4ea9)
+  0x010292125b50 - 0x010292126110  (   1472 bytes, file off 0xd1ee7)
+  0x010292196ac0 - 0x010292196ec0  (   1024 bytes, file off 0xecc30)
+  0x010292198688 - 0x010292198a88  (   1024 bytes, file off 0xeee00)
+  0x010292206320 - 0x0102922068e0  (   1472 bytes, file off 0x116996)
+  0x010292324ad0 - 0x010292325528  (   2648 bytes, file off 0xdd458)
+  0x010292409c30 - 0x01029240a480  (   2128 bytes, file off 0x6990c)
+  0x01029240faa0 - 0x010292410380  (   2272 bytes, file off 0x6a964)
+  0x0102924103a0 - 0x0102924107a0  (   1024 bytes, file off 0x6b248)
+  0x0102924c3670 - 0x0102924c3a70  (   1024 bytes, file off 0xd3823)
+  0x0102924e6930 - 0x0102924e6d30  (   1024 bytes, file off 0xda1f0)
+  0x0102924eb200 - 0x0102924eb600  (   1024 bytes, file off 0xdb610)
+  0x0102925870c0 - 0x0102925874d0  (   1040 bytes, file off 0x10dafd)
+  0x010292587600 - 0x010292587a00  (   1024 bytes, file off 0x10df0d)
+  0x010292626ff0 - 0x010292627540  (   1360 bytes, file off 0xa7141)
+  0x0102e08a8fc8 - 0x0102e08a9540  (   1400 bytes, file off 0x114c36)
+  0x0102e08c0a68 - 0x0102e08c0e68  (   1024 bytes, file off 0x11e2f9)
+  0x0102fffffeff - 0x010300000401  (   1282 bytes, file off 0xbcc89)
+  0x01030cd6fbb0 - 0x01030cd70210  (   1632 bytes, file off 0xfbc5d)
+  0x01030d691670 - 0x01030d6920ac  (   2620 bytes, file off 0x10e4d1)
+  0x01030d6d4aa0 - 0x01030d6d4ea0  (   1024 bytes, file off 0x127b42)
+  0x01030d6facb0 - 0x01030d6fb0b0  (   1024 bytes, file off 0x73b21)
+  0x01030d817240 - 0x01030d817640  (   1024 bytes, file off 0xf1ef4)
+  0x01030d818bf0 - 0x01030d818ff0  (   1024 bytes, file off 0xf2af4)
+  0x01030d8565d0 - 0x01030d856a00  (   1072 bytes, file off 0x10cba9)
+  0x01030d85efdb - 0x01030d85f3db  (   1024 bytes, file off 0x10f31d)
+  0x01030e044f30 - 0x01030e045330  (   1024 bytes, file off 0xba14d)
+  0x01030e0e8330 - 0x01030e0e8730  (   1024 bytes, file off 0xe69a0)
+  0x01030e0e8810 - 0x01030e0e8c10  (   1024 bytes, file off 0xe6da0)
+  0x01030e11ea30 - 0x01030e11ee38  (   1032 bytes, file off 0xf4cbc)
+  0x01030e208ad0 - 0x01030e209158  (   1672 bytes, file off 0xb93c5)
+  0x01030e315b60 - 0x01030e315f60  (   1024 bytes, file off 0x1091c0)
+  0x01030e53fc08 - 0x01030e540210  (   1544 bytes, file off 0x6b648)
+  0x01030eb3fc60 - 0x01030eb4011c  (   1212 bytes, file off 0xcea18)
+  0x01030f13fe40 - 0x01030f140240  (   1024 bytes, file off 0xf3cb4)
+  0x01030f73fbd0 - 0x01030f740210  (   1600 bytes, file off 0x719ba)
+  0x01030fd3f8c8 - 0x01030fd40210  (   2376 bytes, file off 0xd1393)
+  0x01030ff3fbc0 - 0x01030ff40210  (   1616 bytes, file off 0xdca08)
+  0x0103109cfe58 - 0x0103109d0000  (    424 bytes, file off 0xd11eb)
+  0x010310bcfad8 - 0x010310bd0000  (   1320 bytes, file off 0xdc4dc)
+  0x01031225fae0 - 0x0103122601e0  (   1792 bytes, file off 0x74721)
+  0x010312a5fc30 - 0x010312a600e4  (   1204 bytes, file off 0xe0300)
+  0x01031345faf0 - 0x010313460210  (   1824 bytes, file off 0x781fd)
+  0x01032108fdf8 - 0x010321090000  (    520 bytes, file off 0x102c7b)
+  0x010321703f00 - 0x010321704300  (   1024 bytes, file off 0xceed4)
+  0x0103253dfd2c - 0x0103253e012c  (   1024 bytes, file off 0xbbc31)
+  0x0103255dfdf8 - 0x0103255e0000  (    520 bytes, file off 0xd1cdb)
+  0x0103265dfdf8 - 0x0103265e0000  (    520 bytes, file off 0xbdff8)
+  0x0103278bfdf8 - 0x0103278c0000  (    520 bytes, file off 0x10ada9)
+  0x01033b9f9392 - 0x01033b9f9792  (   1024 bytes, file off 0x103b2e)
+  0x010346f4fb42 - 0x010346f50000  (   1214 bytes, file off 0x108d02)
+  0x0103558ee1e0 - 0x0103558ee630  (   1104 bytes, file off 0x123a2d)
+  0x0103563ab910 - 0x0103563abd10  (   1024 bytes, file off 0x120209)
+  0x0103563eeed0 - 0x0103563ef2d0  (   1024 bytes, file off 0x76cc5)
+  0x010362427400 - 0x010362427980  (   1408 bytes, file off 0xa7d21)
+  0x010362428218 - 0x010362428618  (   1024 bytes, file off 0xa82a1)
+  0x010369700ec0 - 0x0103697012c0  (   1024 bytes, file off 0x99971)
+  0x01036a6dc280 - 0x01036a6dc680  (   1024 bytes, file off 0x6a160)
+  0x01036b6a7600 - 0x01036b6a7a00  (   1024 bytes, file off 0x1077be)
+  0x01036b6a7c80 - 0x01036b6a8080  (   1024 bytes, file off 0x107bbe)
+  0x01036b6b0000 - 0x01036b6b0300  (    768 bytes, file off 0x10cfd9)
+  0x01036c67ab90 - 0x01036c67afa0  (   1040 bytes, file off 0xeacc8)
+  0x01036c7e5180 - 0x01036c7e5580  (   1024 bytes, file off 0xd439f)
+  0x01036d617f50 - 0x01036d618350  (   1024 bytes, file off 0xc4228)
+  0x01036d6209d0 - 0x01036d620df8  (   1064 bytes, file off 0xcd304)
+  0x01036d621330 - 0x01036d621760  (   1072 bytes, file off 0xcd72c)
+  0x01036d624d80 - 0x01036d625330  (   1456 bytes, file off 0xcdc64)
+  0x01036d646a38 - 0x01036d646e38  (   1024 bytes, file off 0xd597f)
+  0x01036d650000 - 0x01036d650300  (    768 bytes, file off 0xd6a10)
+  0x01036e001f10 - 0x01036e002310  (   1024 bytes, file off 0x10fb41)
+  0x01036e005f20 - 0x01036e006328  (   1032 bytes, file off 0x111cf2)
+  0x01036e009f30 - 0x01036e00a330  (   1024 bytes, file off 0x112ea2)
+  0x01036e1132c0 - 0x01036e1136c0  (   1024 bytes, file off 0xd5d7f)
+  0x01036e2a9130 - 0x01036e2a9530  (   1024 bytes, file off 0xc6be4)
+  0x01036e2aa3c0 - 0x01036e2aa7c0  (   1024 bytes, file off 0xc7748)
+  0x01036e2aa8d0 - 0x01036e2aacd0  (   1024 bytes, file off 0xc9b20)
+  0x01036e2c4bc0 - 0x01036e2c4fc0  (   1024 bytes, file off 0xd012c)
+  0x010372001c10 - 0x010372002020  (   1040 bytes, file off 0xdc0cc)
+  0x010372002c20 - 0x010372003020  (   1024 bytes, file off 0xdd058)
+  0x010372003c40 - 0x010372004400  (   1984 bytes, file off 0xddeb0)
+  0x010372004540 - 0x010372004940  (   1024 bytes, file off 0xdea70)
+  0x0103746c67a0 - 0x0103746c78d8  (   4408 bytes, file off 0x770c5)
+  0x0103746cfcd0 - 0x0103746de70c  (  59964 bytes, file off 0x79a85)
+  0x0103746ea000 - 0x0103746f6d6c  (  52588 bytes, file off 0x9a3d1)
+  0x0103746f7c70 - 0x0103746f86ac  (   2620 bytes, file off 0xb5459)
+  0x0103746f95b0 - 0x0103746f9fec  (   2620 bytes, file off 0xb6295)
+  0x0103746fa250 - 0x0103746fac8c  (   2620 bytes, file off 0xb7941)
+  0x010374726550 - 0x0103747275dc  (   4236 bytes, file off 0xbf4b8)
+  0x010374727840 - 0x0103747288cc  (   4236 bytes, file off 0xc0944)
+  0x01037472a470 - 0x01037472aeac  (   2620 bytes, file off 0xc2bec)
+  0x01037472c0b8 - 0x01037472d5b8  (   5376 bytes, file off 0xc4628)
+  0x01037472d6c8 - 0x01037472de2c  (   1892 bytes, file off 0xc6fe4)
+  0x01037472e968 - 0x0103747306d0  (   7528 bytes, file off 0xc9f20)
+  0x045f76070130 - 0x045f76070530  (   1024 bytes, file off 0x103f2e)
+  0x700000b32000 - 0x700000b35000  (  12288 bytes, file off 0x6d24a)  [shadps4.exe+0xb32000]
+  0x7ffc3a78f298 - 0x7ffc3a78f29c  (      4 bytes, file off 0xbe200)
+  0x7ffc65aa3298 - 0x7ffc65aa329c  (      4 bytes, file off 0xc5b28)
+  0x7ffc65cfb298 - 0x7ffc65cfb29c  (      4 bytes, file off 0xec1e8)
+  0x7ffc65d1b298 - 0x7ffc65d1b29c  (      4 bytes, file off 0xf32f4)
+  0x7ffc66abd298 - 0x7ffc66abd29c  (      4 bytes, file off 0xbc435)
+  0x7ffc8376d298 - 0x7ffc8376d29c  (      4 bytes, file off 0x120fb9)
+  0x7ffc83a4c298 - 0x7ffc83a4c29c  (      4 bytes, file off 0xe28a0)
+  0x7ffcc561a298 - 0x7ffcc561a29c  (      4 bytes, file off 0xe11ac)
+  0x7ffccf53c298 - 0x7ffccf53c29c  (      4 bytes, file off 0xb4aa5)
+  0x7ffcd4619298 - 0x7ffcd461929c  (      4 bytes, file off 0xba551)
+  0x7ffcd4db8298 - 0x7ffcd4db829c  (      4 bytes, file off 0xdc0c8)
+  0x7ffcd8023298 - 0x7ffcd802329c  (      4 bytes, file off 0xe5d90)
+  0x7ffcd8cb8298 - 0x7ffcd8cb829c  (      4 bytes, file off 0xe6998)
+  0x7ffcd8cfb298 - 0x7ffcd8cfb29c  (      4 bytes, file off 0xf8681)
+  0x7ffcd8d13298 - 0x7ffcd8d1329c  (      4 bytes, file off 0x106fb6)
+  0x7ffcd8d42298 - 0x7ffcd8d4229c  (      4 bytes, file off 0x11a43e)
+  0x7ffcd9704298 - 0x7ffcd970429c  (      4 bytes, file off 0xcc998)
+  0x7ffcdb233298 - 0x7ffcdb23329c  (      4 bytes, file off 0xd99ec)
+  0x7ffce075f298 - 0x7ffce075f29c  (      4 bytes, file off 0x11e6f9)
+  0x7ffce0ff6298 - 0x7ffce0ff629c  (      4 bytes, file off 0xf48b8)
+  0x7ffce16fb298 - 0x7ffce16fb29c  (      4 bytes, file off 0xeba64)
+  0x7ffce1cef298 - 0x7ffce1cef29c  (      4 bytes, file off 0x11f415)
+  0x7ffce202e298 - 0x7ffce202e29c  (      4 bytes, file off 0xfb859)
+  0x7ffce5c7b298 - 0x7ffce5c7b29c  (      4 bytes, file off 0xcdb60)
+  0x7ffcef3d7298 - 0x7ffcef3d729c  (      4 bytes, file off 0xf12ec)
+  0x7ffcf1376298 - 0x7ffcf137629c  (      4 bytes, file off 0xbc431)
+  0x7ffcf1830298 - 0x7ffcf183029c  (      4 bytes, file off 0x11e2f5)
+  0x7ffcf206d298 - 0x7ffcf206d29c  (      4 bytes, file off 0xdf174)
+  0x7ffcf7b86298 - 0x7ffcf7b8629c  (      4 bytes, file off 0xbbc2d)
+  0x7ffcf7d4a298 - 0x7ffcf7d4a29c  (      4 bytes, file off 0xba54d)
+  0x7ffcf7d8b298 - 0x7ffcf7d8b29c  (      4 bytes, file off 0xd1ee3)
+  0x7ffcf7e1b298 - 0x7ffcf7e1b29c  (      4 bytes, file off 0xf40b4)
+  0x7ffcf81a5298 - 0x7ffcf81a529c  (      4 bytes, file off 0xf16f0)
+  0x7ffcf8b66298 - 0x7ffcf8b6629c  (      4 bytes, file off 0x791f5)
+  0x7ffcf8edf298 - 0x7ffcf8edf29c  (      4 bytes, file off 0x719b6)
+  0x7ffcf95a6298 - 0x7ffcf95a629c  (      4 bytes, file off 0x10afb1)
+  0x7ffcf98ab298 - 0x7ffcf98ab29c  (      4 bytes, file off 0xdca04)
+  0x7ffcfa15a298 - 0x7ffcfa15a29c  (      4 bytes, file off 0xccf00)
+  0x7ffcfa609298 - 0x7ffcfa60929c  (      4 bytes, file off 0x120609)
+  0x7ffcfbc95298 - 0x7ffcfbc9529c  (      4 bytes, file off 0xdf170)
+  0x7ffcfc22b298 - 0x7ffcfc22b29c  (      4 bytes, file off 0xeb0d8)
+  0x7ffcfcb19298 - 0x7ffcfcb1929c  (      4 bytes, file off 0xe699c)
+  0x7ffcfcce8298 - 0x7ffcfcce829c  (      4 bytes, file off 0xe75b0)
+  0x7ffcfcf1a298 - 0x7ffcfcf1a29c  (      4 bytes, file off 0x10d6d9)
+  0x7ffcfcf6f298 - 0x7ffcfcf6f29c  (      4 bytes, file off 0x6a960)
+  0x7ffcfd055298 - 0x7ffcfd05529c  (      4 bytes, file off 0xdf178)
+  0x7ffcfd2c4298 - 0x7ffcfd2c429c  (      4 bytes, file off 0x114242)
+  0x7ffcfda02298 - 0x7ffcfda0229c  (      4 bytes, file off 0x11b9b6)
+  0x7ffcfe49b298 - 0x7ffcfe49b29c  (      4 bytes, file off 0x107fbe)
+  0x7ffcfe4af298 - 0x7ffcfe4af29c  (      4 bytes, file off 0x1118ea)
+  0x7ffcfe873298 - 0x7ffcfe87329c  (      4 bytes, file off 0x120a15)
+  0x7ffcfea28298 - 0x7ffcfea2829c  (      4 bytes, file off 0x11b5a2)
+  0x7ffcfec55298 - 0x7ffcfec5529c  (      4 bytes, file off 0x79681)
+  0x7ffcfecbe298 - 0x7ffcfecbe29c  (      4 bytes, file off 0xcdb5c)
+  0x7ffcfee99298 - 0x7ffcfee9929c  (      4 bytes, file off 0xcf7f4)
+  0x7ffcfef1b298 - 0x7ffcfef1b29c  (      4 bytes, file off 0xefa48)
+  0x7ffcff066298 - 0x7ffcff06629c  (      4 bytes, file off 0xd0128)
+  0x7ffcff1f9298 - 0x7ffcff1f929c  (      4 bytes, file off 0xba555)
+  0x7ffcff29d298 - 0x7ffcff29d29c  (      4 bytes, file off 0xe79b8)
+  0x7ffcff51c298 - 0x7ffcff51c29c  (      4 bytes, file off 0x6a15c)
+  0x7ffcff592298 - 0x7ffcff59229c  (      4 bytes, file off 0xbb311)
+  0x7ffcff7bb298 - 0x7ffcff7bb29c  (      4 bytes, file off 0xd7f08)
+  0x7ffcff8ea298 - 0x7ffcff8ea29c  (      4 bytes, file off 0x884c1)
+  0x7ffcff903298 - 0x7ffcff90329c  (      4 bytes, file off 0xa713d)
+  0x7ffcffd5f298 - 0x7ffcffd5f29c  (      4 bytes, file off 0xe75b4)
+  0x7ffcffdc2298 - 0x7ffcffdc229c  (      4 bytes, file off 0x10bba5)
+  0x7ffd0000a298 - 0x7ffd0000a29c  (      4 bytes, file off 0x768c1)
+  0x7ffd00039298 - 0x7ffd0003929c  (      4 bytes, file off 0xb46a1)
+  0x7ffd00233298 - 0x7ffd0023329c  (      4 bytes, file off 0xbd18b)
+  0x7ffd002412c4 - 0x7ffd002413c4  (    256 bytes, file off 0xcbc88)  [win32u.dll+0x12c4]
+  0x7ffd0024ae04 - 0x7ffd0024af04  (    256 bytes, file off 0xcdb64)  [win32u.dll+0xae04]
+  0x7ffd0066f298 - 0x7ffd0066f29c  (      4 bytes, file off 0xef610)
+  0x7ffd00723298 - 0x7ffd0072329c  (      4 bytes, file off 0x71ffa)
+  0x7ffd008ae298 - 0x7ffd008ae29c  (      4 bytes, file off 0x11b9ba)
+  0x7ffd009e9298 - 0x7ffd009e929c  (      4 bytes, file off 0xe6194)
+  0x7ffd00a9c298 - 0x7ffd00a9c29c  (      4 bytes, file off 0x127831)
+  0x7ffd00bfc298 - 0x7ffd00bfc29c  (      4 bytes, file off 0xfa6b5)
+  0x7ffd00d9e298 - 0x7ffd00d9e29c  (      4 bytes, file off 0xef614)
+  0x7ffd01237298 - 0x7ffd0123729c  (      4 bytes, file off 0xb87ad)
+  0x7ffd01a88298 - 0x7ffd01a8829c  (      4 bytes, file off 0x1118ee)
+  0x7ffd01d39298 - 0x7ffd01d3929c  (      4 bytes, file off 0xce614)
+  0x7ffd022a5298 - 0x7ffd022a529c  (      4 bytes, file off 0xcf2d4)
+  0x7ffd0240d298 - 0x7ffd0240d29c  (      4 bytes, file off 0x994d5)
+  0x7ffd025e6298 - 0x7ffd025e629c  (      4 bytes, file off 0xa7d1d)
+  0x7ffd02699298 - 0x7ffd0269929c  (      4 bytes, file off 0xe5d8c)
+  0x7ffd026d2298 - 0x7ffd026d229c  (      4 bytes, file off 0xf3cb0)
+  0x7ffd02700298 - 0x7ffd0270029c  (      4 bytes, file off 0x1073ba)
+  0x7ffd027e9298 - 0x7ffd027e929c  (      4 bytes, file off 0xbf0b4)
+  0x7ffd028b9298 - 0x7ffd028b929c  (      4 bytes, file off 0xfec71)
+  0x7ffd0297c298 - 0x7ffd0297c29c  (      4 bytes, file off 0xa7d19)
+  0x7ffd02aa8298 - 0x7ffd02aa829c  (      4 bytes, file off 0x10e4cd)
+  0x7ffd02b5a298 - 0x7ffd02b5a29c  (      4 bytes, file off 0xb8c41)
+  0x7ffd02c59298 - 0x7ffd02c5929c  (      4 bytes, file off 0x10371b)
+  0x7ffd02cc6298 - 0x7ffd02cc629c  (      4 bytes, file off 0x6b244)
+  0x7ffd02de2298 - 0x7ffd02de229c  (      4 bytes, file off 0xecc2c)
+  0x7ffd02e1b298 - 0x7ffd02e1b29c  (      4 bytes, file off 0xfec6d)
+  0x7ffd03040384 - 0x7ffd03040524  (    416 bytes, file off 0x120a19)  [ntdll.dll+0x160384]
+  0x7ffd03040984 - 0x7ffd03040a84  (    256 bytes, file off 0x120fbd)  [ntdll.dll+0x160984]
+  0x7ffd03040e54 - 0x7ffd03040f54  (    256 bytes, file off 0x1210bd)  [ntdll.dll+0x160e54]
+  0x7ffd03042254 - 0x7ffd03042354  (    256 bytes, file off 0x12279d)  [ntdll.dll+0x162254]
+  0x7ffd03043f54 - 0x7ffd030440b4  (    352 bytes, file off 0x122f2d)  [ntdll.dll+0x163f54]
+  0x7ffd03146298 - 0x7ffd0314629c  (      4 bytes, file off 0xe02fc)
+--- modules in dump (118) --- (first/last 8)
+  0x010213b50000 +0x000dd000  C:\Windows\System32\WinMetadata\Windows.Devices.winmd
+  0x700000000000 +0x05a38000  C:\Users\Νίκος\Documents\GitHub\shadPS4\Build\x64-Clang-RelWithDebInfo\shadps4.exe
+  0x7ffc193a0000 +0x05ca1000  C:\Windows\System32\DriverStore\FileRepository\nv_dispig.inf_amd64_f4c7a2fd13e0f763\nvrtum64.dll
+  0x7ffc1f050000 +0x02925000  C:\Windows\System32\DriverStore\FileRepository\nv_dispig.inf_amd64_f4c7a2fd13e0f763\nvoglv64.dll
+  0x7ffc3a6b0000 +0x000df000  C:\Windows\System32\D3DSCache.dll
+  0x7ffc659d0000 +0x000d3000  C:\Windows\System32\Mfreadwrite.dll
+  0x7ffc65cb0000 +0x0004b000  C:\Windows\System32\dinput8.dll
+  0x7ffc65d00000 +0x0001b000  C:\Windows\System32\XInput1_4.dll
+  0x7ffd028c0000 +0x000bc000  C:\Windows\System32\advapi32.dll
+  0x7ffd02990000 +0x00118000  C:\Windows\System32\rpcrt4.dll
+  0x7ffd02ab0000 +0x000aa000  C:\Windows\System32\sechost.dll
+  0x7ffd02b60000 +0x000f9000  C:\Windows\System32\SHCore.dll
+  0x7ffd02c60000 +0x00066000  C:\Windows\System32\shlwapi.dll
+  0x7ffd02d60000 +0x00082000  C:\Windows\System32\ws2_32.dll
+  0x7ffd02df0000 +0x0002b000  C:\Windows\System32\gdi32.dll
+  0x7ffd02ee0000 +0x00266000  C:\Windows\System32\ntdll.dll
+--- threads (206) ---
+exception stream: code=0xc0000005 tid=0x16d0 addr=0x700000b33500 nparams=2
+  access violation: WRITE at 0x700000b3348d
+--- FAULTING context (from exception stream) ---
+  Rax   =0x0000700000b33500  Rbx   =0x0000010290951140  Rcx   =0x000001029092afa0
+  Rdx   =0x0000000000000800  Rsi   =0x000001029092b01c  Rdi   =0x0000000203604900
+  Rbp   =0x0000010214d93208  Rsp   =0x0000010214d931f8  R8    =0x0000000000000040
+  R9    =0x0000000000000040  R10   =0x0000000000000080  R11   =0x00007ffce661c2d1
+  R12   =0x0000010214d953cc  R13   =0x0000010214d95380  R14   =0x0000010290951140
+  R15   =0x0000010214d953f0  Rip   =0x0000700000b33500  EFlags=0x0000000000010206
+tid=0x2678   rip=0x7ffd0024ae84 rsp=0x0000005fe268
+tid=0x988    rip=0x7ffd03040404 rsp=0x0000075cf358
+tid=0x2288   rip=0x7ffd03040ed4 rsp=0x00000a94f938
+tid=0x23b4   rip=0x7ffd03044034 rsp=0x00000b14fbf8
+tid=0x51e8   rip=0x7ffd03040404 rsp=0x0102101ffda8
+tid=0x2370   rip=0x7ffd03043fd4 rsp=0x0102107ffce8
+tid=0x6790   rip=0x7ffd03044034 rsp=0x010210dffbf8
+tid=0x2a64   rip=0x7ffd03040ed4 rsp=0x0102123ef458
+tid=0x12d4   rip=0x7ffd03044034 rsp=0x0102125efbf8
+tid=0x6310   rip=0x7ffd00241344 rsp=0x01021314fd18
+tid=0x2a78   rip=0x7ffd030404a4 rsp=0x010213f7fb78
+tid=0x16d0   rip=0x7ffd030422d4 rsp=0x010214d907d8 <-- CRASHING THREAD
+tid=0x7ac    rip=0x7ffd03040404 rsp=0x0102157efe48
+tid=0x3f7c   rip=0x7ffd03040ed4 rsp=0x01021646fbc8
+tid=0x5020   rip=0x7ffd03040ed4 rsp=0x010219a8fb58
+tid=0xc1c    rip=0x7ffd03040404 rsp=0x010219d6fd98
+tid=0x3eec   rip=0x7ffd03040404 rsp=0x01021c37fde8
+tid=0xa1c    rip=0x7ffd03040404 rsp=0x01021cd7fe18
+tid=0x6164   rip=0x7ffd03040404 rsp=0x01021cf7fe08
+tid=0x1e8c   rip=0x7ffd03040404 rsp=0x01021d97fd28
+tid=0x2d80   rip=0x7ffd00241344 rsp=0x01021df7fe08
+tid=0x3d80   rip=0x7ffd03043fd4 rsp=0x01021e57fcf8
+tid=0x3f2c   rip=0x7ffd03043fd4 rsp=0x01021eb7fcf8
+tid=0x6a94   rip=0x7ffd03043fd4 rsp=0x01021f17fcf8
+tid=0x1ec4   rip=0x7ffd03040404 rsp=0x01022098fe48
+tid=0x3718   rip=0x7ffd03040ed4 rsp=0x010260f8fb68
+tid=0xbb8    rip=0x7ffd03040404 rsp=0x01026168fd28
+tid=0x2a94   rip=0x7ffd03043fd4 rsp=0x010261cafca8
+tid=0x1d70   rip=0x7ffd03043fd4 rsp=0x010261eafca8
+tid=0x6f0    rip=0x7ffd03043fd4 rsp=0x0102620afca8
+tid=0x1128   rip=0x7ffd03043fd4 rsp=0x0102622afca8
+tid=0x60f0   rip=0x7ffd03040ed4 rsp=0x01026360fb68
+tid=0xc60    rip=0x7ffd03040404 rsp=0x010263cbfe18
+tid=0x3e24   rip=0x7ffd03043fd4 rsp=0x01027e19fba8
+tid=0x1b68   rip=0x7ffd03043fd4 rsp=0x01030cd6fc68
+tid=0x56f0   rip=0x7ffd03040404 rsp=0x01030e53fc08
+tid=0x1d6c   rip=0x7ffd03043fd4 rsp=0x01030eb3fd38
+tid=0x4660   rip=0x7ffd030404a4 rsp=0x01030f13fef8
+tid=0x1448   rip=0x7ffd03040404 rsp=0x01030fd3fac8
+tid=0x3ca0   rip=0x7ffd03043fd4 rsp=0x01030ff3fc78
+tid=0x3248   rip=0x7ffd03040a04 rsp=0x01030f73fbf8
+tid=0x27a8   rip=0x7ffd03040404 rsp=0x0103109cfe58
+tid=0x56e8   rip=0x7ffd03040ed4 rsp=0x010310bcfad8
+tid=0x4088   rip=0x7ffd03043fd4 rsp=0x01031225fb98
+tid=0x33cc   rip=0x7ffd03040404 rsp=0x0007efdf29d8
+tid=0x2148   rip=0x7ffd03043fd4 rsp=0x010312a5fd08
+tid=0x224c   rip=0x7ffd03043fd4 rsp=0x01031345fbc8
+tid=0x3f8c   rip=0x7ffd03040404 rsp=0x0007efcd3a88
+tid=0x18f4   rip=0x7ffd03040404 rsp=0x0007efca9d58
+tid=0x32a4   rip=0x7ffd03040404 rsp=0x0007efc83a08
+tid=0xa38    rip=0x7ffd03040404 rsp=0x0007efb63a08
+tid=0x928    rip=0x7ffd03040404 rsp=0x0007efa43a08
+tid=0x3fb0   rip=0x7ffd03040404 rsp=0x0007ef923a08
+tid=0xaa4    rip=0x7ffd03040404 rsp=0x0007ef803a08
+tid=0x47b4   rip=0x7ffd03040404 rsp=0x0007ef6e3a08
+tid=0x4b50   rip=0x7ffd03040404 rsp=0x0007ef5c3a08
+tid=0x58d4   rip=0x7ffd03040404 rsp=0x0007ef4a3a08
+tid=0x24e0   rip=0x7ffd03040404 rsp=0x0007ef383a08
+tid=0x67c4   rip=0x7ffd03040404 rsp=0x0007ef263a08
+tid=0x69d0   rip=0x7ffd03040404 rsp=0x0007ef143a08
+tid=0x2f18   rip=0x7ffd03040404 rsp=0x0007ef023a08
+tid=0x67d4   rip=0x7ffd03040404 rsp=0x0007eef03a08
+tid=0x3658   rip=0x7ffd03040404 rsp=0x0007eede3a08
+tid=0xd0c    rip=0x7ffd03040404 rsp=0x0007eecc3a58
+tid=0xf28    rip=0x7ffd03040404 rsp=0x0007eec9ba58
+tid=0x211c   rip=0x7ffd03040404 rsp=0x0007eec73a58
+tid=0x331c   rip=0x7ffd03040404 rsp=0x0007eec4ba58
+tid=0x5b0    rip=0x7ffd03040404 rsp=0x0007eec23a58
+tid=0x24fc   rip=0x7ffd03040404 rsp=0x0007eebfba48
+tid=0x26a0   rip=0x7ffd03040404 rsp=0x0007eebcba48
+tid=0x14bc   rip=0x7ffd03040404 rsp=0x0007eeb9ba48
+tid=0x656c   rip=0x7ffd03040404 rsp=0x0007eeb6ba48
+tid=0x1fa4   rip=0x7ffd03040404 rsp=0x0007eeb3ba48
+tid=0x5df8   rip=0x7ffd03040404 rsp=0x0007eeb0ba48
+tid=0x2584   rip=0x7ffd03040404 rsp=0x0007eeadba48
+tid=0x1abc   rip=0x7ffd03040404 rsp=0x0007eeaaba48
+tid=0x1294   rip=0x7ffd03040404 rsp=0x0007eea7ba48
+tid=0x3200   rip=0x7ffd03040404 rsp=0x0007eea49a98
+tid=0x6490   rip=0x7ffd03040404 rsp=0x0007eea21a98
+tid=0x6abc   rip=0x7ffd03040404 rsp=0x0007ee9f9a98
+tid=0x3508   rip=0x7ffd03040404 rsp=0x0007ee9d1a98
+tid=0x6990   rip=0x7ffd03043fd4 rsp=0x0007ee9abd38
+tid=0x27e4   rip=0x7ffd03040404 rsp=0x01032108fdf8
+tid=0x3554   rip=0x7ffd03043fd4 rsp=0x0007ee88bd28
+tid=0x189c   rip=0x7ffd03040404 rsp=0x0007ee76ba88
+tid=0x3414   rip=0x7ffd03040404 rsp=0x0007ee747a88
+tid=0x67e0   rip=0x7ffd03040404 rsp=0x0007ee723a68
+tid=0x64bc   rip=0x7ffd03043fd4 rsp=0x0007ee6f3b18
+tid=0x680c   rip=0x7ffd030404a4 rsp=0x0103255dfdf8
+tid=0x34e8   rip=0x7ffd030404a4 rsp=0x0103265dfdf8
+tid=0x5de0   rip=0x7ffd03043fd4 rsp=0x0007ee4b3c68
+tid=0x234c   rip=0x7ffd03040404 rsp=0x0007ee393aa8
+tid=0x3d28   rip=0x7ffd030404a4 rsp=0x0103278bfdf8
+tid=0xb1c    rip=0x7ffd03040404 rsp=0x0007ee36bcf8
+tid=0x69b4   rip=0x7ffd03040404 rsp=0x0007ee24bc98
+tid=0x2700   rip=0x7ffd03040404 rsp=0x0007ee12bc98
+tid=0x583c   rip=0x7ffd03040404 rsp=0x0007ee00bc98
+tid=0x6b0c   rip=0x7ffd03040404 rsp=0x0007edeebc98
+tid=0x5410   rip=0x7ffd03040404 rsp=0x0007eddcbc78
+tid=0x62b0   rip=0x7ffd03040ed4 rsp=0x0007edcab988
+tid=0x69f8   rip=0x7ffd03043fd4 rsp=0x0007edb8bdb8
+tid=0x336c   rip=0x00000ef965a7 rsp=0x00028647ff80
+tid=0xbac    rip=0x7ffd03040404 rsp=0x0002854ffa98
+tid=0x6570   rip=0x7ffd03040404 rsp=0x00028553fa98
+tid=0x3858   rip=0x7ffd03040404 rsp=0x00028557fa98
+tid=0x6610   rip=0x7ffd03040404 rsp=0x0002855bfa98
+tid=0x6618   rip=0x7ffd03040404 rsp=0x0002855ffa98
+tid=0x30cc   rip=0x7ffd03040404 rsp=0x00028563fa98
+tid=0x2d88   rip=0x7ffd03040404 rsp=0x00028567fa98
+tid=0x592c   rip=0x7ffd03040404 rsp=0x0002856bfa98
+tid=0x56c4   rip=0x7ffd03040404 rsp=0x0002856ffa98
+tid=0x6760   rip=0x7ffd03040404 rsp=0x00028573fa98
+tid=0x61c0   rip=0x7ffd03040404 rsp=0x00028577fa98
+tid=0x5ed8   rip=0x7ffd03040404 rsp=0x0002857bfa98
+tid=0x5e94   rip=0x7ffd03040404 rsp=0x0002857ffa98
+tid=0x1a9c   rip=0x7ffd03040404 rsp=0x00028583fa98
+tid=0x2960   rip=0x7ffd03040404 rsp=0x00028587fa98
+tid=0x1700   rip=0x7ffd03040404 rsp=0x0002858bfa98
+tid=0xd18    rip=0x7ffd03040404 rsp=0x0002858ffa98
+tid=0x1da4   rip=0x7ffd03040404 rsp=0x00028593fa98
+tid=0x6924   rip=0x7ffd03040404 rsp=0x00028597fa98
+tid=0x1ebc   rip=0x7ffd03040404 rsp=0x0002859bfa98
+tid=0x244c   rip=0x7ffd03040404 rsp=0x0002859ffa98
+tid=0x5e0c   rip=0x7ffd03040404 rsp=0x000285a3fa98
+tid=0x5128   rip=0x7ffd03040404 rsp=0x000285a7fa98
+tid=0x3a28   rip=0x7ffd03040404 rsp=0x000285abfa98
+tid=0x1d88   rip=0x7ffd03040404 rsp=0x000285affa98
+tid=0x1458   rip=0x7ffd03040404 rsp=0x000285b3fa98
+tid=0x2fbc   rip=0x7ffd03040404 rsp=0x000285b7fa98
+tid=0x399c   rip=0x7ffd03040404 rsp=0x000285bbfa98
+tid=0xa24    rip=0x7ffd03040404 rsp=0x000285bffa98
+tid=0x2548   rip=0x7ffd03040404 rsp=0x000285c3fa98
+tid=0x3dcc   rip=0x7ffd03040404 rsp=0x000285c7fa98
+tid=0x5fb4   rip=0x7ffd03040404 rsp=0x000285cbfa98
+tid=0x6954   rip=0x7ffd03040404 rsp=0x000285cffa98
+tid=0x5eb8   rip=0x7ffd03040404 rsp=0x000285d3fa98
+tid=0x23d4   rip=0x7ffd03040404 rsp=0x000285d7fa98
+tid=0x3a18   rip=0x7ffd03040404 rsp=0x000285dbfa98
+tid=0x37f4   rip=0x7ffd03040404 rsp=0x000285dffa98
+tid=0x3308   rip=0x7ffd03040404 rsp=0x000285e3fa98
+tid=0x2630   rip=0x7ffd03040404 rsp=0x000285e7fa98
+tid=0x540c   rip=0x7ffd03040404 rsp=0x000285ebfa98
+tid=0x88c    rip=0x7ffd03040404 rsp=0x000285effa98
+tid=0x3354   rip=0x7ffd03040404 rsp=0x000285f3fa98
+tid=0x6860   rip=0x7ffd03040404 rsp=0x000285f7fa98
+tid=0x31d8   rip=0x7ffd03040404 rsp=0x000285fbfa98
+tid=0x271c   rip=0x7ffd03040404 rsp=0x000285fffa98
+tid=0x452c   rip=0x7ffd03040404 rsp=0x00028603fa98
+tid=0x3530   rip=0x7ffd03040404 rsp=0x00028607fa98
+tid=0x1c6c   rip=0x7ffd03040404 rsp=0x0002860bfa98
+tid=0x2158   rip=0x7ffd03040404 rsp=0x0002860ffa98
+tid=0x18c    rip=0x7ffd03040404 rsp=0x00028613fa98
+tid=0xdcc    rip=0x7ffd03040404 rsp=0x00028617fa98
+tid=0x1dd8   rip=0x7ffd03040404 rsp=0x0002861bfa98
+tid=0x1a64   rip=0x7ffd03040404 rsp=0x0002861ffa98
+tid=0xe34    rip=0x7ffd03040404 rsp=0x00028623fa98
+tid=0x1bb0   rip=0x7ffd03040404 rsp=0x00028627fa98
+tid=0x55a4   rip=0x7ffd03040404 rsp=0x0002862bfa98
+tid=0x10dc   rip=0x7ffd03040404 rsp=0x0002862ffa98
+tid=0x56b8   rip=0x7ffd03040404 rsp=0x00028633fa98
+tid=0x30d4   rip=0x7ffd03040404 rsp=0x00028637fa98
+tid=0x2200   rip=0x7ffd03040404 rsp=0x0002863bfa98
+tid=0x48fc   rip=0x7ffd03040404 rsp=0x0002863ffa98
+tid=0x139c   rip=0x7ffd03040404 rsp=0x00028643fa98
+tid=0x68cc   rip=0x7ffd03040404 rsp=0x0007e938ba98
+tid=0x323c   rip=0x7ffd03040404 rsp=0x0007e935ba88
+tid=0x1410   rip=0x7ffd03040404 rsp=0x0007e9333698
+tid=0x1340   rip=0x7ffd03040404 rsp=0x0007e930ba88
+tid=0x125c   rip=0x7ffd03040404 rsp=0x0007e91eba28
+tid=0x10ac   rip=0x7ffd03040404 rsp=0x0007e90cba88
+tid=0x2e30   rip=0x7ffd03040404 rsp=0x0007e90a7a88
+tid=0x107c   rip=0x7ffd03040404 rsp=0x0007e9083a88
+tid=0x56e0   rip=0x7ffd03040404 rsp=0x0007e905fa88
+tid=0x15a0   rip=0x7ffd03040404 rsp=0x0007e903ba88
+tid=0x3ff8   rip=0x7ffd03040404 rsp=0x0007e9017ab8
+tid=0xa9c    rip=0x7ffd03044034 rsp=0x010346f4fbf8
+tid=0x1d0c   rip=0x7ffd03040404 rsp=0x0007e8c93a28
+tid=0x840    rip=0x7ffd03040404 rsp=0x0007e8b4b9b8
+tid=0x3fac   rip=0x7ffd03040404 rsp=0x0007e8adbd78
+tid=0x6b30   rip=0x7ffd03040404 rsp=0x0007e89bbd78
+tid=0x3eb8   rip=0x7ffd03040404 rsp=0x0007e889ba08
+tid=0x6acc   rip=0x7ffd03040404 rsp=0x0007e877ba08
+tid=0x53d8   rip=0x7ffd03040404 rsp=0x0007e865ba08
+tid=0xf38    rip=0x7ffd03040404 rsp=0x0007e853ba08
+tid=0x6980   rip=0x7ffd03040404 rsp=0x0007e841ba08
+tid=0x28ac   rip=0x7ffd03040404 rsp=0x0007e82fba08
+tid=0x65d4   rip=0x7ffd03040404 rsp=0x0007e81dba08
+tid=0x4de0   rip=0x7ffd03040404 rsp=0x0007e80bba08
+tid=0x27ac   rip=0x7ffd03040404 rsp=0x0007e7f9bc18
+tid=0x410    rip=0x7ffd03040404 rsp=0x0007e7f71aa8
+tid=0x6afc   rip=0x7ffd03040404 rsp=0x0007e7f4ba98
+tid=0x978    rip=0x7ffd03040404 rsp=0x0007e7f23a08
+tid=0x5454   rip=0x7ffd03040404 rsp=0x0007e7ef3a98
+tid=0x62d0   rip=0x7ffd03040404 rsp=0x0007e7ecba68
+tid=0x6918   rip=0x7ffd03043fd4 rsp=0x0007ee573c18
+tid=0x4d60   rip=0x7ffd03043fd4 rsp=0x0007ee513b48
+tid=0x6714   rip=0x7ffd03043fd4 rsp=0x0007ee5d3c28
+tid=0x6bc0   rip=0x7ffd03040404 rsp=0x0103253dfd58
+tid=0x400c   rip=0x7ffd03040404 rsp=0x0007e8ff3c98
+tid=0x4b0    rip=0x7ffd03040404 rsp=0x0007e8c6bc98
+tid=0x3190   rip=0x7ffd03040404 rsp=0x0007e8ed3c98
+tid=0x48a0   rip=0x7ffd03040404 rsp=0x0007e8db3c98
+tid=0x6650   rip=0x7ffd03040404 rsp=0x0007e7b47cb8
+tid=0x5d9c   rip=0x7ffd03040404 rsp=0x0007e7b1fc08
+tid=0x10c8   rip=0x7ffd03040404 rsp=0x0007e7af7d78
+tid=0x1f9c   rip=0x7ffd03040404 rsp=0x0007e79d7a48
+--- crashing thread full context (tid=0x16d0) ---
+  Rax   =0x00000000000000fb  Rbx   =0x000000000000067f  Rcx   =0x000000000001f1c8
+  Rdx   =0x0000000000a6a480  Rsi   =0x0000000000a608a8  Rdi   =0x0000000000000000
+  Rbp   =0x0000000000a6a480  Rsp   =0x0000010214d907d8  R8    =0x0000000000000180
+  R9    =0x00000000fffffb30  R10   =0x000000000001f1c8  R11   =0x000000000001f1c8
+  R12   =0x0000000000a69df8  R13   =0x0000000000a69d88  R14   =0x000000000001f1c8
+  R15   =0x0000000000a69df8  Rip   =0x00007ffd030422d4  EFlags=0x0000000000000246
+  SegCs=0x0033 SegSs=0x002b Dr7=0x0
+--- code around IP 0x700000b33500 ---
+  IP lives in dump range 0x700000b32000-0x700000b35000
+  extracted 0x400 bytes: 0x700000b33300 .. 0x700000b33700
+  hexdump around write target (0x700000b3348d) and IP (0x700000b33500):
+  700000b3347d  04 00 00 e8 db cd 50 ff 90 84 c0 75 2b c7 45 b0  ......P....u+.E.
+  700000b3348d  00 00 00 00 e8 ca 2f 4e ff 48 89 45 b8 48 8d 8d  ....../N.H.E.H..
+  700000b3349d  88 04 00 00 48 8d 55 b0 e8 16 38 54 ff 90 83 7d  ....H.U...8T...}
+  700000b334ad  b0 00 0f 85 4d 04 00 00 48 8d 83 d8 12 00 00 48  ....M...H......H
+  700000b334bd  89 45 b0 48 8d 05 19 99 fb ff 48 89 45 b8 48 8b  .E.H......H.E.H.
+  700000b334cd  83 c8 12 00 00 48 89 45 c0 48 c7 85 d8 02 00 00  .....H.E.H......
+  700000b334dd  4f 00 00 00 4c 89 b5 e0 02 00 00 48 8d 05 10 47  O...L......H...G
+  700000b334ed  f0 02 48 89 85 20 04 00 00 48 c7 85 28 04 00 00  ..H.. ...H..(...
+  700000b334fd  1a 00 00 00 48 8d 8d 58 04 00 00 48 8d 95 20 04  ....H..X...H.. .
+  700000b3350d  00 00 4c 8d 85 d8 02 00 00 e8 a5 59 2a 00 90 48  ..L........Y*..H
+  700000b3351d  8d 8d d8 02 00 00 48 8d 95 58 04 00 00 e8 01 75  ......H..X.....u
+  700000b3352d  51 ff 90 48 8d 4d b0 48 8d 95 88 04 00 00 4c 8d  Q..H.M.H......L.
+  700000b3353d  85 d8 02                                         ...
+  -- disassembly starting at 0x700000b33500 (the faulting IP itself) --
+    0x700000b33500: 00488d   add byte ptr [rax - 0x73], cl              <=== FAULTING IP
+    0x700000b33503: 8d5804   lea ebx, [rax + 4]                      
+    0x700000b33506: 0000     add byte ptr [rax], al                  
+    0x700000b33508: 488d9520040000 lea rdx, [rbp + 0x420]                  
+    0x700000b3350f: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33516: e8a5592a00 call 0x700000dd8ec0                     
+    0x700000b3351b: 90       nop                                     
+    0x700000b3351c: 488d8dd8020000 lea rcx, [rbp + 0x2d8]                  
+    0x700000b33523: 488d9558040000 lea rdx, [rbp + 0x458]                  
+    0x700000b3352a: e8017551ff call 0x70000004aa30                     
+    0x700000b3352f: 90       nop                                     
+    0x700000b33530: 488d4db0 lea rcx, [rbp - 0x50]                   
+    0x700000b33534: 488d9588040000 lea rdx, [rbp + 0x488]                  
+    0x700000b3353b: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33542: e8b9fe4dff call 0x700000013400                     
+    0x700000b33547: 90       nop                                     
+    0x700000b33548: c744242001000000 mov dword ptr [rsp + 0x20], 1           
+    0x700000b33550: 488d8d20040000 lea rcx, [rbp + 0x420]                  
+    0x700000b33557: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b3355b: 41b808000000 mov r8d, 8                              
+    0x700000b33561: 41b901000000 mov r9d, 1                              
+  -- disassembly starting at 0x700000b33300 (IP-512, alignment unknown) --
+    0x700000b33300: 89e9     mov ecx, ebp                            
+    0x700000b33302: b205     mov dl, 5                               
+    0x700000b33304: e8e79150ff call 0x70000003c4f0                     
+    0x700000b33309: 4889d9   mov rcx, rbx                            
+    0x700000b3330c: e80ff14cff call 0x700000002420                     
+    0x700000b33311: 488b7d00 mov rdi, qword ptr [rbp]                
+    0x700000b33315: 4c89f3   mov rbx, r14                            
+    0x700000b33318: 488d4d20 lea rcx, [rbp + 0x20]                   
+    0x700000b3331c: e8bff74dff call 0x700000012ae0                     
+    0x700000b33321: e83ae255ff call 0x700000091560                     
+    0x700000b33326: e9d1f9ffff jmp 0x700000b32cfc                      
+    0x700000b3332b: 0f1f440000 nop dword ptr [rax + rax]               
+    0x700000b33330: 4889542410 mov qword ptr [rsp + 0x10], rdx         
+    0x700000b33335: 55       push rbp                                
+    0x700000b33336: 4157     push r15                                
+    0x700000b33338: 4156     push r14                                
+    0x700000b3333a: 4155     push r13                                
+    0x700000b3333c: 4154     push r12                                
+    0x700000b3333e: 56       push rsi                                
+    0x700000b3333f: 57       push rdi                                
+    0x700000b33340: 53       push rbx                                
+    0x700000b33341: 4883ec58 sub rsp, 0x58                           
+    0x700000b33345: 488daa80000000 lea rbp, [rdx + 0x80]                   
+    0x700000b3334c: c5f829742440 vmovaps xmmword ptr [rsp + 0x40], xmm6  
+    0x700000b33352: 488d4d20 lea rcx, [rbp + 0x20]                   
+    0x700000b33356: e885f74dff call 0x700000012ae0                     
+    0x700000b3335b: c5f828742440 vmovaps xmm6, xmmword ptr [rsp + 0x40]  
+    0x700000b33361: 4883c458 add rsp, 0x58                           
+    0x700000b33365: 5b       pop rbx                                 
+    0x700000b33366: 5f       pop rdi                                 
+    0x700000b33367: 5e       pop rsi                                 
+    0x700000b33368: 415c     pop r12                                 
+    0x700000b3336a: 415d     pop r13                                 
+    0x700000b3336c: 415e     pop r14                                 
+    0x700000b3336e: 415f     pop r15                                 
+    0x700000b33370: 5d       pop rbp                                 
+    0x700000b33371: c3       ret                                     
+    0x700000b33372: 66666666662e0f1f840000000000 nop word ptr cs:[rax + rax]             
+    0x700000b33380: 4889542410 mov qword ptr [rsp + 0x10], rdx         
+    0x700000b33385: 55       push rbp                                
+    0x700000b33386: 4157     push r15                                
+    0x700000b33388: 4156     push r14                                
+    0x700000b3338a: 4155     push r13                                
+    0x700000b3338c: 4154     push r12                                
+    0x700000b3338e: 56       push rsi                                
+    0x700000b3338f: 57       push rdi                                
+    0x700000b33390: 53       push rbx                                
+    0x700000b33391: 4883ec58 sub rsp, 0x58                           
+    0x700000b33395: 488daa80000000 lea rbp, [rdx + 0x80]                   
+    0x700000b3339c: c5f829742440 vmovaps xmmword ptr [rsp + 0x40], xmm6  
+    0x700000b333a2: 488d4d20 lea rcx, [rbp + 0x20]                   
+    0x700000b333a6: e835f74dff call 0x700000012ae0                     
+    0x700000b333ab: c5f828742440 vmovaps xmm6, xmmword ptr [rsp + 0x40]  
+    0x700000b333b1: 4883c458 add rsp, 0x58                           
+    0x700000b333b5: 5b       pop rbx                                 
+    0x700000b333b6: 5f       pop rdi                                 
+    0x700000b333b7: 5e       pop rsi                                 
+    0x700000b333b8: 415c     pop r12                                 
+    0x700000b333ba: 415d     pop r13                                 
+    0x700000b333bc: 415e     pop r14                                 
+    0x700000b333be: 415f     pop r15                                 
+    0x700000b333c0: 5d       pop rbp                                 
+    0x700000b333c1: c3       ret                                     
+    0x700000b333c2: cc       int3                                    
+    0x700000b333c3: cc       int3                                    
+    0x700000b333c4: cc       int3                                    
+    0x700000b333c5: cc       int3                                    
+    0x700000b333c6: cc       int3                                    
+    0x700000b333c7: cc       int3                                    
+    0x700000b333c8: cc       int3                                    
+    0x700000b333c9: cc       int3                                    
+    0x700000b333ca: cc       int3                                    
+    0x700000b333cb: cc       int3                                    
+    0x700000b333cc: cc       int3                                    
+    0x700000b333cd: cc       int3                                    
+    0x700000b333ce: cc       int3                                    
+    0x700000b333cf: cc       int3                                    
+    0x700000b333d0: 55       push rbp                                
+    0x700000b333d1: 4157     push r15                                
+    0x700000b333d3: 4156     push r14                                
+    0x700000b333d5: 4155     push r13                                
+    0x700000b333d7: 4154     push r12                                
+    0x700000b333d9: 56       push rsi                                
+    0x700000b333da: 57       push rdi                                
+    0x700000b333db: 53       push rbx                                
+    0x700000b333dc: 4881ec58050000 sub rsp, 0x558                          
+    0x700000b333e3: 488dac2480000000 lea rbp, [rsp + 0x80]                   
+    0x700000b333eb: 48c785d0040000feffffff mov qword ptr [rbp + 0x4d0], 0xfffffffffffffffe
+    0x700000b333f6: 4c89c6   mov rsi, r8                             
+    0x700000b333f9: 4889d7   mov rdi, rdx                            
+    0x700000b333fc: 4889cb   mov rbx, rcx                            
+    0x700000b333ff: 488d15deafee02 lea rdx, [rip + 0x2eeafde]              
+    0x700000b33406: 488d4db0 lea rcx, [rbp - 0x50]                   
+    0x700000b3340a: e801116cff call 0x7000001f4510                     
+    0x700000b3340f: 90       nop                                     
+    0x700000b33410: b903000000 mov ecx, 3                              
+    0x700000b33415: e8d66a56ff call 0x700000099ef0                     
+    0x700000b3341a: 90       nop                                     
+    0x700000b3341b: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b33422: 4c8d75b0 lea r14, [rbp - 0x50]                   
+    0x700000b33426: 4889c2   mov rdx, rax                            
+    0x700000b33429: 4d89f0   mov r8, r14                             
+    0x700000b3342c: e8cfff4dff call 0x700000013400                     
+    0x700000b33431: 90       nop                                     
+    0x700000b33432: 488b45c8 mov rax, qword ptr [rbp - 0x38]         
+    0x700000b33436: 4883f808 cmp rax, 8                              
+    0x700000b3343a: 723d     jb 0x700000b33479                       
+    0x700000b3343c: 488b4db0 mov rcx, qword ptr [rbp - 0x50]         
+    0x700000b33440: 488d144502000000 lea rdx, [rax*2 + 2]                    
+    0x700000b33448: 4881fa00100000 cmp rdx, 0x1000                         
+    0x700000b3344f: 7222     jb 0x700000b33473                       
+    0x700000b33451: 4c8b41f8 mov r8, qword ptr [rcx - 8]             
+    0x700000b33455: 4883c1f8 add rcx, -8                             
+    0x700000b33459: 4c29c1   sub rcx, r8                             
+    0x700000b3345c: 4883f920 cmp rcx, 0x20                           
+    0x700000b33460: 0f8382040000 jae 0x700000b338e8                      
+    0x700000b33466: 4801c0   add rax, rax                            
+    0x700000b33469: 4883c029 add rax, 0x29                           
+    0x700000b3346d: 4889c2   mov rdx, rax                            
+    0x700000b33470: 4c89c1   mov rcx, r8                             
+    0x700000b33473: e8947c2701 call 0x700001dab10c                     
+    0x700000b33478: 90       nop                                     
+    0x700000b33479: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b33480: e8dbcd50ff call 0x700000040260                     
+    0x700000b33485: 90       nop                                     
+    0x700000b33486: 84c0     test al, al                             
+    0x700000b33488: 752b     jne 0x700000b334b5                      
+    0x700000b3348a: c745b000000000 mov dword ptr [rbp - 0x50], 0              <== write target is INSIDE this instruction's bytes
+    0x700000b33491: e8ca2f4eff call 0x700000016460                     
+    0x700000b33496: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b3349a: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b334a1: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b334a5: e8163854ff call 0x700000076cc0                     
+    0x700000b334aa: 90       nop                                     
+    0x700000b334ab: 837db000 cmp dword ptr [rbp - 0x50], 0           
+    0x700000b334af: 0f854d040000 jne 0x700000b33902                      
+    0x700000b334b5: 488d83d8120000 lea rax, [rbx + 0x12d8]                 
+    0x700000b334bc: 488945b0 mov qword ptr [rbp - 0x50], rax         
+    0x700000b334c0: 488d051999fbff lea rax, [rip - 0x466e7]                
+    0x700000b334c7: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b334cb: 488b83c8120000 mov rax, qword ptr [rbx + 0x12c8]       
+    0x700000b334d2: 488945c0 mov qword ptr [rbp - 0x40], rax         
+    0x700000b334d6: 48c785d80200004f000000 mov qword ptr [rbp + 0x2d8], 0x4f       
+    0x700000b334e1: 4c89b5e0020000 mov qword ptr [rbp + 0x2e0], r14        
+    0x700000b334e8: 488d051047f002 lea rax, [rip + 0x2f04710]              
+    0x700000b334ef: 48898520040000 mov qword ptr [rbp + 0x420], rax        
+    0x700000b334f6: 48c785280400001a000000 mov qword ptr [rbp + 0x428], 0x1a       
+    0x700000b33501: 488d8d58040000 lea rcx, [rbp + 0x458]                  
+    0x700000b33508: 488d9520040000 lea rdx, [rbp + 0x420]                  
+    0x700000b3350f: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33516: e8a5592a00 call 0x700000dd8ec0                     
+    0x700000b3351b: 90       nop                                     
+    0x700000b3351c: 488d8dd8020000 lea rcx, [rbp + 0x2d8]                  
+    0x700000b33523: 488d9558040000 lea rdx, [rbp + 0x458]                  
+    0x700000b3352a: e8017551ff call 0x70000004aa30                     
+    0x700000b3352f: 90       nop                                     
+    0x700000b33530: 488d4db0 lea rcx, [rbp - 0x50]                   
+    0x700000b33534: 488d9588040000 lea rdx, [rbp + 0x488]                  
+    0x700000b3353b: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33542: e8b9fe4dff call 0x700000013400                     
+    0x700000b33547: 90       nop                                     
+    0x700000b33548: c744242001000000 mov dword ptr [rsp + 0x20], 1           
+    0x700000b33550: 488d8d20040000 lea rcx, [rbp + 0x420]                  
+    0x700000b33557: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b3355b: 41b808000000 mov r8d, 8                              
+    0x700000b33561: 41b901000000 mov r9d, 1                              
+  linear stream from IP-512 does NOT reach the faulting IP
+  -- disassembly starting at 0x700000b3346d (write-target - 32) --
+    0x700000b3346d: 4889c2   mov rdx, rax                            
+    0x700000b33470: 4c89c1   mov rcx, r8                             
+    0x700000b33473: e8947c2701 call 0x700001dab10c                     
+    0x700000b33478: 90       nop                                     
+    0x700000b33479: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b33480: e8dbcd50ff call 0x700000040260                     
+    0x700000b33485: 90       nop                                     
+    0x700000b33486: 84c0     test al, al                             
+    0x700000b33488: 752b     jne 0x700000b334b5                      
+    0x700000b3348a: c745b000000000 mov dword ptr [rbp - 0x50], 0              <== write target is INSIDE this instruction's bytes
+    0x700000b33491: e8ca2f4eff call 0x700000016460                     
+    0x700000b33496: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b3349a: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b334a1: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b334a5: e8163854ff call 0x700000076cc0                     
+    0x700000b334aa: 90       nop                                     
+    0x700000b334ab: 837db000 cmp dword ptr [rbp - 0x50], 0           
+    0x700000b334af: 0f854d040000 jne 0x700000b33902                      
+    0x700000b334b5: 488d83d8120000 lea rax, [rbx + 0x12d8]                 
+    0x700000b334bc: 488945b0 mov qword ptr [rbp - 0x50], rax         
+    0x700000b334c0: 488d051999fbff lea rax, [rip - 0x466e7]                
+    0x700000b334c7: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b334cb: 488b83c8120000 mov rax, qword ptr [rbx + 0x12c8]       
+    0x700000b334d2: 488945c0 mov qword ptr [rbp - 0x40], rax         
+    ... (truncated at 24 instructions)
+(scanning the FAULTING rsp from the exception stream)
+--- stack scan at rsp=0x10214d931f8 (16 KiB) ---
+  dump holds 0x4000 bytes at rsp (asked 0x4000)
+  rsp+0x0030  0x0000700000b2f79d  GUEST/JIT-region  [shadps4.exe+0xb2f79d]
+  rsp+0x0100  0x00007ffd02f35c0d  HOST-DLL  [ntdll.dll+0x55c0d]
+  rsp+0x0130  0x00007ffc1fecc427  HOST-DLL  [nvoglv64.dll+0xe7c427]
+  rsp+0x0160  0x0000700000000000  GUEST/JIT-region  [shadps4.exe+0x0]
+  rsp+0x0260  0x0000700000c29718  GUEST/JIT-region  [shadps4.exe+0xc29718]
+  rsp+0x02d0  0x00007ffc1fef31b7  HOST-DLL  [nvoglv64.dll+0xea31b7]
+  rsp+0x02e0  0x00007ffc1fad4aeb  HOST-DLL  [nvoglv64.dll+0xa84aeb]
+  rsp+0x0320  0x00007ffc1fad4878  HOST-DLL  [nvoglv64.dll+0xa84878]
+  rsp+0x03e0  0x00007ffd002eeba1  HOST-DLL  [KERNELBASE.dll+0x7eba1]
+  rsp+0x0450  0x00007ffc1fa67cdd  HOST-DLL  [nvoglv64.dll+0xa17cdd]
+  rsp+0x0480  0x00007ffc1fb2abd6  HOST-DLL  [nvoglv64.dll+0xadabd6]
+  rsp+0x04b0  0x00007ffc1fb2da2a  HOST-DLL  [nvoglv64.dll+0xadda2a]
+  rsp+0x0520  0x00007ffc1fb18fec  HOST-DLL  [nvoglv64.dll+0xac8fec]
+  rsp+0x0570  0x00007ffc1fb1986a  HOST-DLL  [nvoglv64.dll+0xac986a]
+  rsp+0x0630  0x00007ffc1fb2dc0f  HOST-DLL  [nvoglv64.dll+0xaddc0f]
+  rsp+0x0670  0x00007ffc1fbce3ff  HOST-DLL  [nvoglv64.dll+0xb7e3ff]
+  rsp+0x0730  0x00007ffc1fbcf5d6  HOST-DLL  [nvoglv64.dll+0xb7f5d6]
+  rsp+0x0760  0x00007ffc1fbe4ab4  HOST-DLL  [nvoglv64.dll+0xb94ab4]
+  rsp+0x0790  0x00007ffc1fb29152  HOST-DLL  [nvoglv64.dll+0xad9152]
+  rsp+0x07b0  0x00007ffc1fbcebd8  HOST-DLL  [nvoglv64.dll+0xb7ebd8]
+  rsp+0x07c0  0x00007ffc1fb2de46  HOST-DLL  [nvoglv64.dll+0xadde46]
+  rsp+0x07f0  0x00007ffc1fbd0f94  HOST-DLL  [nvoglv64.dll+0xb80f94]
+  rsp+0x0810  0x00007ffc1fbc2e02  HOST-DLL  [nvoglv64.dll+0xb72e02]
+  rsp+0x0830  0x00007ffc1fbd0a17  HOST-DLL  [nvoglv64.dll+0xb80a17]
+  rsp+0x0880  0x00007ffc1fbcf358  HOST-DLL  [nvoglv64.dll+0xb7f358]
+  rsp+0x08d0  0x00007ffc1fbcfc03  HOST-DLL  [nvoglv64.dll+0xb7fc03]
+  rsp+0x0900  0x00007ffc1fbec366  HOST-DLL  [nvoglv64.dll+0xb9c366]
+  rsp+0x09d0  0x00007ffc1f50f50d  HOST-DLL  [nvoglv64.dll+0x4bf50d]
+  rsp+0x09e0  0x00007ffc1fa63c76  HOST-DLL  [nvoglv64.dll+0xa13c76]
+  rsp+0x0a00  0x00007ffc1fbac5d3  HOST-DLL  [nvoglv64.dll+0xb5c5d3]
+  rsp+0x0a30  0x00007ffc1fbad955  HOST-DLL  [nvoglv64.dll+0xb5d955]
+  rsp+0x0a60  0x0000700000bc932e  GUEST/JIT-region  [shadps4.exe+0xbc932e]
+  rsp+0x0ab0  0x0000700000bc93f6  GUEST/JIT-region  [shadps4.exe+0xbc93f6]
+  rsp+0x0ad0  0x0000700000bcc7e9  GUEST/JIT-region  [shadps4.exe+0xbcc7e9]
+  rsp+0x0ae0  0x00007ffc1fef4354  HOST-DLL  [nvoglv64.dll+0xea4354]
+  rsp+0x0b00  0x0000700000bccb14  GUEST/JIT-region  [shadps4.exe+0xbccb14]
+  rsp+0x0b20  0x00007ffc1fef4065  HOST-DLL  [nvoglv64.dll+0xea4065]
+  rsp+0x0b70  0x0000700000bcff31  GUEST/JIT-region  [shadps4.exe+0xbcff31]
+  rsp+0x0be0  0x00007ffc1fef308f  HOST-DLL  [nvoglv64.dll+0xea308f]
+  rsp+0x0c50  0x00007ffc1ff16272  HOST-DLL  [nvoglv64.dll+0xec6272]
+  rsp+0x0c80  0x00007ffc1feefad8  HOST-DLL  [nvoglv64.dll+0xe9fad8]
+  rsp+0x0cc0  0x0000700000000004  GUEST/JIT-region  [shadps4.exe+0x4]
+  rsp+0x0da0  0x0000700000000000  GUEST/JIT-region  [shadps4.exe+0x0]
+  rsp+0x0ea0  0x0000700000bd48ef  GUEST/JIT-region  [shadps4.exe+0xbd48ef]
+  rsp+0x0f00  0x00007ffc1fe75841  HOST-DLL  [nvoglv64.dll+0xe25841]
+  rsp+0x0f10  0x00007ffc1ff12f41  HOST-DLL  [nvoglv64.dll+0xec2f41]
+  rsp+0x0f20  0x00007ffc1fee6912  HOST-DLL  [nvoglv64.dll+0xe96912]
+  rsp+0x0f40  0x00007ffc1ff54413  HOST-DLL  [nvoglv64.dll+0xf04413]
+  rsp+0x0fd0  0x0000700000cb6968  GUEST/JIT-region  [shadps4.exe+0xcb6968]
+  rsp+0x1040  0x00007ffc1fc6e6f5  HOST-DLL  [nvoglv64.dll+0xc1e6f5]
+  rsp+0x10b0  0x00007ffc1fc7e5f4  HOST-DLL  [nvoglv64.dll+0xc2e5f4]
+  rsp+0x1110  0x00007ffc1fbd197b  HOST-DLL  [nvoglv64.dll+0xb8197b]
+  rsp+0x12c0  0x00007ffc1fb5fa5a  HOST-DLL  [nvoglv64.dll+0xb0fa5a]
+  rsp+0x1398  0x00007ffc21817c00  HOST-DLL  [nvoglv64.dll+0x27c7c00]
+  rsp+0x13a0  0x00007ffc1f4a372a  HOST-DLL  [nvoglv64.dll+0x45372a]
+  rsp+0x13c0  0x00007ffc1faa2fad  HOST-DLL  [nvoglv64.dll+0xa52fad]
+  rsp+0x13d0  0x00007ffc1f50f537  HOST-DLL  [nvoglv64.dll+0x4bf537]
+  rsp+0x1400  0x00007ffc1faba68b  HOST-DLL  [nvoglv64.dll+0xa6a68b]
+  rsp+0x1450  0x00007ffc1fab94fa  HOST-DLL  [nvoglv64.dll+0xa694fa]
+  rsp+0x1550  0x00007ffc1fbcddd9  HOST-DLL  [nvoglv64.dll+0xb7ddd9]
+  rsp+0x1568  0x00007ffc21817c00  HOST-DLL  [nvoglv64.dll+0x27c7c00]
+  rsp+0x1570  0x00007ffc1f4a372a  HOST-DLL  [nvoglv64.dll+0x45372a]
+  rsp+0x1580  0x00007ffc1faa7786  HOST-DLL  [nvoglv64.dll+0xa57786]
+  rsp+0x1610  0x00007ffc1fbcf5d6  HOST-DLL  [nvoglv64.dll+0xb7f5d6]
+  rsp+0x1640  0x00007ffc1fbe4ab4  HOST-DLL  [nvoglv64.dll+0xb94ab4]
+  rsp+0x1670  0x00007ffc1fb29152  HOST-DLL  [nvoglv64.dll+0xad9152]
+  rsp+0x1690  0x00007ffc1fbcebd8  HOST-DLL  [nvoglv64.dll+0xb7ebd8]
+  rsp+0x16a0  0x00007ffc1fb2de8e  HOST-DLL  [nvoglv64.dll+0xadde8e]
+  rsp+0x16c0  0x00007ffc1fbc2e02  HOST-DLL  [nvoglv64.dll+0xb72e02]
+  rsp+0x16d0  0x00007ffc1fbd0f94  HOST-DLL  [nvoglv64.dll+0xb80f94]
+  rsp+0x16e0  0x00007ffc1fbd0a17  HOST-DLL  [nvoglv64.dll+0xb80a17]
+  rsp+0x16e8  0x00007ffc21817c00  HOST-DLL  [nvoglv64.dll+0x27c7c00]
+  rsp+0x16f0  0x00007ffc1f4a372a  HOST-DLL  [nvoglv64.dll+0x45372a]
+  rsp+0x1700  0x00007ffc1fbcc2cc  HOST-DLL  [nvoglv64.dll+0xb7c2cc]
+  rsp+0x1720  0x00007ffc1f50f537  HOST-DLL  [nvoglv64.dll+0x4bf537]
+  rsp+0x1730  0x00007ffc1fbcf358  HOST-DLL  [nvoglv64.dll+0xb7f358]
+  rsp+0x1750  0x00007ffc1fbac690  HOST-DLL  [nvoglv64.dll+0xb5c690]ERROR:root:PEB parsing error!
+Traceback (most recent call last):
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpfile.py", line 86, in _parse
+    self.__parse_peb()
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpfile.py", line 235, in __parse_peb
+    self.peb = PEB.from_minidump(self)
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\structures\peb.py", line 85, in from_minidump
+    buff_reader.move(minidumpfile.threads.threads[0].Teb + PEB_OFFSETS[offset_index]["peb"])
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpreader.py", line 136, in move
+    self._select_segment(address)
+  File "C:\Users\Νίκος\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\minidump\minidumpreader.py", line 104, in _select_segment
+    raise Exception('Memory address 0x%08x is not in process memory space' % requested_position)
+Exception: Memory address 0x0037d060 is not in process memory space
+
+  rsp+0x1780  0x00007ffc1fbd0b90  HOST-DLL  [nvoglv64.dll+0xb80b90]
+  rsp+0x17b0  0x00007ffc1fb5f9fa  HOST-DLL  [nvoglv64.dll+0xb0f9fa]
+  rsp+0x1840  0x00007ffc1fb5f989  HOST-DLL  [nvoglv64.dll+0xb0f989]
+  rsp+0x1a50  0x00007ffd02ef0997  HOST-DLL  [ntdll.dll+0x10997]
+  rsp+0x1a90  0x00007ffd02eeee6d  HOST-DLL  [ntdll.dll+0xee6d]
+  rsp+0x1b00  0x00007ffd02f3adcf  HOST-DLL  [ntdll.dll+0x5adcf]
+  rsp+0x1bf0  0x00007ffd02f3adcf  HOST-DLL  [ntdll.dll+0x5adcf]
+  rsp+0x1ce0  0x00007ffd02f30201  HOST-DLL  [ntdll.dll+0x50201]
+  rsp+0x1d40  0x00007ffd02f33a10  HOST-DLL  [ntdll.dll+0x53a10]
+  rsp+0x1dd0  0x00007ffd02f33a10  HOST-DLL  [ntdll.dll+0x53a10]
+  rsp+0x1e30  0x00007ffd02f81322  HOST-DLL  [ntdll.dll+0xa1322]
+  rsp+0x1e50  0x00007ffd02f38414  HOST-DLL  [ntdll.dll+0x58414]
+  rsp+0x1ec0  0x00007ffd02f385d0  HOST-DLL  [ntdll.dll+0x585d0]
+  rsp+0x1f00  0x0000700000bcccbb  GUEST/JIT-region  [shadps4.exe+0xbcccbb]
+  rsp+0x1f10  0x0000700000bcd2aa  GUEST/JIT-region  [shadps4.exe+0xbcd2aa]
+  rsp+0x1f20  0x00007ffce6647eab  HOST-DLL  [msvcp140.dll+0x17eab]
+  rsp+0x2020  0x0000700000bcd2aa  GUEST/JIT-region  [shadps4.exe+0xbcd2aa]
+  rsp+0x2030  0x00007ffce6647eab  HOST-DLL  [msvcp140.dll+0x17eab]
+  rsp+0x2060  0x0000700000bcf8c9  GUEST/JIT-region  [shadps4.exe+0xbcf8c9]
+  rsp+0x2088  0x00007ffce6600000  HOST-DLL  [VCRUNTIME140.dll+0x0]
+  rsp+0x20e0  0x0000700000c278b0  GUEST/JIT-region  [shadps4.exe+0xc278b0]
+  rsp+0x2150  0x00007ffd00ac2d7b  HOST-DLL  [ucrtbase.dll+0x12d7b]
+  rsp+0x2160  0x0000700000000000  GUEST/JIT-region  [shadps4.exe+0x0]
+  rsp+0x2180  0x0000700000cdf10a  GUEST/JIT-region  [shadps4.exe+0xcdf10a]
+  rsp+0x21a0  0x00007ffc1ff5fa16  HOST-DLL  [nvoglv64.dll+0xf0fa16]
+  rsp+0x21b0  0x0000700000c85c80  GUEST/JIT-region  [shadps4.exe+0xc85c80]
+  rsp+0x2210  0x0000700000c85757  GUEST/JIT-region  [shadps4.exe+0xc85757]
+  rsp+0x2260  0x0000700000c272fe  GUEST/JIT-region  [shadps4.exe+0xc272fe]
+  rsp+0x2298  0x0000700003a67428  GUEST/JIT-region  [shadps4.exe+0x3a67428]
+  rsp+0x2360  0x0000700000c85c80  GUEST/JIT-region  [shadps4.exe+0xc85c80]
+  rsp+0x23c0  0x0000700000c67043  GUEST/JIT-region  [shadps4.exe+0xc67043]
+  rsp+0x24b0  0x0000700000b8dccb  GUEST/JIT-region  [shadps4.exe+0xb8dccb]
+  rsp+0x2540  0x0000700000b889f8  GUEST/JIT-region  [shadps4.exe+0xb889f8]
+  rsp+0x2550  0x0000700000cc8289  GUEST/JIT-region  [shadps4.exe+0xcc8289]
+  rsp+0x25b0  0x0000700000b9932c  GUEST/JIT-region  [shadps4.exe+0xb9932c]
+  rsp+0x29c0  0x0000700000b972aa  GUEST/JIT-region  [shadps4.exe+0xb972aa]
+  rsp+0x2dd0  0x0000700000b972aa  GUEST/JIT-region  [shadps4.exe+0xb972aa]
+  rsp+0x31e0  0x0000700000b972aa  GUEST/JIT-region  [shadps4.exe+0xb972aa]
+  rsp+0x33c0  0x00007ffd00ab50d9  HOST-DLL  [ucrtbase.dll+0x50d9]
+  rsp+0x35f0  0x0000700000b972aa  GUEST/JIT-region  [shadps4.exe+0xb972aa]
+  rsp+0x37d0  0x0000700000b9311f  GUEST/JIT-region  [shadps4.exe+0xb9311f]
+  rsp+0x3a00  0x0000700000b972aa  GUEST/JIT-region  [shadps4.exe+0xb972aa]
+  rsp+0x3e10  0x0000700000b972aa  GUEST/JIT-region  [shadps4.exe+0xb972aa]
+  ... (truncated at 120 hits)
+--- call-site recovery at [rsp] ---
+  [rsp] = 0x7d1b01b
+  000007d1afeb  00 00 44 89 56 74 44 8b 97 10 03 00 00 44 89 56  ..D.VtD......D.V
+  000007d1affb  78 57 56 48 8d 76 7c ba 00 08 00 00 48 b8 00 35  xWVH.v|.....H..5
+  000007d1b00b  b3 00 00 70 00 00 55 48 89 e5 48 83 e4 f0 ff d0  ...p..UH..H.....
+  000007d1b01b  48 89 ec 5d 5e 5f 5f 57 48 8b 7f 08 49 ba ff ff  H..]^__WH...I...
+  000007d1b02b  ff ff ff ff 00 00 4c 21 d7 44 8b 17 44 89 96 7c  ......L!.D..D..|
+  coherent stream ends in a CALL at [rsp]-2:
+    0x000007d1afeb: 0000             add byte ptr [rax], al
+    0x000007d1afed: 44895674         mov dword ptr [rsi + 0x74], r10d
+    0x000007d1aff1: 448b9710030000   mov r10d, dword ptr [rdi + 0x310]
+    0x000007d1aff8: 44895678         mov dword ptr [rsi + 0x78], r10d
+    0x000007d1affc: 57               push rdi
+    0x000007d1affd: 56               push rsi
+    0x000007d1affe: 488d767c         lea rsi, [rsi + 0x7c]
+    0x000007d1b002: ba00080000       mov edx, 0x800
+    0x000007d1b007: 48b80035b30000700000 movabs rax, 0x700000b33500
+    0x000007d1b011: 55               push rbp
+    0x000007d1b012: 4889e5           mov rbp, rsp
+    0x000007d1b015: 4883e4f0         and rsp, 0xfffffffffffffff0
+    0x000007d1b019: ffd0             call rax
+--- on-disk exe comparison ---
+  exe TimeDateStamp on disk 0x6a8f189f, in dump 0x6a8f189f
+  dumped range 0x700000b32000 (+0x3000) vs on-disk .text: 0 differing bytes
+  disp32 refs in exe .text to exe+0xb33500 (fault target): NONE
+  disp32 refs in exe .text to exe+0xb33e30 (CopyDynrcWindowClamped): ['0xb32dd9']
+
+==============================================================================
+DUMP run171  (C:\Users\Νίκος\Documents\GitHub\shadPS4\GT7_work\logs\run171_guest_crash.dmp, 1210357 bytes)
+==============================================================================
+--- memory ranges in dump (558) ---
+  0x000000010000 - 0x000000010401  (   1025 bytes, file off 0x6e578)
+  0x000000011f17 - 0x000000012000  (    233 bytes, file off 0x6ed79)
+  0x000000020000 - 0x000000020300  (    768 bytes, file off 0x7c546)
+  0x000000026d30 - 0x000000027130  (   1024 bytes, file off 0x8f0ca)
+  0x00000002ff27 - 0x000000030327  (   1024 bytes, file off 0x933ca)
+  0x000000030903 - 0x000000030d03  (   1024 bytes, file off 0x945ee)
+  0x00000003ff46 - 0x000000040346  (   1024 bytes, file off 0x9d56e)
+  0x000000044d5d - 0x00000004515d  (   1024 bytes, file off 0x9ed7e)
+  0x0000000bff00 - 0x0000000c0300  (   1024 bytes, file off 0xc9e37)
+  0x0000000f0000 - 0x0000000f0300  (    768 bytes, file off 0xd7a30)
+  0x0000000f4140 - 0x0000000f4540  (   1024 bytes, file off 0xd96b0)
+  0x000000100000 - 0x000000100308  (    776 bytes, file off 0xdd868)
+  0x000000120000 - 0x00000012060c  (   1548 bytes, file off 0xe515e)
+  0x000000120c20 - 0x000000121140  (   1312 bytes, file off 0xe5b6a)
+  0x000000121280 - 0x000000121680  (   1024 bytes, file off 0xe608a)
+  0x000000121e80 - 0x000000122280  (   1024 bytes, file off 0xe648a)
+  0x000000122780 - 0x000000122b80  (   1024 bytes, file off 0xe688a)
+  0x000000123500 - 0x000000123900  (   1024 bytes, file off 0xe6c8a)
+  0x000000123980 - 0x000000123d80  (   1024 bytes, file off 0xe75a2)
+  0x000000124ac0 - 0x000000124ec0  (   1024 bytes, file off 0xe79a6)
+  0x0000001253c0 - 0x0000001257c0  (   1024 bytes, file off 0xe81aa)
+  0x000000126a40 - 0x000000126e40  (   1024 bytes, file off 0xe89ae)
+  0x000000129f80 - 0x00000012a380  (   1024 bytes, file off 0xe8db2)
+  0x00000012ab80 - 0x00000012af80  (   1024 bytes, file off 0xe9952)
+  0x0000001cfff0 - 0x0000001d03f0  (   1024 bytes, file off 0x6a7e4)
+  0x000000200f40 - 0x000000201340  (   1024 bytes, file off 0x98efe)
+  0x0000002f1f00 - 0x0000002f2300  (   1024 bytes, file off 0xe85ae)
+  0x000000300000 - 0x000000300330  (    816 bytes, file off 0xec83e)
+  0x000000323000 - 0x000000323400  (   1024 bytes, file off 0x1064d2)
+  0x00000037c000 - 0x00000037c6a0  (   1696 bytes, file off 0x12020d)
+  0x00000037ef00 - 0x00000037f300  (   1024 bytes, file off 0x1208ad)
+  0x000000380f00 - 0x000000381300  (   1024 bytes, file off 0x1215dd)
+  0x000000382f00 - 0x000000383300  (   1024 bytes, file off 0x122081)
+  0x00000038cf00 - 0x00000038d300  (   1024 bytes, file off 0x1251cb)
+  0x00000038ef00 - 0x00000038f300  (   1024 bytes, file off 0x1255cb)
+  0x000000390f00 - 0x000000391300  (   1024 bytes, file off 0x125ebb)
+  0x000000396f00 - 0x000000397300  (   1024 bytes, file off 0x69fd4)
+  0x0000003bff0a - 0x0000003c033a  (   1072 bytes, file off 0x8fa6a)
+  0x000000524800 - 0x000000524c00  (   1024 bytes, file off 0x1147eb)
+  0x00000053434e - 0x00000053474e  (   1024 bytes, file off 0x117f97)
+  0x0000005fe138 - 0x000000600110  (   8152 bytes, file off 0xc01eb)
+  0x0000006e0000 - 0x0000006e0369  (    873 bytes, file off 0x10f453)
+  0x000000740000 - 0x00000074037c  (    892 bytes, file off 0x6f35a)
+  0x000000741980 - 0x000000742178  (   2040 bytes, file off 0x6fc46)
+  0x000000743e70 - 0x000000744270  (   1024 bytes, file off 0x73a4a)
+  0x000000744940 - 0x000000744d40  (   1024 bytes, file off 0x75e22)
+  0x00000074bf08 - 0x00000074c728  (   2080 bytes, file off 0x7904a)
+  0x00000074f0d0 - 0x00000074f8e0  (   2064 bytes, file off 0x7cc46)
+  0x00000074fca0 - 0x0000007504b0  (   2064 bytes, file off 0x7d456)
+  0x0000007523e0 - 0x000000752df0  (   2576 bytes, file off 0x8cada)
+  0x000000753cd0 - 0x000000754360  (   1680 bytes, file off 0x8de3a)
+  0x000000754a00 - 0x000000754e60  (   1120 bytes, file off 0x8f4ca)
+  0x000000756c65 - 0x000000757065  (   1024 bytes, file off 0x8fe9a)
+  0x000000758d50 - 0x000000759178  (   1064 bytes, file off 0x90a5a)
+  0x00000075a6b0 - 0x00000075aab0  (   1024 bytes, file off 0x91a82)
+  0x00000075ae20 - 0x00000075b230  (   1040 bytes, file off 0x91e82)
+  0x00000075e0f0 - 0x00000075e4f0  (   1024 bytes, file off 0x93dea)
+  0x00000075f350 - 0x00000075f750  (   1024 bytes, file off 0x971d2)
+  0x000000760e80 - 0x000000761290  (   1040 bytes, file off 0x97b8a)
+  0x000000762ec0 - 0x0000007632c0  (   1024 bytes, file off 0x986fe)
+  0x000000765e60 - 0x000000766260  (   1024 bytes, file off 0x99e06)
+  0x00000076d6c8 - 0x00000076dac8  (   1024 bytes, file off 0x9c732)
+  0x0000007812d0 - 0x000000781750  (   1152 bytes, file off 0x9ff9e)
+  0x00000079db20 - 0x00000079df28  (   1032 bytes, file off 0xb3347)
+  0x00000079e800 - 0x00000079ec00  (   1024 bytes, file off 0xb5c7b)
+  0x0000007a4e60 - 0x0000007a5260  (   1024 bytes, file off 0xb8b7f)
+  0x0000007a57a0 - 0x0000007a5ba0  (   1024 bytes, file off 0xb8f7f)
+  0x0000007c5ff0 - 0x0000007c63f0  (   1024 bytes, file off 0xbfbdf)
+  0x0000007d65e8 - 0x0000007d69e8  (   1024 bytes, file off 0xc5563)
+  0x0000007d6cf0 - 0x0000007d72a8  (   1464 bytes, file off 0xc5963)
+  0x0000007da690 - 0x0000007daa90  (   1024 bytes, file off 0xc632b)
+  0x0000007db550 - 0x0000007db950  (   1024 bytes, file off 0xc672b)
+  0x0000007de6d0 - 0x0000007dead0  (   1024 bytes, file off 0xc732b)
+  0x0000007e0130 - 0x0000007e05c8  (   1176 bytes, file off 0xc832f)
+  0x0000007f07b0 - 0x0000007f0bb0  (   1024 bytes, file off 0xca637)
+  0x0000007f2ff0 - 0x0000007f33f0  (   1024 bytes, file off 0xcaa37)
+  0x0000007f3980 - 0x0000007f3e10  (   1168 bytes, file off 0xcae37)
+  0x0000007f4400 - 0x0000007f4850  (   1104 bytes, file off 0xcb2c7)
+  0x0000007fff00 - 0x000000800301  (   1025 bytes, file off 0xcdda7)
+  0x000000807700 - 0x000000807c30  (   1328 bytes, file off 0xcf1a8)
+  0x000000807d30 - 0x000000808130  (   1024 bytes, file off 0xcf6d8)
+  0x000000808410 - 0x000000808810  (   1024 bytes, file off 0xcfad8)
+  0x00000080e9b0 - 0x00000080edb0  (   1024 bytes, file off 0xd12ec)
+  0x00000080f200 - 0x00000080f7d0  (   1488 bytes, file off 0xd1b28)
+  0x00000080f7f0 - 0x000000810650  (   3680 bytes, file off 0xd20f8)
+  0x000000810b80 - 0x000000811000  (   1152 bytes, file off 0xd3cb8)
+  0x000000811ec0 - 0x0000008122c0  (   1024 bytes, file off 0xd4138)
+  0x000000812300 - 0x000000812720  (   1056 bytes, file off 0xd4538)
+  0x000000813358 - 0x000000813758  (   1024 bytes, file off 0xd4d58)
+  0x00000081d4f0 - 0x00000081d900  (   1040 bytes, file off 0xd7220)
+  0x00000081fed0 - 0x0000008202e0  (   1040 bytes, file off 0xd81f4)
+  0x000000822f40 - 0x000000823350  (   1040 bytes, file off 0xd9eb0)
+  0x000000825550 - 0x000000825978  (   1064 bytes, file off 0xdb0b4)
+  0x000000826480 - 0x000000826880  (   1024 bytes, file off 0xdb4dc)
+  0x000000826a50 - 0x000000826e50  (   1024 bytes, file off 0xdb8dc)
+  0x0000008274a0 - 0x0000008278c0  (   1056 bytes, file off 0xdbcdc)
+  0x00000082b000 - 0x00000082b470  (   1136 bytes, file off 0xdc0fc)
+  0x00000082e070 - 0x00000082e470  (   1024 bytes, file off 0xddb70)
+  0x00000082ea70 - 0x00000082ef08  (   1176 bytes, file off 0xddf70)
+  0x0000008362b0 - 0x0000008367e0  (   1328 bytes, file off 0xe0234)
+  0x00000083ca38 - 0x00000083ce38  (   1024 bytes, file off 0xe1198)
+  0x00000083e8d0 - 0x00000083ef60  (   1680 bytes, file off 0xe1598)
+  0x000000989580 - 0x000000989980  (   1024 bytes, file off 0xbddaf)
+  0x000000a3fb42 - 0x000000a40168  (   1574 bytes, file off 0xfe600)
+  0x000000c21f6a - 0x000000c2236a  (   1024 bytes, file off 0x1071ee)
+  0x000000c3fb42 - 0x000000c40168  (   1574 bytes, file off 0x10da1d)
+  0x000000e3fb42 - 0x000000e40168  (   1574 bytes, file off 0x11f113)
+  0x00000106fc00 - 0x00000106fc04  (      4 bytes, file off 0x9f98e)
+  0x00000107fc00 - 0x00000107fc04  (      4 bytes, file off 0xa0e2a)
+  0x000003ffff04 - 0x000004000304  (   1024 bytes, file off 0xe9e52)
+  0x0000042fca40 - 0x0000042fce40  (   1024 bytes, file off 0xbf0d3)
+  0x000004324890 - 0x000004324c90  (   1024 bytes, file off 0xc9a33)
+  0x000004ffff25 - 0x000005000325  (   1024 bytes, file off 0xdf634)
+  0x000006b4ff00 - 0x000006b50300  (   1024 bytes, file off 0x10a7ad)
+  0x00000761f358 - 0x000007620390  (   4152 bytes, file off 0x10afb5)
+  0x000007d67f1b - 0x000007d6831b  (   1024 bytes, file off 0x114feb)
+  0x000009007f00 - 0x000009008300  (   1024 bytes, file off 0xb374f)
+  0x000009d9cfa0 - 0x000009d9d528  (   1416 bytes, file off 0x10c3ed)
+  0x000009d9fe28 - 0x000009da0460  (   1592 bytes, file off 0x10cbe1)
+  0x000009da1a60 - 0x000009da1e60  (   1024 bytes, file off 0x10d619)
+  0x000009da4020 - 0x000009da47a0  (   1920 bytes, file off 0x10e613)
+  0x000009da62c0 - 0x000009da6a40  (   1920 bytes, file off 0x10f7bc)
+  0x000009daa310 - 0x000009daa710  (   1024 bytes, file off 0x10ff44)
+  0x000009dabda0 - 0x000009dac520  (   1920 bytes, file off 0x111280)
+  0x000009db0380 - 0x000009db0780  (   1024 bytes, file off 0x112604)
+  0x000009db92b0 - 0x000009db96b0  (   1024 bytes, file off 0x115bef)
+  0x000009e17fc0 - 0x000009e183c0  (   1024 bytes, file off 0x8c2da)
+  0x000009e1f0b8 - 0x000009e1f4b8  (   1024 bytes, file off 0x91282)
+  0x000009e1fa78 - 0x000009e1fe78  (   1024 bytes, file off 0x91682)
+  0x000009e20c70 - 0x000009e212f0  (   1664 bytes, file off 0x92292)
+  0x000009e21ce8 - 0x000009e220e8  (   1024 bytes, file off 0x92912)
+  0x000009e28968 - 0x000009e28d68  (   1024 bytes, file off 0x98afe)
+  0x000009e34da0 - 0x000009e351a0  (   1024 bytes, file off 0x9dd6e)
+  0x000009e36ca0 - 0x000009e370a0  (   1024 bytes, file off 0x9e16e)
+  0x000009e383d0 - 0x000009e387e0  (   1040 bytes, file off 0x9e96e)
+  0x000009e4e201 - 0x000009e4e6e0  (   1247 bytes, file off 0xa0e32)
+  0x000009e51fb0 - 0x000009e523b0  (   1024 bytes, file off 0xa323b)
+  0x000009e5ad90 - 0x000009e5b190  (   1024 bytes, file off 0xb273f)
+  0x000009e6a1d0 - 0x000009e6a7d0  (   1536 bytes, file off 0xb817f)
+  0x000009e6b4d0 - 0x000009e6b8d0  (   1024 bytes, file off 0xb937f)
+  0x000009e6b950 - 0x000009e6bdb8  (   1128 bytes, file off 0xb977f)
+  0x00000a99f958 - 0x00000a9a0000  (   1704 bytes, file off 0xd5558)
+  0x00000ab9fb42 - 0x00000aba0168  (   1574 bytes, file off 0xe303c)
+  0x00000b19fb42 - 0x00000b1a0168  (   1574 bytes, file off 0x122481)
+  0x00000efe6527 - 0x00000efe6627  (    256 bytes, file off 0xe9d52)
+  0x00007ffe0000 - 0x00007ffe0a80  (   2688 bytes, file off 0x11cccf)
+  0x000080000000 - 0x00008000030d  (    781 bytes, file off 0x1274e8)
+  0x00008000d340 - 0x00008000d740  (   1024 bytes, file off 0x6c358)
+  0x000200000000 - 0x00020000030c  (    780 bytes, file off 0x1262bb)
+  0x0002024251b4 - 0x00020242586c  (   1720 bytes, file off 0x9b472)
+  0x000203404800 - 0x000203404c00  (   1024 bytes, file off 0x124253)
+  0x000203406140 - 0x000203406540  (   1024 bytes, file off 0x124753)
+  0x0007ffffff00 - 0x000800000398  (   1176 bytes, file off 0x120cad)
+  0x001000000000 - 0x001000000310  (    784 bytes, file off 0x117887)
+  0x001013600900 - 0x001013600d00  (   1024 bytes, file off 0xe2434)
+  0x010000000000 - 0x01000000030c  (    780 bytes, file off 0xbf8d3)
+  0x01000000ff00 - 0x010000010300  (   1024 bytes, file off 0xc40b7)
+  0x0100ffffff46 - 0x010100000346  (   1024 bytes, file off 0xbf4d3)
+  0x01010100ff01 - 0x010101010301  (   1024 bytes, file off 0xba7cb)
+  0x0101fffffeff - 0x01020000097f  (   2688 bytes, file off 0xbe64b)
+  0x01020000f728 - 0x01020000fb28  (   1024 bytes, file off 0xc26c7)
+  0x0102101ff7f0 - 0x0102102002d8  (   2792 bytes, file off 0x76682)
+  0x010210201960 - 0x010210201d60  (   1024 bytes, file off 0x77c46)
+  0x010210202800 - 0x010210202c00  (   1024 bytes, file off 0x7804a)
+  0x010210203ac0 - 0x010210203ec0  (   1024 bytes, file off 0x7844a)
+  0x010210298390 - 0x010210298790  (   1024 bytes, file off 0xc7b2f)
+  0x010210298990 - 0x010210298d90  (   1024 bytes, file off 0xc7f2f)
+  0x0102102f0fe0 - 0x0102102f13e0  (   1024 bytes, file off 0xe0764)
+  0x0102103379d0 - 0x010210337dd0  (   1024 bytes, file off 0x100a02)
+  0x010210338e90 - 0x010210339290  (   1024 bytes, file off 0x100e02)
+  0x0102103630b0 - 0x010210363770  (   1728 bytes, file off 0x10ed93)
+  0x01021036d160 - 0x01021036d560  (   1024 bytes, file off 0x111a04)
+  0x01021036e040 - 0x01021036e440  (   1024 bytes, file off 0x112204)
+  0x010210372730 - 0x010210372c20  (   1264 bytes, file off 0x113ae3)
+  0x01021037ade0 - 0x01021037b500  (   1824 bytes, file off 0x115fef)
+  0x010210385c00 - 0x010210386010  (   1040 bytes, file off 0x118397)
+  0x010210387a20 - 0x010210387e20  (   1024 bytes, file off 0x118fef)
+  0x010210389e00 - 0x01021038abd0  (   3536 bytes, file off 0x119bf3)
+  0x01021038b300 - 0x01021038b700  (   1024 bytes, file off 0x11b1c7)
+  0x01021038b8a0 - 0x01021038bd40  (   1184 bytes, file off 0x11b5c7)
+  0x01021038e7f0 - 0x01021038ebf0  (   1024 bytes, file off 0x11c4cf)
+  0x0102103913e0 - 0x010210391ab0  (   1744 bytes, file off 0x11d74f)
+  0x010210392ab0 - 0x010210392eb0  (   1024 bytes, file off 0x11e037)
+  0x01021039fe10 - 0x0102103a0210  (   1024 bytes, file off 0x122aa7)
+  0x0102103a19c0 - 0x0102103a1dc0  (   1024 bytes, file off 0x1236af)
+  0x0102103ba8a0 - 0x0102103baca0  (   1024 bytes, file off 0x6afe8)
+  0x0102103bb620 - 0x0102103bbda0  (   1920 bytes, file off 0x6b3e8)
+  0x0102103cbb10 - 0x0102103cc0d8  (   1480 bytes, file off 0x7767a)
+  0x0102103cffb0 - 0x0102103d03b0  (   1024 bytes, file off 0x78c4a)
+  0x0102103d7940 - 0x0102103d7d40  (   1024 bytes, file off 0x8d4ea)
+  0x0102103d8000 - 0x0102103d8400  (   1024 bytes, file off 0x8e4ca)
+  0x0102103dc860 - 0x0102103dd020  (   1984 bytes, file off 0x9029a)
+  0x0102103dd080 - 0x0102103dd480  (   1024 bytes, file off 0x90e82)
+  0x0102103e1830 - 0x0102103e1cf0  (   1216 bytes, file off 0x92f0a)
+  0x0102103e2110 - 0x0102103e2730  (   1568 bytes, file off 0x937ca)
+  0x0102103fb640 - 0x0102103fba40  (   1024 bytes, file off 0x9f992)
+  0x0102109ffda8 - 0x010210a00000  (    600 bytes, file off 0xd5c04)
+  0x010210fffc30 - 0x0102110000bf  (   1167 bytes, file off 0x112a04)
+  0x0102115ffb42 - 0x010211600168  (   1574 bytes, file off 0xa1311)
+  0x010212301d60 - 0x010212302160  (   1024 bytes, file off 0xcb717)
+  0x01021230d800 - 0x01021230dc00  (   1024 bytes, file off 0xce9a8)
+  0x01021231a900 - 0x01021231ad00  (   1024 bytes, file off 0xd4958)
+  0x01021232bbe0 - 0x01021232c1d0  (   1520 bytes, file off 0xda6c0)
+  0x01021235fc48 - 0x0102123603e8  (   1952 bytes, file off 0xe91b2)
+  0x010212366b10 - 0x010212366f70  (   1120 bytes, file off 0xeb02a)
+  0x010212373650 - 0x010212373a50  (   1024 bytes, file off 0xfd5ec)
+  0x010212394e70 - 0x010212395490  (   1568 bytes, file off 0x1079f6)
+  0x0102123974b0 - 0x0102123978b0  (   1024 bytes, file off 0x108816)
+  0x0102123978f0 - 0x010212397cf0  (   1024 bytes, file off 0x1090c5)
+  0x010212398170 - 0x010212398570  (   1024 bytes, file off 0x1094c9)
+  0x01021239a200 - 0x01021239a600  (   1024 bytes, file off 0x1098cd)
+  0x0102123ae840 - 0x0102123aec40  (   1024 bytes, file off 0x10d219)
+  0x0102123c4ed0 - 0x0102123c52d0  (   1024 bytes, file off 0x1153eb)
+  0x010212531100 - 0x010212531688  (   1416 bytes, file off 0xeaaa2)
+  0x010212545890 - 0x010212545ca0  (   1040 bytes, file off 0xfddec)
+  0x010212566de0 - 0x0102125671e0  (   1024 bytes, file off 0x109ccd)
+  0x0102125a2b90 - 0x0102125a2f90  (   1024 bytes, file off 0x1197ef)
+  0x0102125c8120 - 0x0102125c8e55  (   3381 bytes, file off 0x1267af)
+  0x01021260fe90 - 0x010212610290  (   1024 bytes, file off 0x9e56e)
+  0x010212636838 - 0x010212636c38  (   1024 bytes, file off 0xb2b3f)
+  0x01021267c5c0 - 0x01021267c9c0  (   1024 bytes, file off 0xc6b2b)
+  0x0102130ef320 - 0x0102130f0110  (   3568 bytes, file off 0xa244b)
+  0x01021384fca0 - 0x01021385013c  (   1180 bytes, file off 0xbe1af)
+  0x01021406fa70 - 0x010214070510  (   2720 bytes, file off 0x110344)
+  0x010214e806d8 - 0x010214e90000  (  63784 bytes, file off 0xed08e)
+  0x010214e9f000 - 0x010214ea3000  (  16384 bytes, file off 0x101b22)
+  0x0102152e3a38 - 0x0102152e4540  (   2824 bytes, file off 0x992fe)
+  0x0102152e4640 - 0x0102152e4c48  (   1544 bytes, file off 0x9a206)
+  0x0102152e4d48 - 0x0102152e51a8  (   1120 bytes, file off 0x9a812)
+  0x0102158efbc8 - 0x0102158f0000  (   1080 bytes, file off 0xd16ec)
+  0x010215ceff00 - 0x010215cf03e8  (   1256 bytes, file off 0xfec2e)
+  0x010215cf1d38 - 0x010215cf2138  (   1024 bytes, file off 0xffdfe)
+  0x010215d8f200 - 0x010215d8f600  (   1024 bytes, file off 0x7986a)
+  0x010215d90770 - 0x010215d90d80  (   1552 bytes, file off 0x79c6a)
+  0x010215d92550 - 0x010215d92950  (   1024 bytes, file off 0x7c846)
+  0x010215d93ec0 - 0x010215d942c0  (   1024 bytes, file off 0x7dc66)
+  0x010215d96d80 - 0x010215d972d0  (   1360 bytes, file off 0x8d8ea)
+  0x010215d97a20 - 0x010215d97e20  (   1024 bytes, file off 0x8e8ca)
+  0x010215d97ec0 - 0x010215d982c0  (   1024 bytes, file off 0x8ecca)
+  0x010215d98ec0 - 0x010215d99000  (    320 bytes, file off 0x8f92a)
+  0x010215e40000 - 0x010215e40450  (   1104 bytes, file off 0xcc4c7)
+  0x010215e40760 - 0x010215e40ba8  (   1096 bytes, file off 0xcc917)
+  0x010215e40c08 - 0x010215e41020  (   1048 bytes, file off 0xcd3cf)
+  0x010215e4bac8 - 0x010215e4bec8  (   1024 bytes, file off 0xcfed8)
+  0x010215e4c278 - 0x010215e4c678  (   1024 bytes, file off 0xd02d8)
+  0x010215e5ee10 - 0x010215e5f000  (    496 bytes, file off 0xd6270)
+  0x01021854a050 - 0x01021854a460  (   1040 bytes, file off 0xa193b)
+  0x01021855d4f0 - 0x01021855d8f0  (   1024 bytes, file off 0xb2f47)
+  0x01021855e530 - 0x01021855e930  (   1024 bytes, file off 0xb3b4f)
+  0x0102185af480 - 0x0102185af880  (   1024 bytes, file off 0xca237)
+  0x0102185e0a40 - 0x0102185e0e40  (   1024 bytes, file off 0xd8ab0)
+  0x0102185f1f28 - 0x0102185f2328  (   1024 bytes, file off 0xde408)
+  0x01021860c280 - 0x01021860c680  (   1024 bytes, file off 0xe3c7a)
+  0x01021860c7c0 - 0x01021860cbc0  (   1024 bytes, file off 0xe407a)
+  0x01021860cd30 - 0x01021860d490  (   1888 bytes, file off 0xe447a)
+  0x01021860d7e0 - 0x01021860dd60  (   1408 bytes, file off 0xe4bda)
+  0x01021861ff20 - 0x010218620320  (   1024 bytes, file off 0xeb48a)
+  0x010218621298 - 0x0102186216c8  (   1072 bytes, file off 0xebdb2)
+  0x01021864fb01 - 0x01021864ffb0  (   1199 bytes, file off 0x108c16)
+  0x01021888ba30 - 0x01021888be30  (   1024 bytes, file off 0x6abe4)
+  0x010218914240 - 0x010218914640  (   1024 bytes, file off 0xbd9af)
+  0x0102189254b0 - 0x0102189258b0  (   1024 bytes, file off 0xc22c7)
+  0x010218925a00 - 0x010218925e00  (   1024 bytes, file off 0xc2ac7)
+  0x01021892bc50 - 0x01021892c050  (   1024 bytes, file off 0xc3cb7)
+  0x01021892c090 - 0x01021892c490  (   1024 bytes, file off 0xc44b7)
+  0x01021892c610 - 0x01021892ca88  (   1144 bytes, file off 0xc48b7)
+  0x010218a1fb80 - 0x010218a1ffa4  (   1060 bytes, file off 0x117463)
+  0x010218ac3200 - 0x010218ac3948  (   1864 bytes, file off 0xb607b)
+  0x010219669e64 - 0x01021966a264  (   1024 bytes, file off 0x101722)
+  0x01021b50fd98 - 0x01021b510000  (    616 bytes, file off 0x10c979)
+  0x01021b70fde8 - 0x01021b710000  (    536 bytes, file off 0x11de1f)
+  0x01021c1efe18 - 0x01021c1f0000  (    488 bytes, file off 0x1265c7)
+  0x01021c3efe08 - 0x01021c3f0000  (    504 bytes, file off 0x92d12)
+  0x01021cdefc80 - 0x01021cdf01a0  (   1312 bytes, file off 0xecb6e)
+  0x01021d6402c0 - 0x01021d6407a0  (   1248 bytes, file off 0xbc6b3)
+  0x01021d6954f0 - 0x01021d695cf0  (   2048 bytes, file off 0xd2f58)
+  0x01021d6963b0 - 0x01021d696910  (   1376 bytes, file off 0xd3758)
+  0x01021d6a09d0 - 0x01021d6a0de0  (   1040 bytes, file off 0xd5e60)
+  0x01021d6a1050 - 0x01021d6a1450  (   1024 bytes, file off 0xd6460)
+  0x01021d6a1c30 - 0x01021d6a2040  (   1040 bytes, file off 0xd6860)
+  0x01021d7073f0 - 0x01021d707910  (   1312 bytes, file off 0x101202)
+  0x01021d8e8180 - 0x01021d8e8860  (   1760 bytes, file off 0x10a0cd)
+  0x01021d9609c0 - 0x01021d961060  (   1696 bytes, file off 0x73e4a)
+  0x01021d9f0820 - 0x01021d9f1050  (   2096 bytes, file off 0xc3487)
+  0x01021da181c0 - 0x01021da18770  (   1456 bytes, file off 0xcbb17)
+  0x01021da18a30 - 0x01021da18e30  (   1024 bytes, file off 0xcc0c7)
+  0x01021da198d0 - 0x01021da19f40  (   1648 bytes, file off 0xccd5f)
+  0x01021da1ac50 - 0x01021da1b210  (   1472 bytes, file off 0xcd7e7)
+  0x01021da20710 - 0x01021da20b10  (   1024 bytes, file off 0xce1a8)
+  0x01021da20fe0 - 0x01021da213e0  (   1024 bytes, file off 0xce5a8)
+  0x01021da3ef80 - 0x01021da3f380  (   1024 bytes, file off 0xd92b0)
+  0x01021da3f3c8 - 0x01021da3f7c8  (   1024 bytes, file off 0xd9ab0)
+  0x01021da4f0c0 - 0x01021da4f6b0  (   1520 bytes, file off 0xde80c)
+  0x01021da50980 - 0x01021da50d80  (   1024 bytes, file off 0xdfa34)
+  0x01021da51040 - 0x01021da51440  (   1024 bytes, file off 0xdfe34)
+  0x01021daee970 - 0x01021daeed70  (   1024 bytes, file off 0x11a9c3)
+  0x01021daeefb0 - 0x01021daef3b0  (   1024 bytes, file off 0x11adc3)
+  0x01021db06f70 - 0x01021db07370  (   1024 bytes, file off 0x123c4f)
+  0x01021dbbd9d0 - 0x01021dbbde00  (   1072 bytes, file off 0xc4d2f)
+  0x01021dbf22c0 - 0x01021dbf26c0  (   1024 bytes, file off 0xd0adc)
+  0x01021dd12a50 - 0x01021dd12e60  (   1040 bytes, file off 0x949ee)
+  0x01021dd134f0 - 0x01021dd138f0  (   1024 bytes, file off 0x975d2)
+  0x01021ddd3d30 - 0x01021ddd41d8  (   1192 bytes, file off 0xd8604)
+  0x01021de39410 - 0x01021de399c0  (   1456 bytes, file off 0x105f22)
+  0x01021de40910 - 0x01021de40d10  (   1024 bytes, file off 0x108016)
+  0x01021e08ebd8 - 0x01021e08efd8  (   1024 bytes, file off 0x744ea)
+  0x01021e3bfc40 - 0x01021e3c0210  (   1488 bytes, file off 0x10e043)
+  0x01021e5bfc40 - 0x01021e5c0210  (   1488 bytes, file off 0x11f739)
+  0x01021ebbfc40 - 0x01021ebc0210  (   1488 bytes, file off 0xbafd3)
+  0x01021f7ffe48 - 0x01021f800000  (    440 bytes, file off 0x979d2)
+  0x01025fdffb68 - 0x01025fe00000  (   1176 bytes, file off 0x121145)
+  0x0102603ffd28 - 0x0102604001d0  (   1192 bytes, file off 0xbc103)
+  0x0102609ffbf0 - 0x010260a00108  (   1304 bytes, file off 0xe708a)
+  0x010260bffbf0 - 0x010260c00108  (   1304 bytes, file off 0x1068d2)
+  0x010260dffbf0 - 0x010260e00000  (   1040 bytes, file off 0x113fd3)
+  0x010260fffbf0 - 0x010261000108  (   1304 bytes, file off 0x124cb3)
+  0x01026237fb68 - 0x010262380000  (   1176 bytes, file off 0x110de4)
+  0x010264a2fd48 - 0x010264a30148  (   1024 bytes, file off 0xc8ddf)
+  0x0102652acbc0 - 0x0102652acfc0  (   1024 bytes, file off 0x9ac72)
+  0x0102652b0178 - 0x0102652b0578  (   1024 bytes, file off 0x9bf2e)
+  0x0102652b25f8 - 0x0102652b29f8  (   1024 bytes, file off 0x9c32e)
+  0x0102652b4150 - 0x0102652b4550  (   1024 bytes, file off 0x9d96e)
+  0x01026555cb20 - 0x01026555d130  (   1552 bytes, file off 0xe366a)
+  0x01026558a300 - 0x01026558a7e8  (   1256 bytes, file off 0xff116)
+  0x0102657f3088 - 0x0102657f3488  (   1024 bytes, file off 0x7884a)
+  0x0102658c9e00 - 0x0102658ca200  (   1024 bytes, file off 0xd8eb0)
+  0x010265921270 - 0x010265921670  (   1024 bytes, file off 0xff5fe)
+  0x0102659216b0 - 0x010265921ab0  (   1024 bytes, file off 0xff9fe)
+  0x0102659229d0 - 0x010265922dd0  (   1024 bytes, file off 0x1001fe)
+  0x010265b90a80 - 0x010265b90efc  (   1148 bytes, file off 0x8bc56)
+  0x010265bc3540 - 0x010265bc3940  (   1024 bytes, file off 0xa0a26)
+  0x010265d24650 - 0x010265d24cf0  (   1696 bytes, file off 0x1219e1)
+  0x010265d26120 - 0x010265d26520  (   1024 bytes, file off 0x122ea7)
+  0x010265d27350 - 0x010265d27750  (   1024 bytes, file off 0x1232a7)
+  0x01027bd1faf0 - 0x01027bd20000  (   1296 bytes, file off 0x7716a)
+  0x01028e4533d0 - 0x01028e453980  (   1456 bytes, file off 0xd6c70)
+  0x01028e4c1ed0 - 0x01028e4c22d0  (   1024 bytes, file off 0x1075ee)
+  0x01028e4d6f08 - 0x01028e4d7308  (   1024 bytes, file off 0x10abb1)
+  0x01028e4d8cd8 - 0x01028e4d90d8  (   1024 bytes, file off 0x10bfed)
+  0x01028e5a5b40 - 0x01028e5a5f70  (   1072 bytes, file off 0xb784f)
+  0x01028e5a9790 - 0x01028e5a9f68  (   2008 bytes, file off 0xb9beb)
+  0x01028e6bb220 - 0x01028e6bba70  (   2128 bytes, file off 0x113293)
+  0x01028e6e0b40 - 0x01028e6e1040  (   1280 bytes, file off 0x11fd09)
+  0x01028e771350 - 0x01028e771850  (   1280 bytes, file off 0xb7c7f)
+  0x01028e7fb250 - 0x01028e7fb658  (   1032 bytes, file off 0xdd460)
+  0x01028e9e2580 - 0x01028e9e2980  (   1024 bytes, file off 0xe2c3c)
+  0x01028e9ec360 - 0x01028e9ec760  (   1024 bytes, file off 0xe7da6)
+  0x01028eb46720 - 0x01028eb46d30  (   1552 bytes, file off 0xc87cb)
+  0x01028ec3a5c0 - 0x01028ec3a9c0  (   1024 bytes, file off 0x11c8cf)
+  0x01028ec3f1a0 - 0x01028ec3f758  (   1464 bytes, file off 0x11eb57)
+  0x01028ec568d0 - 0x01028ec56dc0  (   1264 bytes, file off 0x1259cb)
+  0x01028edf6700 - 0x01028edf6b00  (   1024 bytes, file off 0x117063)
+  0x01028f268930 - 0x01028f268d30  (   1024 bytes, file off 0xc5163)
+  0x0102de51be08 - 0x0102de51c208  (   1024 bytes, file off 0x8c6da)
+  0x0102fffffe00 - 0x010300000320  (   1312 bytes, file off 0xbcb93)
+  0x01030a9cfbb0 - 0x01030a9d0210  (   1632 bytes, file off 0x11ba67)
+  0x01030afbb5b0 - 0x01030afbb9b0  (   1024 bytes, file off 0xb1f3f)
+  0x01030b030db0 - 0x01030b0311b0  (   1024 bytes, file off 0xceda8)
+  0x01030b0570b0 - 0x01030b0574b0  (   1024 bytes, file off 0xdc714)
+  0x01030b05d410 - 0x01030b05dc48  (   2104 bytes, file off 0xdedfc)
+  0x01030b2b20c0 - 0x01030b2b24c0  (   1024 bytes, file off 0x114beb)
+  0x01030b2c5010 - 0x01030b2c5410  (   1024 bytes, file off 0x1193ef)
+  0x01030b2fd700 - 0x01030b2fdb00  (   1024 bytes, file off 0x6cfa8)
+  0x01030b5dbe70 - 0x01030b5dc270  (   1024 bytes, file off 0xe576a)
+  0x01030b647d30 - 0x01030b648130  (   1024 bytes, file off 0x1143e3)
+  0x01030b64f890 - 0x01030b64fde0  (   1360 bytes, file off 0x11670f)
+  0x01030b650fd0 - 0x01030b6513d0  (   1024 bytes, file off 0x116c5f)
+  0x01030b660a30 - 0x01030b660e30  (   1024 bytes, file off 0x11c0c7)
+  0x01030b68a4a0 - 0x01030b68a8b0  (   1040 bytes, file off 0x6a3d4)
+  0x01030b69da50 - 0x01030b69deb0  (   1120 bytes, file off 0x76222)
+  0x01030b70ac00 - 0x01030b70b360  (   1888 bytes, file off 0xbb9a3)
+  0x01030b714c00 - 0x01030b715000  (   1024 bytes, file off 0xbd0b3)
+  0x01030b715500 - 0x01030b7159f8  (   1272 bytes, file off 0xbd4b7)
+  0x01030b73e550 - 0x01030b73e950  (   1024 bytes, file off 0xc91df)
+  0x01030b867f3c - 0x01030b868548  (   1548 bytes, file off 0x7343e)
+  0x01030bc28a50 - 0x01030bc2948c  (   2620 bytes, file off 0x9cb32)
+  0x01030bc5fa00 - 0x01030bc5fe00  (   1024 bytes, file off 0xb877f)
+  0x01030bdfbd40 - 0x01030bdfc140  (   1024 bytes, file off 0x9f17e)
+  0x01030be12bf0 - 0x01030be13020  (   1072 bytes, file off 0xa363b)
+  0x01030be1b5fb - 0x01030be1b9fb  (   1024 bytes, file off 0xb233f)
+  0x01030bec1370 - 0x01030bec19a0  (   1584 bytes, file off 0xe0b64)
+  0x01030c19fc08 - 0x01030c1a0210  (   1544 bytes, file off 0xa041e)
+  0x01030c79fc60 - 0x01030c7a011c  (   1212 bytes, file off 0xd7d38)
+  0x01030cd9fe40 - 0x01030cda0240  (   1024 bytes, file off 0x1157eb)
+  0x01030d39fbd0 - 0x01030d3a0210  (   1600 bytes, file off 0xa3e6f)
+  0x01030d99f8c8 - 0x01030d9a0210  (   2376 bytes, file off 0xdcb14)
+  0x01030db9fbc0 - 0x01030dba0210  (   1616 bytes, file off 0xec1e2)
+  0x01030e62fe58 - 0x01030e630000  (    424 bytes, file off 0xdc56c)
+  0x01030e82fad8 - 0x01030e830000  (   1320 bytes, file off 0xeb88a)
+  0x01030feafae0 - 0x01030feb01e0  (   1792 bytes, file off 0xa1d4b)
+  0x010310f1fc30 - 0x010310f200e4  (   1204 bytes, file off 0xc2ed3)
+  0x01031191faf0 - 0x010311920210  (   1824 bytes, file off 0x11e437)
+  0x010320723f00 - 0x010320724300  (   1024 bytes, file off 0xdacb4)
+  0x01032269fdf8 - 0x0103226a0000  (    520 bytes, file off 0x8c0d2)
+  0x01032389fd2c - 0x0103238a012c  (   1024 bytes, file off 0x941ea)
+  0x010323c9fdf8 - 0x010323ca0000  (    520 bytes, file off 0xbffdf)
+  0x01032429fdf8 - 0x0103242a0000  (    520 bytes, file off 0xfcfdc)
+  0x010325c9fdf8 - 0x010325ca0000  (    520 bytes, file off 0x9fd92)
+  0x01034541fb42 - 0x010345420168  (   1574 bytes, file off 0xfc9b6)
+  0x01034defc890 - 0x01034defce00  (   1392 bytes, file off 0x6f6d6)
+  0x01034df94fe0 - 0x01034df953f0  (   1040 bytes, file off 0xc5f1b)
+  0x01034e0715f0 - 0x01034e0719f0  (   1024 bytes, file off 0x111e04)
+  0x01034e625448 - 0x01034e625890  (   1096 bytes, file off 0x6c75c)
+  0x01034e842bc0 - 0x01034e842fc0  (   1024 bytes, file off 0xa3a6b)
+  0x010354b16600 - 0x010354b16a00  (   1024 bytes, file off 0xba3c7)
+  0x010354c3b558 - 0x010354c3b9a0  (   1096 bytes, file off 0x1187a7)
+  0x010354c3ba98 - 0x010354c3be98  (   1024 bytes, file off 0x118bef)
+  0x010354d7de80 - 0x010354d7e280  (   1024 bytes, file off 0xe1c30)
+  0x0103552e0140 - 0x0103552e0540  (   1024 bytes, file off 0xe2030)
+  0x01036158ed60 - 0x01036158f160  (   1024 bytes, file off 0x7a27a)
+  0x010361889360 - 0x010361889760  (   1024 bytes, file off 0x1005fe)
+  0x010361891de0 - 0x0103618921e0  (   1024 bytes, file off 0x105b22)
+  0x010361895778 - 0x010361895b78  (   1024 bytes, file off 0x106dea)
+  0x010361a34b20 - 0x010361a34f70  (   1104 bytes, file off 0xea252)
+  0x010361c0c0f0 - 0x010361c0c4f0  (   1024 bytes, file off 0xfd1e4)
+  0x010361c11d40 - 0x010361c12140  (   1024 bytes, file off 0xfd9ec)
+  0x010361e7f480 - 0x010361e7f880  (   1024 bytes, file off 0x748ea)
+  0x010361f4f390 - 0x010361f4f790  (   1024 bytes, file off 0xd5158)
+  0x010361f58ff0 - 0x010361f593f0  (   1024 bytes, file off 0xd7630)
+  0x010361f97389 - 0x010361f97789  (   1024 bytes, file off 0xea6a2)
+  0x0103620b5e00 - 0x0103620b6200  (   1024 bytes, file off 0xbabd3)
+  0x0103620b69d0 - 0x0103620b6dd0  (   1024 bytes, file off 0xbb5a3)
+  0x010364d1d400 - 0x010364d1dbf0  (   2032 bytes, file off 0x6bb68)
+  0x010364d212d0 - 0x010364d216d0  (   1024 bytes, file off 0x6cba4)
+  0x010364d23820 - 0x010364d23e60  (   1600 bytes, file off 0x6d7a8)
+  0x010364d24000 - 0x010364d24790  (   1936 bytes, file off 0x6dde8)
+  0x010364d24a20 - 0x010364d24e20  (   1024 bytes, file off 0x6e979)
+  0x010364d26600 - 0x010364d26af8  (   1272 bytes, file off 0x6ee62)
+  0x010364dc4970 - 0x010364dc4d70  (   1024 bytes, file off 0xc772b)
+  0x010364dcf100 - 0x010364dcf550  (   1104 bytes, file off 0xc95e3)
+  0x010364e74da8 - 0x010364e751a8  (   1024 bytes, file off 0x108416)
+  0x0103659dff50 - 0x0103659e0350  (   1024 bytes, file off 0x9bb2e)
+  0x010365a7ff30 - 0x010365a80330  (   1024 bytes, file off 0xd06d8)
+  0x010365a80f30 - 0x010365a81340  (   1040 bytes, file off 0xd0edc)
+  0x0103684c6cc0 - 0x0103684c70c0  (   1024 bytes, file off 0x6d3a8)
+  0x010368a54060 - 0x010368a54460  (   1024 bytes, file off 0x9b072)
+  0x010368ba4450 - 0x010368ba4850  (   1024 bytes, file off 0x112e93)
+  0x01036ab1a5b0 - 0x01036ab1a9b0  (   1024 bytes, file off 0xc6f2b)
+  0x01036ac7dee0 - 0x01036ac7e2f0  (   1040 bytes, file off 0x9f57e)
+  0x01036b9df9a0 - 0x01036b9dfda0  (   1024 bytes, file off 0xe283c)
+  0x01036c35c980 - 0x01036c35cd80  (   1024 bytes, file off 0x117b97)
+  0x01036c56cbf0 - 0x01036c56dd28  (   4408 bytes, file off 0x74cea)
+  0x01036c576eb0 - 0x01036c578d7c  (   7884 bytes, file off 0x7a67a)
+  0x01036c579760 - 0x01036c587350  (  56304 bytes, file off 0x7e066)
+  0x01036c587e04 - 0x01036c58a1d8  (   9172 bytes, file off 0x94dfe)
+  0x01036c58a2e8 - 0x01036c58aa4c  (   1892 bytes, file off 0x97f9a)
+  0x01036c5b8890 - 0x01036c5c631c  (  55948 bytes, file off 0xa44b3)
+  0x01036c5c6bd0 - 0x01036c5c88fc  (   7468 bytes, file off 0xb3f4f)
+  0x01036c5c91b0 - 0x01036c5ca23c  (   4236 bytes, file off 0xb67c3)
+  0x01036c64c530 - 0x01036c64c930  (   1024 bytes, file off 0xda2c0)
+  0x0471ea070130 - 0x0471ea070530  (   1024 bytes, file off 0xfe1fc)
+  0x700000b32000 - 0x700000b35000  (  12288 bytes, file off 0x7043e)  [shadps4.exe+0xb32000]
+  0x7ffc3a78f298 - 0x7ffc3a78f29c  (      4 bytes, file off 0xbf0cb)
+  0x7ffc65aa3298 - 0x7ffc65aa329c  (      4 bytes, file off 0xc01e7)
+  0x7ffc65cfb298 - 0x7ffc65cfb29c  (      4 bytes, file off 0xe85aa)
+  0x7ffc65d1b298 - 0x7ffc65d1b29c  (      4 bytes, file off 0xfe5fc)
+  0x7ffc66abd298 - 0x7ffc66abd29c  (      4 bytes, file off 0xbc6af)
+  0x7ffc8376d298 - 0x7ffc8376d29c  (      4 bytes, file off 0x12404f)
+  0x7ffc83a4c298 - 0x7ffc83a4c29c  (      4 bytes, file off 0xde808)
+  0x7ffcc561a298 - 0x7ffcc561a29c  (      4 bytes, file off 0xdd45c)
+  0x7ffccf53c298 - 0x7ffccf53c29c  (      4 bytes, file off 0xa44af)
+  0x7ffcd4619298 - 0x7ffcd461929c  (      4 bytes, file off 0xba3c3)
+  0x7ffcd4db8298 - 0x7ffcd4db829c  (      4 bytes, file off 0xd5c00)
+  0x7ffcd8023298 - 0x7ffcd802329c  (      4 bytes, file off 0xe1c2c)
+  0x7ffcd8cb8298 - 0x7ffcd8cb829c  (      4 bytes, file off 0xe2834)
+  0x7ffcd8cfb298 - 0x7ffcd8cfb29c  (      4 bytes, file off 0x1071ea)
+  0x7ffcd8d13298 - 0x7ffcd8d1329c  (      4 bytes, file off 0x10afb1)
+  0x7ffcd8d42298 - 0x7ffcd8d4229c  (      4 bytes, file off 0x119bef)
+  0x7ffcd9704298 - 0x7ffcd970429c  (      4 bytes, file off 0xc22c3)
+  0x7ffcdb233298 - 0x7ffcdb23329c  (      4 bytes, file off 0xd1b24)
+  0x7ffcdd815298 - 0x7ffcdd81529c  (      4 bytes, file off 0xe1c28)
+  0x7ffce075f298 - 0x7ffce075f29c  (      4 bytes, file off 0x120209)
+  0x7ffce0ff6298 - 0x7ffce0ff629c  (      4 bytes, file off 0x1009fe)
+  0x7ffce16fb298 - 0x7ffce16fb29c  (      4 bytes, file off 0xe81a6)
+  0x7ffce1cef298 - 0x7ffce1cef29c  (      4 bytes, file off 0x1219dd)
+  0x7ffce202e298 - 0x7ffce202e29c  (      4 bytes, file off 0x1079f2)
+  0x7ffce5c7b298 - 0x7ffce5c7b29c  (      4 bytes, file off 0xc2ecf)
+  0x7ffcef3d7298 - 0x7ffcef3d729c  (      4 bytes, file off 0xfd5e4)
+  0x7ffcf1376298 - 0x7ffcf137629c  (      4 bytes, file off 0xbc5ab)
+  0x7ffcf1830298 - 0x7ffcf183029c  (      4 bytes, file off 0x11f10f)
+  0x7ffcf206d298 - 0x7ffcf206d29c  (      4 bytes, file off 0xd7d34)
+  0x7ffcf7b86298 - 0x7ffcf7b8629c  (      4 bytes, file off 0xbabcf)
+  0x7ffcf7d4a298 - 0x7ffcf7d4a29c  (      4 bytes, file off 0xb9be7)
+  0x7ffcf7d8b298 - 0x7ffcf7d8b29c  (      4 bytes, file off 0xc95df)
+  0x7ffcf7e1b298 - 0x7ffcf7e1b29c  (      4 bytes, file off 0xfec2a)
+  0x7ffcf81a5298 - 0x7ffcf81a529c  (      4 bytes, file off 0xfd5e8)
+  0x7ffcf8b66298 - 0x7ffcf8b6629c  (      4 bytes, file off 0x9a80e)
+  0x7ffcf8edf298 - 0x7ffcf8edf29c  (      4 bytes, file off 0x77c42)
+  0x7ffcf95a6298 - 0x7ffcf95a629c  (      4 bytes, file off 0x10ff3c)
+  0x7ffcf98ab298 - 0x7ffcf98ab29c  (      4 bytes, file off 0xd5e5c)
+  0x7ffcfa15a298 - 0x7ffcfa15a29c  (      4 bytes, file off 0xc2ec7)
+  0x7ffcfa5df298 - 0x7ffcfa5df29c  (      4 bytes, file off 0x115beb)
+  0x7ffcfa609298 - 0x7ffcfa60929c  (      4 bytes, file off 0x1236a7)
+  0x7ffcfbc95298 - 0x7ffcfbc9529c  (      4 bytes, file off 0xd7d30)
+  0x7ffcfc22b298 - 0x7ffcfc22b29c  (      4 bytes, file off 0xe79a2)
+  0x7ffcfcb19298 - 0x7ffcfcb1929c  (      4 bytes, file off 0xe2838)
+  0x7ffcfcce8298 - 0x7ffcfcce829c  (      4 bytes, file off 0xe3662)
+  0x7ffcfcf1a298 - 0x7ffcfcf1a29c  (      4 bytes, file off 0x11127c)
+  0x7ffcfcf6f298 - 0x7ffcfcf6f29c  (      4 bytes, file off 0x6c758)
+  0x7ffcfd055298 - 0x7ffcfd05529c  (      4 bytes, file off 0xd8aac)
+  0x7ffcfd2c4298 - 0x7ffcfd2c429c  (      4 bytes, file off 0x11705f)
+  0x7ffcfda02298 - 0x7ffcfda0229c  (      4 bytes, file off 0x11c4c7)
+  0x7ffcfe49b298 - 0x7ffcfe49b29c  (      4 bytes, file off 0x10da19)
+  0x7ffcfe4af298 - 0x7ffcfe4af29c  (      4 bytes, file off 0x1147e3)
+  0x7ffcfe873298 - 0x7ffcfe87329c  (      4 bytes, file off 0x1236ab)
+  0x7ffcfea28298 - 0x7ffcfea2829c  (      4 bytes, file off 0x11b1c3)
+  0x7ffcfec55298 - 0x7ffcfec5529c  (      4 bytes, file off 0x9bb2a)
+  0x7ffcfecbe298 - 0x7ffcfecbe29c  (      4 bytes, file off 0xc2ecb)
+  0x7ffcfee99298 - 0x7ffcfee9929c  (      4 bytes, file off 0xc87c7)
+  0x7ffcfef1b298 - 0x7ffcfef1b29c  (      4 bytes, file off 0xec83a)
+  0x7ffcff066298 - 0x7ffcff06629c  (      4 bytes, file off 0xc8ddb)
+  0x7ffcff1f9298 - 0x7ffcff1f929c  (      4 bytes, file off 0xba7c7)
+  0x7ffcff29d298 - 0x7ffcff29d29c  (      4 bytes, file off 0xe515a)
+  0x7ffcff51c298 - 0x7ffcff51c29c  (      4 bytes, file off 0x6afe4)
+  0x7ffcff592298 - 0x7ffcff59229c  (      4 bytes, file off 0xbabcb)
+  0x7ffcff7bb298 - 0x7ffcff7bb29c  (      4 bytes, file off 0xd0ad8)
+  0x7ffcff8ea298 - 0x7ffcff8ea29c  (      4 bytes, file off 0x9c72e)
+  0x7ffcff903298 - 0x7ffcff90329c  (      4 bytes, file off 0xa0e26)
+  0x7ffcffd5f298 - 0x7ffcffd5f29c  (      4 bytes, file off 0xe3666)
+  0x7ffcffdc2298 - 0x7ffcffdc229c  (      4 bytes, file off 0x10ff40)
+  0x7ffd0000a298 - 0x7ffd0000a29c  (      4 bytes, file off 0x945ea)
+  0x7ffd00039298 - 0x7ffd0003929c  (      4 bytes, file off 0xa3e6b)
+  0x7ffd00233298 - 0x7ffd0023329c  (      4 bytes, file off 0xbd4b3)
+  0x7ffd002412c4 - 0x7ffd002413c4  (    256 bytes, file off 0xc21c3)  [win32u.dll+0x12c4]
+  0x7ffd0024ae04 - 0x7ffd0024af04  (    256 bytes, file off 0xc3387)  [win32u.dll+0xae04]
+  0x7ffd0066f298 - 0x7ffd0066f29c  (      4 bytes, file off 0xec832)
+  0x7ffd00723298 - 0x7ffd0072329c  (      4 bytes, file off 0x78046)
+  0x7ffd008ae298 - 0x7ffd008ae29c  (      4 bytes, file off 0x11c4cb)
+  0x7ffd009e9298 - 0x7ffd009e929c  (      4 bytes, file off 0xe2430)
+  0x7ffd00a9c298 - 0x7ffd00a9c29c  (      4 bytes, file off 0x1274e4)
+  0x7ffd00bfc298 - 0x7ffd00bfc29c  (      4 bytes, file off 0x1079ee)
+  0x7ffd00d9e298 - 0x7ffd00d9e29c  (      4 bytes, file off 0xec836)
+  0x7ffd01237298 - 0x7ffd0123729c  (      4 bytes, file off 0xb2f3f)
+  0x7ffd01a88298 - 0x7ffd01a8829c  (      4 bytes, file off 0x1147e7)
+  0x7ffd01b85298 - 0x7ffd01b8529c  (      4 bytes, file off 0xc9e33)
+  0x7ffd01d39298 - 0x7ffd01d3929c  (      4 bytes, file off 0xc515f)
+  0x7ffd022a5298 - 0x7ffd022a529c  (      4 bytes, file off 0xc7b2b)
+  0x7ffd0240d298 - 0x7ffd0240d29c  (      4 bytes, file off 0x9ff9a)
+  0x7ffd025e6298 - 0x7ffd025e629c  (      4 bytes, file off 0xa1937)
+  0x7ffd02699298 - 0x7ffd0269929c  (      4 bytes, file off 0xe1194)
+  0x7ffd026d2298 - 0x7ffd026d229c  (      4 bytes, file off 0xfec26)
+  0x7ffd02700298 - 0x7ffd0270029c  (      4 bytes, file off 0x10c975)
+  0x7ffd027e9298 - 0x7ffd027e929c  (      4 bytes, file off 0xbf0cf)
+  0x7ffd028b9298 - 0x7ffd028b929c  (      4 bytes, file off 0x1098c9)
+  0x7ffd0297c298 - 0x7ffd0297c29c  (      4 bytes, file off 0xa0e2e)
+  0x7ffd02aa8298 - 0x7ffd02aa829c  (      4 bytes, file off 0x111a00)
+  0x7ffd02b5a298 - 0x7ffd02b5a29c  (      4 bytes, file off 0xb2f43)
+  0x7ffd02c59298 - 0x7ffd02c5929c  (      4 bytes, file off 0x10abad)
+  0x7ffd02cc6298 - 0x7ffd02cc629c  (      4 bytes, file off 0x6cfa4)
+  0x7ffd02de2298 - 0x7ffd02de229c  (      4 bytes, file off 0xe8dae)
+  0x7ffd02e1b298 - 0x7ffd02e1b29c  (      4 bytes, file off 0x1094c5)
+  0x7ffd02f10477 - 0x7ffd02f10577  (    256 bytes, file off 0xbc5af)  [ntdll.dll+0x30477]
+  0x7ffd03040384 - 0x7ffd03040524  (    416 bytes, file off 0x123aaf)  [ntdll.dll+0x160384]
+  0x7ffd03040984 - 0x7ffd03040a84  (    256 bytes, file off 0x124053)  [ntdll.dll+0x160984]
+  0x7ffd03040e54 - 0x7ffd03040f54  (    256 bytes, file off 0x124153)  [ntdll.dll+0x160e54]
+  0x7ffd03042254 - 0x7ffd03042354  (    256 bytes, file off 0x124653)  [ntdll.dll+0x162254]
+  0x7ffd03043f54 - 0x7ffd030440b4  (    352 bytes, file off 0x124b53)  [ntdll.dll+0x163f54]
+  0x7ffd03146298 - 0x7ffd0314629c  (      4 bytes, file off 0xdacb0)
+--- modules in dump (121) --- (first/last 8)
+  0x010213c50000 +0x000dd000  C:\Windows\System32\WinMetadata\Windows.Devices.winmd
+  0x700000000000 +0x05a38000  C:\Users\Νίκος\Documents\GitHub\shadPS4\Build\x64-Clang-RelWithDebInfo\shadps4.exe
+  0x7ffc17980000 +0x05ca1000  C:\Windows\System32\DriverStore\FileRepository\nv_dispig.inf_amd64_f4c7a2fd13e0f763\nvrtum64.dll
+  0x7ffc1d630000 +0x02925000  C:\Windows\System32\DriverStore\FileRepository\nv_dispig.inf_amd64_f4c7a2fd13e0f763\nvoglv64.dll
+  0x7ffc1ff60000 +0x01a1b000  C:\Program Files\RenderDoc\renderdoc.dll
+  0x7ffc3a6b0000 +0x000df000  C:\Windows\System32\D3DSCache.dll
+  0x7ffc659d0000 +0x000d3000  C:\Windows\System32\Mfreadwrite.dll
+  0x7ffc65cb0000 +0x0004b000  C:\Windows\System32\dinput8.dll
+  0x7ffd028c0000 +0x000bc000  C:\Windows\System32\advapi32.dll
+  0x7ffd02990000 +0x00118000  C:\Windows\System32\rpcrt4.dll
+  0x7ffd02ab0000 +0x000aa000  C:\Windows\System32\sechost.dll
+  0x7ffd02b60000 +0x000f9000  C:\Windows\System32\SHCore.dll
+  0x7ffd02c60000 +0x00066000  C:\Windows\System32\shlwapi.dll
+  0x7ffd02d60000 +0x00082000  C:\Windows\System32\ws2_32.dll
+  0x7ffd02df0000 +0x0002b000  C:\Windows\System32\gdi32.dll
+  0x7ffd02ee0000 +0x00266000  C:\Windows\System32\ntdll.dll
+--- threads (207) ---
+exception stream: code=0xc0000005 tid=0x68fc addr=0x700000b33500 nparams=2
+  access violation: WRITE at 0x700000b3348d
+--- FAULTING context (from exception stream) ---
+  Rax   =0x0000700000b33500  Rbx   =0x0000010265bc3640  Rcx   =0x0000010265b90b80
+  Rdx   =0x0000000000000800  Rsi   =0x0000010265b90bfc  Rdi   =0x0000000203404900
+  Rbp   =0x0000010214e83208  Rsp   =0x0000010214e831f8  R8    =0x0000000000000040
+  R9    =0x0000000000000040  R10   =0x0000000000000080  R11   =0x00007ffce661c2d1
+  R12   =0x0000010214e853cc  R13   =0x0000010214e85380  R14   =0x0000010265bc3640
+  R15   =0x0000010214e853f0  Rip   =0x0000700000b33500  EFlags=0x0000000000010206
+tid=0x66a4   rip=0x7ffd0024ae84 rsp=0x0000005fe268
+tid=0x2864   rip=0x7ffd03044034 rsp=0x000000a3fbf8
+tid=0xd38    rip=0x7ffd03044034 rsp=0x000000c3fbf8
+tid=0x7b8    rip=0x7ffd03044034 rsp=0x000000e3fbf8
+tid=0x66f0   rip=0x7ffd03040404 rsp=0x00000761f358
+tid=0x1860   rip=0x7ffd03040ed4 rsp=0x00000a99f958
+tid=0x2868   rip=0x7ffd03044034 rsp=0x00000ab9fbf8
+tid=0x2ca0   rip=0x7ffd03044034 rsp=0x00000b19fbf8
+tid=0x5960   rip=0x7ffd03040a04 rsp=0x0102101ff818
+tid=0x6be4   rip=0x7ffd03040404 rsp=0x0102109ffda8
+tid=0x2da0   rip=0x7ffd03043fd4 rsp=0x010210fffce8
+tid=0x6664   rip=0x7ffd03044034 rsp=0x0102115ffbf8
+tid=0x34e4   rip=0x7ffd03040ed4 rsp=0x0102130ef458
+tid=0x496c   rip=0x7ffd00241344 rsp=0x01021384fd18
+tid=0xa4     rip=0x7ffd03043fd4 rsp=0x01021406fc28
+tid=0x68fc   rip=0x7ffd030422d4 rsp=0x010214e807d8 <-- CRASHING THREAD
+tid=0xa94    rip=0x7ffd03040ed4 rsp=0x0102158efbc8
+tid=0x55e8   rip=0x7ffd03040404 rsp=0x01021b50fd98
+tid=0x3d4c   rip=0x7ffd03040404 rsp=0x01021b70fde8
+tid=0x1528   rip=0x7ffd03040404 rsp=0x01021c1efe18
+tid=0x26a8   rip=0x7ffd03040404 rsp=0x01021c3efe08
+tid=0x2c9c   rip=0x7ffd03040404 rsp=0x01021cdefd28
+tid=0x32a8   rip=0x7ffd03043fd4 rsp=0x01021e3bfcf8
+tid=0x2fa4   rip=0x7ffd03043fd4 rsp=0x01021e5bfcf8
+tid=0x5998   rip=0x7ffd03043fd4 rsp=0x01021ebbfcf8
+tid=0x914    rip=0x7ffd03040404 rsp=0x01021f7ffe48
+tid=0x1e44   rip=0x7ffd03040ed4 rsp=0x01025fdffb68
+tid=0x8b8    rip=0x7ffd03040404 rsp=0x0102603ffd28
+tid=0x5610   rip=0x7ffd03043fd4 rsp=0x0102609ffca8
+tid=0x55d8   rip=0x7ffd03043fd4 rsp=0x010260bffca8
+tid=0x6adc   rip=0x7ffd03043fd4 rsp=0x010260dffca8
+tid=0x4084   rip=0x7ffd03043fd4 rsp=0x010260fffca8
+tid=0x2718   rip=0x7ffd03040ed4 rsp=0x01026237fb68
+tid=0x92c    rip=0x7ffd03040404 rsp=0x010264a2fe18
+tid=0x66d8   rip=0x7ffd03043fd4 rsp=0x01027bd1fba8
+tid=0x25e4   rip=0x7ffd03043fd4 rsp=0x01030a9cfc68
+tid=0x1b0c   rip=0x7ffd03040404 rsp=0x01030c19fc08
+tid=0x3f3c   rip=0x7ffd03043fd4 rsp=0x01030c79fd38
+tid=0x229c   rip=0x7ffd030404a4 rsp=0x01030cd9fef8
+tid=0x23a4   rip=0x7ffd03040404 rsp=0x01030d99fac8
+tid=0xf00    rip=0x7ffd03043fd4 rsp=0x01030db9fc78
+tid=0x3d38   rip=0x7ffd03040a04 rsp=0x01030d39fbf8
+tid=0x2c58   rip=0x7ffd03040404 rsp=0x01030e62fe58
+tid=0x6a8c   rip=0x7ffd03040ed4 rsp=0x01030e82fad8
+tid=0x6bec   rip=0x7ffd03043fd4 rsp=0x01030feafb98
+tid=0x99c    rip=0x7ffd03040404 rsp=0x0007efdf29d8
+tid=0x93c    rip=0x7ffd02f104f7 rsp=0x010310f1fd10
+tid=0x2da8   rip=0x7ffd03043fd4 rsp=0x01031191fbc8
+tid=0x1c14   rip=0x7ffd03040404 rsp=0x0007efcd3a88
+tid=0x1b14   rip=0x7ffd03040404 rsp=0x0007efca9d58
+tid=0x3dac   rip=0x7ffd03040404 rsp=0x0007efc83a08
+tid=0x544    rip=0x7ffd03040404 rsp=0x0007efb63a08
+tid=0x3188   rip=0x7ffd03040404 rsp=0x0007efa43a08
+tid=0x30c0   rip=0x7ffd03040404 rsp=0x0007ef923a08
+tid=0x68e8   rip=0x7ffd03040404 rsp=0x0007ef803a08
+tid=0x2f1c   rip=0x7ffd03040404 rsp=0x0007ef6e3a08
+tid=0x80c    rip=0x7ffd03040404 rsp=0x0007ef5c3a08
+tid=0x1dd4   rip=0x7ffd03040404 rsp=0x0007ef4a3a08
+tid=0x2734   rip=0x7ffd03040404 rsp=0x0007ef383a08
+tid=0x1198   rip=0x7ffd03040404 rsp=0x0007ef263a08
+tid=0x683c   rip=0x7ffd03040404 rsp=0x0007ef143a08
+tid=0x522c   rip=0x7ffd03040404 rsp=0x0007ef023a08
+tid=0xa98    rip=0x7ffd03040404 rsp=0x0007eef03a08
+tid=0x4648   rip=0x7ffd03040404 rsp=0x0007eede3a08
+tid=0x3db0   rip=0x7ffd03040404 rsp=0x0007eecc3a58
+tid=0x2578   rip=0x7ffd03040404 rsp=0x0007eec9ba58
+tid=0x26c4   rip=0x7ffd03040404 rsp=0x0007eec73a58
+tid=0x1c0    rip=0x7ffd03040404 rsp=0x0007eec4ba58
+tid=0x464c   rip=0x7ffd03040404 rsp=0x0007eec23a58
+tid=0x46a8   rip=0x7ffd03040404 rsp=0x0007eebfba48
+tid=0x1e50   rip=0x7ffd03040404 rsp=0x0007eebcba48
+tid=0x26cc   rip=0x7ffd03040404 rsp=0x0007eeb9ba48
+tid=0x4818   rip=0x7ffd03040404 rsp=0x0007eeb6ba48
+tid=0x68b0   rip=0x7ffd03040404 rsp=0x0007eeb3ba48
+tid=0x1ab0   rip=0x7ffd03040404 rsp=0x0007eeb0ba48
+tid=0x1334   rip=0x7ffd03040404 rsp=0x0007eeadba48
+tid=0x1e4c   rip=0x7ffd03040404 rsp=0x0007eeaaba48
+tid=0x277c   rip=0x7ffd03040404 rsp=0x0007eea7ba48
+tid=0x14b4   rip=0x7ffd03040404 rsp=0x0007eea49a98
+tid=0x1474   rip=0x7ffd03040404 rsp=0x0007eea21a98
+tid=0x6bfc   rip=0x7ffd03040404 rsp=0x0007ee9f9a98
+tid=0x3950   rip=0x7ffd03040404 rsp=0x0007ee9d1a98
+tid=0xe30    rip=0x7ffd03043fd4 rsp=0x0007ee9abd38
+tid=0x223c   rip=0x7ffd03043fd4 rsp=0x0007ee88bd28
+tid=0x900    rip=0x7ffd03040404 rsp=0x0007ee76ba88
+tid=0x308c   rip=0x7ffd03040404 rsp=0x0007ee747a88
+tid=0x12dc   rip=0x7ffd03040404 rsp=0x0007ee723a68
+tid=0x5c2c   rip=0x7ffd03040404 rsp=0x01032269fdf8
+tid=0x33ac   rip=0x7ffd03043fd4 rsp=0x0007ee6f3b18
+tid=0x27c4   rip=0x7ffd030404a4 rsp=0x010323c9fdf8
+tid=0x2c5c   rip=0x7ffd030404a4 rsp=0x01032429fdf8
+tid=0x18e0   rip=0x7ffd03043fd4 rsp=0x0007ee4b3c68
+tid=0x3d40   rip=0x7ffd03040404 rsp=0x0007ee393aa8
+tid=0x490c   rip=0x7ffd030404a4 rsp=0x010325c9fdf8
+tid=0xaa8    rip=0x7ffd03040404 rsp=0x0007ee36bcf8
+tid=0x64a8   rip=0x7ffd03040404 rsp=0x0007ee24bc98
+tid=0x1e7c   rip=0x7ffd03040404 rsp=0x0007ee12bc98
+tid=0x275c   rip=0x7ffd03040404 rsp=0x0007ee00bc98
+tid=0x6ab0   rip=0x7ffd03040404 rsp=0x0007edeebc98
+tid=0xea0    rip=0x7ffd03040404 rsp=0x0007eddcbc78
+tid=0x1058   rip=0x7ffd03043fd4 rsp=0x0007edcabdb8
+tid=0x55c0   rip=0x7ffd03040ed4 rsp=0x0007edb8b988
+tid=0x32b0   rip=0x00000efe65a7 rsp=0x0002854bff80
+tid=0x347c   rip=0x7ffd03040404 rsp=0x0002854ffa98
+tid=0x2e18   rip=0x7ffd03040404 rsp=0x00028553fa98
+tid=0x684c   rip=0x7ffd03040404 rsp=0x00028557fa98
+tid=0x3c30   rip=0x7ffd03040404 rsp=0x0002855bfa98
+tid=0x4be4   rip=0x7ffd03040404 rsp=0x0002855ffa98
+tid=0x2df0   rip=0x7ffd03040404 rsp=0x00028563fa98
+tid=0x454    rip=0x7ffd03040404 rsp=0x00028567fa98
+tid=0x14d8   rip=0x7ffd03040404 rsp=0x0002856bfa98
+tid=0x580    rip=0x7ffd03040404 rsp=0x0002856ffa98
+tid=0x2538   rip=0x7ffd03040404 rsp=0x00028573fa98
+tid=0x728    rip=0x7ffd03040404 rsp=0x00028577fa98
+tid=0x6718   rip=0x7ffd03040404 rsp=0x0002857bfa98
+tid=0x3480   rip=0x7ffd03040404 rsp=0x0002857ffa98
+tid=0x4f8    rip=0x7ffd03040404 rsp=0x00028583fa98
+tid=0x3510   rip=0x7ffd03040404 rsp=0x00028587fa98
+tid=0x4914   rip=0x7ffd03040404 rsp=0x0002858bfa98
+tid=0x6a6c   rip=0x7ffd03040404 rsp=0x0002858ffa98
+tid=0x5044   rip=0x7ffd03040404 rsp=0x00028593fa98
+tid=0x3f90   rip=0x7ffd03040404 rsp=0x00028597fa98
+tid=0x13cc   rip=0x7ffd03040404 rsp=0x0002859bfa98
+tid=0x2d00   rip=0x7ffd03040404 rsp=0x0002859ffa98
+tid=0x1b08   rip=0x7ffd03040404 rsp=0x000285a3fa98
+tid=0x56dc   rip=0x7ffd03040404 rsp=0x000285a7fa98
+tid=0x291c   rip=0x7ffd03040404 rsp=0x000285abfa98
+tid=0x509c   rip=0x7ffd03040404 rsp=0x000285affa98
+tid=0x690c   rip=0x7ffd03040404 rsp=0x000285b3fa98
+tid=0xfd0    rip=0x7ffd03040404 rsp=0x000285b7fa98
+tid=0x2778   rip=0x7ffd03040404 rsp=0x000285bbfa98
+tid=0x22b8   rip=0x7ffd03040404 rsp=0x000285bffa98
+tid=0x3098   rip=0x7ffd03040404 rsp=0x000285c3fa98
+tid=0x1464   rip=0x7ffd03040404 rsp=0x000285c7fa98
+tid=0x11ac   rip=0x7ffd03040404 rsp=0x000285cbfa98
+tid=0x47e8   rip=0x7ffd03040404 rsp=0x000285cffa98
+tid=0x1bdc   rip=0x7ffd03040404 rsp=0x000285d3fa98
+tid=0x66e8   rip=0x7ffd03040404 rsp=0x000285d7fa98
+tid=0x5b34   rip=0x7ffd03040404 rsp=0x000285dbfa98
+tid=0x19c    rip=0x7ffd03040404 rsp=0x000285dffa98
+tid=0x3d7c   rip=0x7ffd03040404 rsp=0x000285e3fa98
+tid=0x1b50   rip=0x7ffd03040404 rsp=0x000285e7fa98
+tid=0x6af4   rip=0x7ffd03040404 rsp=0x000285ebfa98
+tid=0x12c    rip=0x7ffd03040404 rsp=0x000285effa98
+tid=0x652c   rip=0x7ffd03040404 rsp=0x000285f3fa98
+tid=0x3314   rip=0x7ffd03040404 rsp=0x000285f7fa98
+tid=0x6b0    rip=0x7ffd03040404 rsp=0x000285fbfa98
+tid=0x5bcc   rip=0x7ffd03040404 rsp=0x000285fffa98
+tid=0x2b04   rip=0x7ffd03040404 rsp=0x00028603fa98
+tid=0x5e84   rip=0x7ffd03040404 rsp=0x00028607fa98
+tid=0x2cdc   rip=0x7ffd03040404 rsp=0x0002860bfa98
+tid=0x530c   rip=0x7ffd03040404 rsp=0x0002860ffa98
+tid=0x340c   rip=0x7ffd03040404 rsp=0x00028613fa98
+tid=0x6938   rip=0x7ffd03040404 rsp=0x00028617fa98
+tid=0x569c   rip=0x7ffd03040404 rsp=0x0002861bfa98
+tid=0x3fa0   rip=0x7ffd03040404 rsp=0x0002861ffa98
+tid=0x220c   rip=0x7ffd03040404 rsp=0x00028623fa98
+tid=0x2d94   rip=0x7ffd03040404 rsp=0x00028627fa98
+tid=0x3e30   rip=0x7ffd03040404 rsp=0x0002862bfa98
+tid=0x6b58   rip=0x7ffd03040404 rsp=0x0002862ffa98
+tid=0x5ef4   rip=0x7ffd03040404 rsp=0x00028633fa98
+tid=0x68a4   rip=0x7ffd03040404 rsp=0x00028637fa98
+tid=0x3434   rip=0x7ffd03040404 rsp=0x0002863bfa98
+tid=0x3cf0   rip=0x7ffd03040404 rsp=0x0002863ffa98
+tid=0x24d0   rip=0x7ffd03040404 rsp=0x00028643fa98
+tid=0x4f14   rip=0x7ffd03040404 rsp=0x0007e938ba98
+tid=0x788    rip=0x7ffd03040404 rsp=0x0007e935ba88
+tid=0x20d0   rip=0x7ffd03040404 rsp=0x0007e9333698
+tid=0x5dec   rip=0x7ffd03040404 rsp=0x0007e930ba88
+tid=0x4500   rip=0x7ffd03040404 rsp=0x0007e91eba28
+tid=0x52c    rip=0x7ffd03040404 rsp=0x0007e90cba88
+tid=0x349c   rip=0x7ffd03040404 rsp=0x0007e90a7a88
+tid=0x136c   rip=0x7ffd03040404 rsp=0x0007e9083a88
+tid=0x289c   rip=0x7ffd03040404 rsp=0x0007e905fa88
+tid=0x68a0   rip=0x7ffd03040404 rsp=0x0007e903ba88
+tid=0x2dec   rip=0x7ffd03040404 rsp=0x0007e9017ab8
+tid=0x1a40   rip=0x7ffd03044034 rsp=0x01034541fbf8
+tid=0x1710   rip=0x7ffd03040404 rsp=0x0007e8c93a28
+tid=0x26a4   rip=0x7ffd03040404 rsp=0x0007e8b4b9b8
+tid=0x4950   rip=0x7ffd03040404 rsp=0x0007e8adbd78
+tid=0x2f54   rip=0x7ffd03040404 rsp=0x0007e89bbd78
+tid=0x264c   rip=0x7ffd03040404 rsp=0x0007e889ba08
+tid=0x47f0   rip=0x7ffd03040404 rsp=0x0007e877ba08
+tid=0x754    rip=0x7ffd03040404 rsp=0x0007e865ba08
+tid=0x1ca8   rip=0x7ffd03040404 rsp=0x0007e853ba08
+tid=0x5a24   rip=0x7ffd03040404 rsp=0x0007e841ba08
+tid=0x566c   rip=0x7ffd03040404 rsp=0x0007e82fba08
+tid=0x450    rip=0x7ffd03040404 rsp=0x0007e81dba08
+tid=0x2c88   rip=0x7ffd03040404 rsp=0x0007e80bba08
+tid=0x1a50   rip=0x7ffd03040404 rsp=0x0007e7f9bc18
+tid=0x22c4   rip=0x7ffd03040404 rsp=0x0007e7f71aa8
+tid=0x6910   rip=0x7ffd03040404 rsp=0x0007e7f4ba98
+tid=0x1fac   rip=0x7ffd03040404 rsp=0x0007e7f23a08
+tid=0x734    rip=0x7ffd03040404 rsp=0x0007e7ef3a98
+tid=0x8b4    rip=0x7ffd03040404 rsp=0x0007e7ecba68
+tid=0x15c8   rip=0x7ffd03043fd4 rsp=0x0007ee573c18
+tid=0x260c   rip=0x7ffd03043fd4 rsp=0x0007ee513b48
+tid=0x2ac8   rip=0x7ffd03043fd4 rsp=0x0007ee5d3c28
+tid=0x1530   rip=0x7ffd03040404 rsp=0x01032389fd58
+tid=0x1894   rip=0x7ffd03043fd4 rsp=0x0007e8ff3d08
+tid=0x1e14   rip=0x7ffd03040404 rsp=0x0007e8c6bc98
+tid=0x537c   rip=0x7ffd03040a04 rsp=0x0007e8ed3ae8
+tid=0x5e88   rip=0x7ffd03040404 rsp=0x0007e8db3c98
+tid=0x1e30   rip=0x7ffd03040404 rsp=0x0007e7b47cb8
+tid=0x4e18   rip=0x7ffd03040404 rsp=0x0007e7b1fc08
+tid=0x5738   rip=0x7ffd03040404 rsp=0x0007e7af7d78
+tid=0x6858   rip=0x7ffd03040404 rsp=0x0007e79d7a48
+--- crashing thread full context (tid=0x68fc) ---
+  Rax   =0x00000000000000fb  Rbx   =0x000000000000067f  Rcx   =0x000000000001f1d8
+  Rdx   =0x0000010215e4c280  Rsi   =0x0000010215e408a8  Rdi   =0x0000000000000000
+  Rbp   =0x0000010215e4c280  Rsp   =0x0000010214e807d8  R8    =0x0000000000000180
+  R9    =0x00000000fffffb30  R10   =0x000000000001f1d8  R11   =0x000000000001f1d8
+  R12   =0x0000010215e4bbf8  R13   =0x0000010215e4bb88  R14   =0x000000000001f1d8
+  R15   =0x0000010215e4bbf8  Rip   =0x00007ffd030422d4  EFlags=0x0000000000000246
+  SegCs=0x0033 SegSs=0x002b Dr7=0x0
+--- code around IP 0x700000b33500 ---
+  IP lives in dump range 0x700000b32000-0x700000b35000
+  extracted 0x400 bytes: 0x700000b33300 .. 0x700000b33700
+  hexdump around write target (0x700000b3348d) and IP (0x700000b33500):
+  700000b3347d  04 00 00 e8 db cd 50 ff 90 84 c0 75 2b c7 45 b0  ......P....u+.E.
+  700000b3348d  00 00 00 00 e8 ca 2f 4e ff 48 89 45 b8 48 8d 8d  ....../N.H.E.H..
+  700000b3349d  88 04 00 00 48 8d 55 b0 e8 16 38 54 ff 90 83 7d  ....H.U...8T...}
+  700000b334ad  b0 00 0f 85 4d 04 00 00 48 8d 83 d8 12 00 00 48  ....M...H......H
+  700000b334bd  89 45 b0 48 8d 05 19 99 fb ff 48 89 45 b8 48 8b  .E.H......H.E.H.
+  700000b334cd  83 c8 12 00 00 48 89 45 c0 48 c7 85 d8 02 00 00  .....H.E.H......
+  700000b334dd  4f 00 00 00 4c 89 b5 e0 02 00 00 48 8d 05 10 47  O...L......H...G
+  700000b334ed  f0 02 48 89 85 20 04 00 00 48 c7 85 28 04 00 00  ..H.. ...H..(...
+  700000b334fd  1a 00 00 00 48 8d 8d 58 04 00 00 48 8d 95 20 04  ....H..X...H.. .
+  700000b3350d  00 00 4c 8d 85 d8 02 00 00 e8 a5 59 2a 00 90 48  ..L........Y*..H
+  700000b3351d  8d 8d d8 02 00 00 48 8d 95 58 04 00 00 e8 01 75  ......H..X.....u
+  700000b3352d  51 ff 90 48 8d 4d b0 48 8d 95 88 04 00 00 4c 8d  Q..H.M.H......L.
+  700000b3353d  85 d8 02                                         ...
+  -- disassembly starting at 0x700000b33500 (the faulting IP itself) --
+    0x700000b33500: 00488d   add byte ptr [rax - 0x73], cl              <=== FAULTING IP
+    0x700000b33503: 8d5804   lea ebx, [rax + 4]                      
+    0x700000b33506: 0000     add byte ptr [rax], al                  
+    0x700000b33508: 488d9520040000 lea rdx, [rbp + 0x420]                  
+    0x700000b3350f: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33516: e8a5592a00 call 0x700000dd8ec0                     
+    0x700000b3351b: 90       nop                                     
+    0x700000b3351c: 488d8dd8020000 lea rcx, [rbp + 0x2d8]                  
+    0x700000b33523: 488d9558040000 lea rdx, [rbp + 0x458]                  
+    0x700000b3352a: e8017551ff call 0x70000004aa30                     
+    0x700000b3352f: 90       nop                                     
+    0x700000b33530: 488d4db0 lea rcx, [rbp - 0x50]                   
+    0x700000b33534: 488d9588040000 lea rdx, [rbp + 0x488]                  
+    0x700000b3353b: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33542: e8b9fe4dff call 0x700000013400                     
+    0x700000b33547: 90       nop                                     
+    0x700000b33548: c744242001000000 mov dword ptr [rsp + 0x20], 1           
+    0x700000b33550: 488d8d20040000 lea rcx, [rbp + 0x420]                  
+    0x700000b33557: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b3355b: 41b808000000 mov r8d, 8                              
+    0x700000b33561: 41b901000000 mov r9d, 1                              
+  -- disassembly starting at 0x700000b33300 (IP-512, alignment unknown) --
+    0x700000b33300: 89e9     mov ecx, ebp                            
+    0x700000b33302: b205     mov dl, 5                               
+    0x700000b33304: e8e79150ff call 0x70000003c4f0                     
+    0x700000b33309: 4889d9   mov rcx, rbx                            
+    0x700000b3330c: e80ff14cff call 0x700000002420                     
+    0x700000b33311: 488b7d00 mov rdi, qword ptr [rbp]                
+    0x700000b33315: 4c89f3   mov rbx, r14                            
+    0x700000b33318: 488d4d20 lea rcx, [rbp + 0x20]                   
+    0x700000b3331c: e8bff74dff call 0x700000012ae0                     
+    0x700000b33321: e83ae255ff call 0x700000091560                     
+    0x700000b33326: e9d1f9ffff jmp 0x700000b32cfc                      
+    0x700000b3332b: 0f1f440000 nop dword ptr [rax + rax]               
+    0x700000b33330: 4889542410 mov qword ptr [rsp + 0x10], rdx         
+    0x700000b33335: 55       push rbp                                
+    0x700000b33336: 4157     push r15                                
+    0x700000b33338: 4156     push r14                                
+    0x700000b3333a: 4155     push r13                                
+    0x700000b3333c: 4154     push r12                                
+    0x700000b3333e: 56       push rsi                                
+    0x700000b3333f: 57       push rdi                                
+    0x700000b33340: 53       push rbx                                
+    0x700000b33341: 4883ec58 sub rsp, 0x58                           
+    0x700000b33345: 488daa80000000 lea rbp, [rdx + 0x80]                   
+    0x700000b3334c: c5f829742440 vmovaps xmmword ptr [rsp + 0x40], xmm6  
+    0x700000b33352: 488d4d20 lea rcx, [rbp + 0x20]                   
+    0x700000b33356: e885f74dff call 0x700000012ae0                     
+    0x700000b3335b: c5f828742440 vmovaps xmm6, xmmword ptr [rsp + 0x40]  
+    0x700000b33361: 4883c458 add rsp, 0x58                           
+    0x700000b33365: 5b       pop rbx                                 
+    0x700000b33366: 5f       pop rdi                                 
+    0x700000b33367: 5e       pop rsi                                 
+    0x700000b33368: 415c     pop r12                                 
+    0x700000b3336a: 415d     pop r13                                 
+    0x700000b3336c: 415e     pop r14                                 
+    0x700000b3336e: 415f     pop r15                                 
+    0x700000b33370: 5d       pop rbp                                 
+    0x700000b33371: c3       ret                                     
+    0x700000b33372: 66666666662e0f1f840000000000 nop word ptr cs:[rax + rax]             
+    0x700000b33380: 4889542410 mov qword ptr [rsp + 0x10], rdx         
+    0x700000b33385: 55       push rbp                                
+    0x700000b33386: 4157     push r15                                
+    0x700000b33388: 4156     push r14                                
+    0x700000b3338a: 4155     push r13                                
+    0x700000b3338c: 4154     push r12                                
+    0x700000b3338e: 56       push rsi                                
+    0x700000b3338f: 57       push rdi                                
+    0x700000b33390: 53       push rbx                                
+    0x700000b33391: 4883ec58 sub rsp, 0x58                           
+    0x700000b33395: 488daa80000000 lea rbp, [rdx + 0x80]                   
+    0x700000b3339c: c5f829742440 vmovaps xmmword ptr [rsp + 0x40], xmm6  
+    0x700000b333a2: 488d4d20 lea rcx, [rbp + 0x20]                   
+    0x700000b333a6: e835f74dff call 0x700000012ae0                     
+    0x700000b333ab: c5f828742440 vmovaps xmm6, xmmword ptr [rsp + 0x40]  
+    0x700000b333b1: 4883c458 add rsp, 0x58                           
+    0x700000b333b5: 5b       pop rbx                                 
+    0x700000b333b6: 5f       pop rdi                                 
+    0x700000b333b7: 5e       pop rsi                                 
+    0x700000b333b8: 415c     pop r12                                 
+    0x700000b333ba: 415d     pop r13                                 
+    0x700000b333bc: 415e     pop r14                                 
+    0x700000b333be: 415f     pop r15                                 
+    0x700000b333c0: 5d       pop rbp                                 
+    0x700000b333c1: c3       ret                                     
+    0x700000b333c2: cc       int3                                    
+    0x700000b333c3: cc       int3                                    
+    0x700000b333c4: cc       int3                                    
+    0x700000b333c5: cc       int3                                    
+    0x700000b333c6: cc       int3                                    
+    0x700000b333c7: cc       int3                                    
+    0x700000b333c8: cc       int3                                    
+    0x700000b333c9: cc       int3                                    
+    0x700000b333ca: cc       int3                                    
+    0x700000b333cb: cc       int3                                    
+    0x700000b333cc: cc       int3                                    
+    0x700000b333cd: cc       int3                                    
+    0x700000b333ce: cc       int3                                    
+    0x700000b333cf: cc       int3                                    
+    0x700000b333d0: 55       push rbp                                
+    0x700000b333d1: 4157     push r15                                
+    0x700000b333d3: 4156     push r14                                
+    0x700000b333d5: 4155     push r13                                
+    0x700000b333d7: 4154     push r12                                
+    0x700000b333d9: 56       push rsi                                
+    0x700000b333da: 57       push rdi                                
+    0x700000b333db: 53       push rbx                                
+    0x700000b333dc: 4881ec58050000 sub rsp, 0x558                          
+    0x700000b333e3: 488dac2480000000 lea rbp, [rsp + 0x80]                   
+    0x700000b333eb: 48c785d0040000feffffff mov qword ptr [rbp + 0x4d0], 0xfffffffffffffffe
+    0x700000b333f6: 4c89c6   mov rsi, r8                             
+    0x700000b333f9: 4889d7   mov rdi, rdx                            
+    0x700000b333fc: 4889cb   mov rbx, rcx                            
+    0x700000b333ff: 488d15deafee02 lea rdx, [rip + 0x2eeafde]              
+    0x700000b33406: 488d4db0 lea rcx, [rbp - 0x50]                   
+    0x700000b3340a: e801116cff call 0x7000001f4510                     
+    0x700000b3340f: 90       nop                                     
+    0x700000b33410: b903000000 mov ecx, 3                              
+    0x700000b33415: e8d66a56ff call 0x700000099ef0                     
+    0x700000b3341a: 90       nop                                     
+    0x700000b3341b: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b33422: 4c8d75b0 lea r14, [rbp - 0x50]                   
+    0x700000b33426: 4889c2   mov rdx, rax                            
+    0x700000b33429: 4d89f0   mov r8, r14                             
+    0x700000b3342c: e8cfff4dff call 0x700000013400                     
+    0x700000b33431: 90       nop                                     
+    0x700000b33432: 488b45c8 mov rax, qword ptr [rbp - 0x38]         
+    0x700000b33436: 4883f808 cmp rax, 8                              
+    0x700000b3343a: 723d     jb 0x700000b33479                       
+    0x700000b3343c: 488b4db0 mov rcx, qword ptr [rbp - 0x50]         
+    0x700000b33440: 488d144502000000 lea rdx, [rax*2 + 2]                    
+    0x700000b33448: 4881fa00100000 cmp rdx, 0x1000                         
+    0x700000b3344f: 7222     jb 0x700000b33473                       
+    0x700000b33451: 4c8b41f8 mov r8, qword ptr [rcx - 8]             
+    0x700000b33455: 4883c1f8 add rcx, -8                             
+    0x700000b33459: 4c29c1   sub rcx, r8                             
+    0x700000b3345c: 4883f920 cmp rcx, 0x20                           
+    0x700000b33460: 0f8382040000 jae 0x700000b338e8                      
+    0x700000b33466: 4801c0   add rax, rax                            
+    0x700000b33469: 4883c029 add rax, 0x29                           
+    0x700000b3346d: 4889c2   mov rdx, rax                            
+    0x700000b33470: 4c89c1   mov rcx, r8                             
+    0x700000b33473: e8947c2701 call 0x700001dab10c                     
+    0x700000b33478: 90       nop                                     
+    0x700000b33479: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b33480: e8dbcd50ff call 0x700000040260                     
+    0x700000b33485: 90       nop                                     
+    0x700000b33486: 84c0     test al, al                             
+    0x700000b33488: 752b     jne 0x700000b334b5                      
+    0x700000b3348a: c745b000000000 mov dword ptr [rbp - 0x50], 0              <== write target is INSIDE this instruction's bytes
+    0x700000b33491: e8ca2f4eff call 0x700000016460                     
+    0x700000b33496: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b3349a: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b334a1: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b334a5: e8163854ff call 0x700000076cc0                     
+    0x700000b334aa: 90       nop                                     
+    0x700000b334ab: 837db000 cmp dword ptr [rbp - 0x50], 0           
+    0x700000b334af: 0f854d040000 jne 0x700000b33902                      
+    0x700000b334b5: 488d83d8120000 lea rax, [rbx + 0x12d8]                 
+    0x700000b334bc: 488945b0 mov qword ptr [rbp - 0x50], rax         
+    0x700000b334c0: 488d051999fbff lea rax, [rip - 0x466e7]                
+    0x700000b334c7: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b334cb: 488b83c8120000 mov rax, qword ptr [rbx + 0x12c8]       
+    0x700000b334d2: 488945c0 mov qword ptr [rbp - 0x40], rax         
+    0x700000b334d6: 48c785d80200004f000000 mov qword ptr [rbp + 0x2d8], 0x4f       
+    0x700000b334e1: 4c89b5e0020000 mov qword ptr [rbp + 0x2e0], r14        
+    0x700000b334e8: 488d051047f002 lea rax, [rip + 0x2f04710]              
+    0x700000b334ef: 48898520040000 mov qword ptr [rbp + 0x420], rax        
+    0x700000b334f6: 48c785280400001a000000 mov qword ptr [rbp + 0x428], 0x1a       
+    0x700000b33501: 488d8d58040000 lea rcx, [rbp + 0x458]                  
+    0x700000b33508: 488d9520040000 lea rdx, [rbp + 0x420]                  
+    0x700000b3350f: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33516: e8a5592a00 call 0x700000dd8ec0                     
+    0x700000b3351b: 90       nop                                     
+    0x700000b3351c: 488d8dd8020000 lea rcx, [rbp + 0x2d8]                  
+    0x700000b33523: 488d9558040000 lea rdx, [rbp + 0x458]                  
+    0x700000b3352a: e8017551ff call 0x70000004aa30                     
+    0x700000b3352f: 90       nop                                     
+    0x700000b33530: 488d4db0 lea rcx, [rbp - 0x50]                   
+    0x700000b33534: 488d9588040000 lea rdx, [rbp + 0x488]                  
+    0x700000b3353b: 4c8d85d8020000 lea r8, [rbp + 0x2d8]                   
+    0x700000b33542: e8b9fe4dff call 0x700000013400                     
+    0x700000b33547: 90       nop                                     
+    0x700000b33548: c744242001000000 mov dword ptr [rsp + 0x20], 1           
+    0x700000b33550: 488d8d20040000 lea rcx, [rbp + 0x420]                  
+    0x700000b33557: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b3355b: 41b808000000 mov r8d, 8                              
+    0x700000b33561: 41b901000000 mov r9d, 1                              
+  linear stream from IP-512 does NOT reach the faulting IP
+  -- disassembly starting at 0x700000b3346d (write-target - 32) --
+    0x700000b3346d: 4889c2   mov rdx, rax                            
+    0x700000b33470: 4c89c1   mov rcx, r8                             
+    0x700000b33473: e8947c2701 call 0x700001dab10c                     
+    0x700000b33478: 90       nop                                     
+    0x700000b33479: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b33480: e8dbcd50ff call 0x700000040260                     
+    0x700000b33485: 90       nop                                     
+    0x700000b33486: 84c0     test al, al                             
+    0x700000b33488: 752b     jne 0x700000b334b5                      
+    0x700000b3348a: c745b000000000 mov dword ptr [rbp - 0x50], 0              <== write target is INSIDE this instruction's bytes
+    0x700000b33491: e8ca2f4eff call 0x700000016460                     
+    0x700000b33496: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b3349a: 488d8d88040000 lea rcx, [rbp + 0x488]                  
+    0x700000b334a1: 488d55b0 lea rdx, [rbp - 0x50]                   
+    0x700000b334a5: e8163854ff call 0x700000076cc0                     
+    0x700000b334aa: 90       nop                                     
+    0x700000b334ab: 837db000 cmp dword ptr [rbp - 0x50], 0           
+    0x700000b334af: 0f854d040000 jne 0x700000b33902                      
+    0x700000b334b5: 488d83d8120000 lea rax, [rbx + 0x12d8]                 
+    0x700000b334bc: 488945b0 mov qword ptr [rbp - 0x50], rax         
+    0x700000b334c0: 488d051999fbff lea rax, [rip - 0x466e7]                
+    0x700000b334c7: 488945b8 mov qword ptr [rbp - 0x48], rax         
+    0x700000b334cb: 488b83c8120000 mov rax, qword ptr [rbx + 0x12c8]       
+    0x700000b334d2: 488945c0 mov qword ptr [rbp - 0x40], rax         
+    ... (truncated at 24 instructions)
+(scanning the FAULTING rsp from the exception stream)
+--- stack scan at rsp=0x10214e831f8 (16 KiB) ---
+  dump holds 0x4000 bytes at rsp (asked 0x4000)
+  rsp+0x0030  0x0000700000b2f79d  GUEST/JIT-region  [shadps4.exe+0xb2f79d]
+  rsp+0x0070  0x00007ffd02f34e84  HOST-DLL  [ntdll.dll+0x54e84]
+  rsp+0x00a0  0x00007ffc2015c331  HOST-DLL  [renderdoc.dll+0x1fc331]
+  rsp+0x0100  0x00007ffd02f1e732  HOST-DLL  [ntdll.dll+0x3e732]
+  rsp+0x0120  0x00007ffc213509c8  HOST-DLL  [renderdoc.dll+0x13f09c8]
+  rsp+0x0130  0x00007ffc2019b5c7  HOST-DLL  [renderdoc.dll+0x23b5c7]
+  rsp+0x0260  0x0000700000c29718  GUEST/JIT-region  [shadps4.exe+0xc29718]
+  rsp+0x0280  0x00007ffd002eeba1  HOST-DLL  [KERNELBASE.dll+0x7eba1]
+  rsp+0x02f0  0x00007ffc1e047cdd  HOST-DLL  [nvoglv64.dll+0xa17cdd]
+  rsp+0x0320  0x00007ffc1e10abd6  HOST-DLL  [nvoglv64.dll+0xadabd6]
+  rsp+0x0350  0x00007ffc1e10da2a  HOST-DLL  [nvoglv64.dll+0xadda2a]
+  rsp+0x03c0  0x00007ffc1e0f8fec  HOST-DLL  [nvoglv64.dll+0xac8fec]
+  rsp+0x0410  0x00007ffc1e0f986a  HOST-DLL  [nvoglv64.dll+0xac986a]
+  rsp+0x04d0  0x00007ffc1e10dc0f  HOST-DLL  [nvoglv64.dll+0xaddc0f]
+  rsp+0x0510  0x00007ffc1e1ae3ff  HOST-DLL  [nvoglv64.dll+0xb7e3ff]
+  rsp+0x05d0  0x00007ffc1e1af5d6  HOST-DLL  [nvoglv64.dll+0xb7f5d6]
+  rsp+0x0600  0x00007ffc1e1c4ab4  HOST-DLL  [nvoglv64.dll+0xb94ab4]
+  rsp+0x0630  0x00007ffc1e109152  HOST-DLL  [nvoglv64.dll+0xad9152]
+  rsp+0x0650  0x00007ffc1e1aebd8  HOST-DLL  [nvoglv64.dll+0xb7ebd8]
+  rsp+0x0660  0x00007ffc1e10de46  HOST-DLL  [nvoglv64.dll+0xadde46]
+  rsp+0x0680  0x00007ffc2019cb09  HOST-DLL  [renderdoc.dll+0x23cb09]
+  rsp+0x0690  0x00007ffc1e1b0f94  HOST-DLL  [nvoglv64.dll+0xb80f94]
+  rsp+0x06b0  0x00007ffc1e1a2e02  HOST-DLL  [nvoglv64.dll+0xb72e02]
+  rsp+0x06d0  0x00007ffc1e1b0a17  HOST-DLL  [nvoglv64.dll+0xb80a17]
+  rsp+0x06f0  0x00007ffd00ac2d7b  HOST-DLL  [ucrtbase.dll+0x12d7b]
+  rsp+0x0720  0x00007ffc1e1af358  HOST-DLL  [nvoglv64.dll+0xb7f358]
+  rsp+0x0750  0x00007ffc20155ebe  HOST-DLL  [renderdoc.dll+0x1f5ebe]
+  rsp+0x0770  0x00007ffc1e1afc03  HOST-DLL  [nvoglv64.dll+0xb7fc03]
+  rsp+0x07a0  0x00007ffc1e1cc366  HOST-DLL  [nvoglv64.dll+0xb9c366]
+  rsp+0x07c0  0x00007ffc2019d7f8  HOST-DLL  [renderdoc.dll+0x23d7f8]
+  rsp+0x0830  0x0000700000cb6cb4  GUEST/JIT-region  [shadps4.exe+0xcb6cb4]
+  rsp+0x0870  0x00007ffc1daef50d  HOST-DLL  [nvoglv64.dll+0x4bf50d]
+  rsp+0x0880  0x00007ffc1e043c76  HOST-DLL  [nvoglv64.dll+0xa13c76]
+  rsp+0x08a0  0x00007ffc1e18c5d3  HOST-DLL  [nvoglv64.dll+0xb5c5d3]
+  rsp+0x08d0  0x00007ffc1e18d955  HOST-DLL  [nvoglv64.dll+0xb5d955]
+  rsp+0x0920  0x00007ffc2019d7f8  HOST-DLL  [renderdoc.dll+0x23d7f8]
+  rsp+0x0a00  0x00007ffc2015c331  HOST-DLL  [renderdoc.dll+0x1fc331]
+  rsp+0x0a20  0x00007ffc213509c8  HOST-DLL  [renderdoc.dll+0x13f09c8]
+  rsp+0x0a30  0x00007ffc2019d7f8  HOST-DLL  [renderdoc.dll+0x23d7f8]
+  rsp+0x0a40  0x00007ffc1e4d4354  HOST-DLL  [nvoglv64.dll+0xea4354]
+  rsp+0x0a80  0x00007ffc1e4d4065  HOST-DLL  [nvoglv64.dll+0xea4065]
+  rsp+0x0ac0  0x00007ffc20903850  HOST-DLL  [renderdoc.dll+0x9a3850]
+  rsp+0x0ae0  0x00007ffc20048dd9  HOST-DLL  [renderdoc.dll+0xe8dd9]
+  rsp+0x0b00  0x00007ffc20da2be5  HOST-DLL  [renderdoc.dll+0xe42be5]
+  rsp+0x0b40  0x00007ffc1e4d308f  HOST-DLL  [nvoglv64.dll+0xea308f]
+  rsp+0x0c00  0x00007ffd02f34e84  HOST-DLL  [ntdll.dll+0x54e84]
+  rsp+0x0c20  0x00007ffc00000000  HOST-DLL
+  rsp+0x0c28  0x00007ffc21480538  HOST-DLL  [renderdoc.dll+0x1520538]
+  rsp+0x0c90  0x00007ffd02f1e732  HOST-DLL  [ntdll.dll+0x3e732]
+  rsp+0x0ce0  0x00007ffc20d7c11f  HOST-DLL  [renderdoc.dll+0xe1c11f]
+  rsp+0x0cf0  0x00007ffc21496428  HOST-DLL  [renderdoc.dll+0x1536428]
+  rsp+0x0d10  0x00007ffc2147fb18  HOST-DLL  [renderdoc.dll+0x151fb18]
+  rsp+0x0d30  0x00007ffc20e59465  HOST-DLL  [renderdoc.dll+0xef9465]
+  rsp+0x0d70  0x00007ffc20d03cc9  HOST-DLL  [renderdoc.dll+0xda3cc9]
+  rsp+0x0db8  0x00007ffc21481b30  HOST-DLL  [renderdoc.dll+0x1521b30]
+  rsp+0x0df8  0x00007ffd00be98b0  HOST-DLL  [ucrtbase.dll+0x1398b0]
+  rsp+0x0e10  0x00007ffd00ab50d9  HOST-DLL  [ucrtbase.dll+0x50d9]
+  rsp+0x0e20  0x00007ffc2019d7f8  HOST-DLL  [renderdoc.dll+0x23d7f8]
+  rsp+0x0e40  0x00007ffc20ff10a0  HOST-DLL  [renderdoc.dll+0x10910a0]
+  rsp+0x0e70  0x00007ffc2104e79d  HOST-DLL  [renderdoc.dll+0x10ee79d]
+  rsp+0x0ed0  0x00007ffc20048dd9  HOST-DLL  [renderdoc.dll+0xe8dd9]
+  rsp+0x0ef0  0x00007ffc20155ebe  HOST-DLL  [renderdoc.dll+0x1f5ebe]
+  rsp+0x0f00  0x00007ffc2015c331  HOST-DLL  [renderdoc.dll+0x1fc331]
+  rsp+0x0f20  0x00007ffc213509c8  HOST-DLL  [renderdoc.dll+0x13f09c8]
+  rsp+0x0fd0  0x0000700000cb6968  GUEST/JIT-region  [shadps4.exe+0xcb6968]
+  rsp+0x1080  0x00007ffc2019d7f8  HOST-DLL  [renderdoc.dll+0x23d7f8]
+  rsp+0x1160  0x00007ffc1e13fa5a  HOST-DLL  [nvoglv64.dll+0xb0fa5a]
+  rsp+0x1238  0x00007ffc1fdf7c00  HOST-DLL  [nvoglv64.dll+0x27c7c00]
+  rsp+0x1240  0x00007ffc1da8372a  HOST-DLL  [nvoglv64.dll+0x45372a]
+  rsp+0x1260  0x00007ffc1e082fad  HOST-DLL  [nvoglv64.dll+0xa52fad]
+  rsp+0x1270  0x00007ffc1daef537  HOST-DLL  [nvoglv64.dll+0x4bf537]
+  rsp+0x12a0  0x00007ffc1e09a68b  HOST-DLL  [nvoglv64.dll+0xa6a68b]
+  rsp+0x12f0  0x00007ffc1e0994fa  HOST-DLL  [nvoglv64.dll+0xa694fa]
+  rsp+0x13f0  0x00007ffc1e1addd9  HOST-DLL  [nvoglv64.dll+0xb7ddd9]
+  rsp+0x1408  0x00007ffc1fdf7c00  HOST-DLL  [nvoglv64.dll+0x27c7c00]
+  rsp+0x1410  0x00007ffc1da8372a  HOST-DLL  [nvoglv64.dll+0x45372a]
+  rsp+0x1420  0x00007ffc1e087786  HOST-DLL  [nvoglv64.dll+0xa57786]
+  rsp+0x14b0  0x00007ffc1e1af5d6  HOST-DLL  [nvoglv64.dll+0xb7f5d6]
+  rsp+0x14e0  0x00007ffc1e1c4ab4  HOST-DLL  [nvoglv64.dll+0xb94ab4]
+  rsp+0x1510  0x00007ffc1e109152  HOST-DLL  [nvoglv64.dll+0xad9152]
+  rsp+0x1530  0x00007ffc1e1aebd8  HOST-DLL  [nvoglv64.dll+0xb7ebd8]
+  rsp+0x1540  0x00007ffc1e10de8e  HOST-DLL  [nvoglv64.dll+0xadde8e]
+  rsp+0x1560  0x00007ffc1e1a2e02  HOST-DLL  [nvoglv64.dll+0xb72e02]
+  rsp+0x1570  0x00007ffc1e1b0f94  HOST-DLL  [nvoglv64.dll+0xb80f94]
+  rsp+0x1580  0x00007ffc1e1b0a17  HOST-DLL  [nvoglv64.dll+0xb80a17]
+  rsp+0x1588  0x00007ffc1fdf7c00  HOST-DLL  [nvoglv64.dll+0x27c7c00]
+  rsp+0x1590  0x00007ffc1da8372a  HOST-DLL  [nvoglv64.dll+0x45372a]
+  rsp+0x15a0  0x00007ffc1e1ac2cc  HOST-DLL  [nvoglv64.dll+0xb7c2cc]
+  rsp+0x15c0  0x00007ffc1daef537  HOST-DLL  [nvoglv64.dll+0x4bf537]
+  rsp+0x15d0  0x00007ffc1e1af358  HOST-DLL  [nvoglv64.dll+0xb7f358]
+  rsp+0x15f0  0x00007ffc1e18c690  HOST-DLL  [nvoglv64.dll+0xb5c690]
+  rsp+0x1620  0x00007ffc1e1b0b90  HOST-DLL  [nvoglv64.dll+0xb80b90]
+  rsp+0x1650  0x00007ffc1e13f9fa  HOST-DLL  [nvoglv64.dll+0xb0f9fa]
+  rsp+0x16e0  0x00007ffc1e13f989  HOST-DLL  [nvoglv64.dll+0xb0f989]
+  rsp+0x18b0  0x00007ffc2019d7f8  HOST-DLL  [renderdoc.dll+0x23d7f8]
+  rsp+0x1900  0x00007ffd02eeee6d  HOST-DLL  [ntdll.dll+0xee6d]
+  rsp+0x1930  0x00007ffd02eeec8d  HOST-DLL  [ntdll.dll+0xec8d]
+  rsp+0x19a0  0x00007ffd02f3adcf  HOST-DLL  [ntdll.dll+0x5adcf]
+  rsp+0x1af0  0x00007ffd02f33a10  HOST-DLL  [ntdll.dll+0x53a10]
+  rsp+0x1b50  0x00007ffd02f33a10  HOST-DLL  [ntdll.dll+0x53a10]
+  rsp+0x1b80  0x00007ffd02f33a10  HOST-DLL  [ntdll.dll+0x53a10]
+  rsp+0x1be0  0x00007ffd02f81322  HOST-DLL  [ntdll.dll+0xa1322]
+  rsp+0x1c70  0x00007ffd02f385d0  HOST-DLL  [ntdll.dll+0x585d0]
+  rsp+0x1ca0  0x00007ffd02f1e732  HOST-DLL  [ntdll.dll+0x3e732]
+  rsp+0x1ce0  0x00007ffd00ac2d7b  HOST-DLL  [ucrtbase.dll+0x12d7b]
+  rsp+0x1d30  0x00007ffd02f33978  HOST-DLL  [ntdll.dll+0x53978]
+  rsp+0x1dd0  0x00007ffd00ac2d7b  HOST-DLL  [ucrtbase.dll+0x12d7b]
+  rsp+0x1e00  0x00007ffc201f2a33  HOST-DLL  [renderdoc.dll+0x292a33]
+  rsp+0x1e20  0x00007ffd00ac2d7b  HOST-DLL  [ucrtbase.dll+0x12d7b]
+  rsp+0x1e30  0x00007ffc20263ae0  HOST-DLL  [renderdoc.dll+0x303ae0]
+  rsp+0x1e50  0x00007ffc2013296d  HOST-DLL  [renderdoc.dll+0x1d296d]
+  rsp+0x1f10  0x00007ffd00ac2d7b  HOST-DLL  [ucrtbase.dll+0x12d7b]
+  rsp+0x2020  0x0000700000bcd2aa  GUEST/JIT-region  [shadps4.exe+0xbcd2aa]
+  rsp+0x2030  0x00007ffce6647eab  HOST-DLL  [msvcp140.dll+0x17eab]
+  rsp+0x2060  0x0000700000bcf8c9  GUEST/JIT-region  [shadps4.exe+0xbcf8c9]
+  rsp+0x20e0  0x0000700000c278b0  GUEST/JIT-region  [shadps4.exe+0xc278b0]
+  rsp+0x20f0  0x00007ffc20155ebe  HOST-DLL  [renderdoc.dll+0x1f5ebe]
+  rsp+0x2100  0x00007ffc200e532d  HOST-DLL  [renderdoc.dll+0x18532d]
+  rsp+0x2130  0x00007ffc211b1c62  HOST-DLL  [renderdoc.dll+0x1251c62]
+  rsp+0x2150  0x00007ffd00ac2d7b  HOST-DLL  [ucrtbase.dll+0x12d7b]
+  ... (truncated at 120 hits)
+--- call-site recovery at [rsp] ---
+  [rsp] = 0x7d6801b
+  000007d67feb  00 00 44 89 56 74 44 8b 97 10 03 00 00 44 89 56  ..D.VtD......D.V
+  000007d67ffb  78 57 56 48 8d 76 7c ba 00 08 00 00 48 b8 00 35  xWVH.v|.....H..5
+  000007d6800b  b3 00 00 70 00 00 55 48 89 e5 48 83 e4 f0 ff d0  ...p..UH..H.....
+  000007d6801b  48 89 ec 5d 5e 5f 5f 57 48 8b 7f 08 49 ba ff ff  H..]^__WH...I...
+  000007d6802b  ff ff ff ff 00 00 4c 21 d7 44 8b 17 44 89 96 7c  ......L!.D..D..|
+  coherent stream ends in a CALL at [rsp]-2:
+    0x000007d67feb: 0000             add byte ptr [rax], al
+    0x000007d67fed: 44895674         mov dword ptr [rsi + 0x74], r10d
+    0x000007d67ff1: 448b9710030000   mov r10d, dword ptr [rdi + 0x310]
+    0x000007d67ff8: 44895678         mov dword ptr [rsi + 0x78], r10d
+    0x000007d67ffc: 57               push rdi
+    0x000007d67ffd: 56               push rsi
+    0x000007d67ffe: 488d767c         lea rsi, [rsi + 0x7c]
+    0x000007d68002: ba00080000       mov edx, 0x800
+    0x000007d68007: 48b80035b30000700000 movabs rax, 0x700000b33500
+    0x000007d68011: 55               push rbp
+    0x000007d68012: 4889e5           mov rbp, rsp
+    0x000007d68015: 4883e4f0         and rsp, 0xfffffffffffffff0
+    0x000007d68019: ffd0             call rax
+--- on-disk exe comparison ---
+  exe TimeDateStamp on disk 0x6a8f189f, in dump 0x6a8f189f
+  dumped range 0x700000b32000 (+0x3000) vs on-disk .text: 0 differing bytes
+  disp32 refs in exe .text to exe+0xb33500 (fault target): NONE
+  disp32 refs in exe .text to exe+0xb33e30 (CopyDynrcWindowClamped): ['0xb32dd9']
+
+==============================================================================
+DIFF run170 vs run171: bytes around IP
+==============================================================================
+IDENTICAL: all 0x400 bytes at 0x700000b33300..0x700000b33700 match

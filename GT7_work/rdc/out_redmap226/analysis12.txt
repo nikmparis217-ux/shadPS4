@@ -1,0 +1,2 @@
+textures in capture: 497
+candidates: 288, PNGs saved: 288
