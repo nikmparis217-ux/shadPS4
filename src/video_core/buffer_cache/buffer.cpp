@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <map>
 #include <mutex>
@@ -39,6 +40,26 @@ struct BdaRangeInfo {
 };
 std::mutex bda_registry_mutex;
 std::map<u64, BdaRangeInfo> bda_registry;
+
+// GT7 runs 243/244: two WriteInvalid faults, both a few dozen KB PAST THE END of a
+// multi-gigabyte cache buffer at guest 0x1000dfc000 whose size DIFFERED between the runs
+// (0xc3d38000 vs 0x91c24000) - a buffer the cache keeps replacing with bigger ones as the
+// game's streaming heap grows. The prime suspect is a write issued through the BDA of an
+// ALREADY-REPLACED generation of that buffer. A dead buffer is invisible to the live
+// registry, so the fault handler could only say "past the end of the live one" - which is
+// exactly what a stale write into a freed range looks like from the outside. Keep a ring
+// of the most recently unregistered ranges so the handler can answer the real question:
+// does the fault land inside a buffer that WAS alive until moments ago?
+struct DeadBdaRange {
+    u64 bda_addr;
+    u64 size;
+    VAddr guest_addr;
+    u64 death_order;
+};
+constexpr size_t DeadRingSize = 64;
+std::array<DeadBdaRange, DeadRingSize> dead_bda_ring{};
+size_t dead_bda_next = 0;
+u64 dead_bda_count = 0;
 } // namespace
 
 void RegisterBdaRange(u64 bda_addr, u64 size, VAddr guest_addr) {
@@ -48,7 +69,13 @@ void RegisterBdaRange(u64 bda_addr, u64 size, VAddr guest_addr) {
 
 void UnregisterBdaRange(u64 bda_addr) {
     std::scoped_lock lk{bda_registry_mutex};
-    bda_registry.erase(bda_addr);
+    const auto it = bda_registry.find(bda_addr);
+    if (it != bda_registry.end()) {
+        dead_bda_ring[dead_bda_next] =
+            DeadBdaRange{bda_addr, it->second.size, it->second.guest_addr, ++dead_bda_count};
+        dead_bda_next = (dead_bda_next + 1) % DeadRingSize;
+        bda_registry.erase(it);
+    }
 }
 
 std::string DescribeBdaAddressForFault(u64 device_addr) {
@@ -82,6 +109,23 @@ std::string DescribeBdaAddressForFault(u64 device_addr) {
     }
     if (after != bda_registry.end()) {
         describe(after, "nearest-above");
+    }
+    // The dead ring: a fault inside a RECENTLY FREED range is the signature of a stale
+    // write - GPU work still targeting the BDA of a buffer the cache already replaced.
+    // Report every dead range that contains the fault (newest first is not needed; there
+    // are at most a couple), with how many unregistrations ago it died.
+    for (size_t i = 0; i < DeadRingSize; ++i) {
+        const auto& dead = dead_bda_ring[i];
+        if (dead.size == 0 || device_addr < dead.bda_addr ||
+            device_addr >= dead.bda_addr + dead.size) {
+            continue;
+        }
+        out += fmt::format("    DEAD buffer CONTAINS the fault at bda+{:#x}: bda [{:#x}, "
+                           "{:#x}) size {:#x} guest {:#x}, freed {} unregistration(s) ago - "
+                           "A STALE WRITE THROUGH A REPLACED BUFFER'S ADDRESS\n",
+                           device_addr - dead.bda_addr, dead.bda_addr,
+                           dead.bda_addr + dead.size, dead.size, dead.guest_addr,
+                           dead_bda_count - dead.death_order + 1);
     }
     if (out.empty()) {
         out = "    (registry has no neighbours for this address)";
