@@ -29,6 +29,15 @@ REM UGreaterThan(counter,C), ONLY when the counter is a phi that provably decrem
 REM and C <= 4. Identical iteration count for every value a real console can produce; in the
 REM wrap case the loop exits after one pass instead of 2^32. Log: "[loopguard] shader ...".
 REM
+REM RUN 236b ADDENDUM (logs/run236b_garage_session.txt): the garage session with tess SKIPPED
+REM also died - device fault at 21:24, cs_0xef4a0dc6 (DispatchDirect 1x1x1, 512 threads,
+REM counts 0x0), a SECOND wrap-prone loop: INCREMENTING counter with exit `counter != end`
+REM where start AND end are loaded from a buffer (shaders/cs_ef4a0dc6.spvasm). Garbage data
+REM with start > end wraps 2^32 - this is the "new car gets stuck then dies" crash. The guard
+REM now also rewrites that shape (INotEqual -> ULessThan on a +1 phi), and BOTH shapes are
+REM gated on the comparison feeding ONLY branch conditions (a real loop exit, never an
+REM in-body `i != x` value).
+REM
 REM VERDICT METRICS:
 REM   1. Car bodies BACK (preview car has paint, races have real cars).
 REM   2. No device lost at race entry / car change / loading bursts (was 100% before).
