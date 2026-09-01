@@ -44,30 +44,32 @@ static bool IsStepOf(const IR::Value& incoming, const IR::Inst* phi, u32 step_im
 }
 
 // A comparison is only a LOOP EXIT if its result feeds nothing but branch conditions -
-// ConditionRef directly, or through a single LogicalNot (the observed SPIR-V is
-// INotEqual -> LogicalNot -> BranchConditional). An in-body `i != x` used as a VALUE or a
-// non-exit branch (e.g. "skip element k": `if (i != skip) accumulate`) must NOT be rewritten:
-// `<` is not equivalent to `!=` there even for perfectly valid data.
-static bool OnlyFeedsBranchConditions(const IR::Inst& inst) {
-    if (!inst.HasUses()) {
+// ConditionRef, reached directly or through boolean plumbing (LogicalNot / LogicalAnd /
+// LogicalOr). The plumbing matters: hs_0x3827418d's real do-while exit is
+//     %489 = OpLogicalAnd(%206, INotEqual(1, counter_phi)) -> BranchConditional
+// and a gate that only accepted ConditionRef/LogicalNot silently refused to rewrite the very
+// shader this pass was built for (run 239: it compiled fresh at race load, got no rewrite,
+// the count arrived 0, and the 2^32 wrap hang came back). An in-body `i != x` used as a
+// VALUE (arithmetic, select, store) must still NOT be rewritten: `<` is not equivalent to
+// `!=` there even for perfectly valid data.
+static bool OnlyFeedsBranchConditions(const IR::Inst& inst, int depth = 0) {
+    if (!inst.HasUses() || depth > 4) {
         return false;
     }
     for (const auto& [user, arg_index] : inst.Uses()) {
-        if (user->GetOpcode() == IR::Opcode::ConditionRef) {
+        switch (user->GetOpcode()) {
+        case IR::Opcode::ConditionRef:
             continue;
-        }
-        if (user->GetOpcode() == IR::Opcode::LogicalNot) {
-            if (!user->HasUses()) {
+        case IR::Opcode::LogicalNot:
+        case IR::Opcode::LogicalAnd:
+        case IR::Opcode::LogicalOr:
+            if (!OnlyFeedsBranchConditions(*user, depth + 1)) {
                 return false;
             }
-            for (const auto& [not_user, not_arg] : user->Uses()) {
-                if (not_user->GetOpcode() != IR::Opcode::ConditionRef) {
-                    return false;
-                }
-            }
             continue;
+        default:
+            return false;
         }
-        return false;
     }
     return true;
 }
