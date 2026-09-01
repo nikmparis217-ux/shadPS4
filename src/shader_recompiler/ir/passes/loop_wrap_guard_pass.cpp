@@ -8,6 +8,7 @@
 #include <boost/container/small_vector.hpp>
 
 #include "common/logging/log.h"
+#include "shader_recompiler/ir/ir_emitter.h"
 #include "shader_recompiler/ir/program.h"
 
 namespace Shader::Optimization {
@@ -125,13 +126,39 @@ void LoopWrapGuardPass(IR::Program& program) {
     if (!enabled) {
         return;
     }
+    // GT_LOOP_BOUND_CAP=N (iterations; 0/unset = off), run 242: cs_0xc3d5603f hung the device
+    // with an ORDERED loop exit - `while (counter < bound)`, counter stepping +1, bound
+    // DERIVED FROM srt_flatbuf[16] (a record count snapshotted by the CPU-side SRT walker).
+    // Zeros exit that loop instantly; STALE/GARBAGE data (float bits, leftover pointers)
+    // makes `(garbage+63)>>6` tens of millions of iterations x an SSBO-touching body on one
+    // 64-thread group = the draw that never retires. Same disease GT_18256C0_GUARD fixed for
+    // cs_0x018256c0's flatbuf[52]/[53], but per-shader clamps do not scale - this caps the
+    // BOUND of any (+1 stepping phi) < (loaded bound) loop exit at N via UMin/SMin. For every
+    // legit loop the min is an identity (real per-invocation trip counts here are thousands);
+    // only a bound asking more than N iterations per invocation - a TDR by definition on this
+    // hardware - is cut. Signed compares use signed min so negative garbage keeps exiting
+    // instantly instead of being promoted to N iterations.
+    static const u32 bound_cap = [] {
+        const char* v = std::getenv("GT_LOOP_BOUND_CAP");
+        return v ? static_cast<u32>(std::strtoul(v, nullptr, 10)) : 0u;
+    }();
     // Small bound only: the observed exit constant is 1, and a large constant would make the
     // "legit start below C" case (which `>` exits and `!=` wraps) more plausible.
     constexpr u32 MaxExitConst = 4;
     u32 rewrites = 0;
+    u32 caps = 0;
     for (IR::Block* const block : program.blocks) {
         for (IR::Inst& inst : block->Instructions()) {
-            if (inst.GetOpcode() != IR::Opcode::INotEqual32) {
+            const IR::Opcode op = inst.GetOpcode();
+            const bool is_wrap_shape = op == IR::Opcode::INotEqual32;
+            // "counter < bound" forms only: phi on the small side, loaded bound on the big
+            // side. A decrementing `counter > C` loop is bounded by its START value, which a
+            // bound cap cannot reach - not handled.
+            const bool is_cap_shape =
+                bound_cap != 0 &&
+                (op == IR::Opcode::ULessThan32 || op == IR::Opcode::SLessThan32 ||
+                 op == IR::Opcode::UGreaterThan32 || op == IR::Opcode::SGreaterThan32);
+            if (!is_wrap_shape && !is_cap_shape) {
                 continue;
             }
             std::string_view refused_by{};
@@ -139,13 +166,33 @@ void LoopWrapGuardPass(IR::Program& program) {
                 // Near-miss forensics: a stepping-phi compare the gate refused is exactly the
                 // shape that cost runs 239 and 241 (the And link, then the Phi link). Name the
                 // refusing user so the NEXT mismatch is one log line instead of a blind run.
-                if (AsSteppingPhi(inst.Arg(0), 0xFFFFFFFFu) || AsSteppingPhi(inst.Arg(1), 0xFFFFFFFFu) ||
-                    AsSteppingPhi(inst.Arg(0), 1u) || AsSteppingPhi(inst.Arg(1), 1u)) {
+                if (is_wrap_shape &&
+                    (AsSteppingPhi(inst.Arg(0), 0xFFFFFFFFu) || AsSteppingPhi(inst.Arg(1), 0xFFFFFFFFu) ||
+                     AsSteppingPhi(inst.Arg(0), 1u) || AsSteppingPhi(inst.Arg(1), 1u))) {
                     LOG_WARNING(Render_Recompiler,
                                 "[loopguard] shader {:#x}: stepping-phi INotEqual NOT rewritten - "
                                 "its result feeds '{}', not only branch conditions",
                                 program.info.pgm_hash, refused_by);
                 }
+                continue;
+            }
+            if (is_cap_shape) {
+                // Phi position by comparison direction: `phi < bound` or `bound > phi`.
+                const bool phi_first =
+                    op == IR::Opcode::ULessThan32 || op == IR::Opcode::SLessThan32;
+                const IR::Value phi_side = inst.Arg(phi_first ? 0 : 1);
+                const u32 bound_idx = phi_first ? 1 : 0;
+                const IR::Value bound = inst.Arg(bound_idx);
+                if (bound.IsImmediate() || AsSteppingPhi(phi_side, 1u) == nullptr) {
+                    continue; // A compile-time bound is the game's real intent; leave it.
+                }
+                const bool is_signed =
+                    op == IR::Opcode::SLessThan32 || op == IR::Opcode::SGreaterThan32;
+                IR::IREmitter ir{*block, IR::Block::InstructionList::s_iterator_to(inst)};
+                const IR::U32 capped =
+                    ir.IMin(IR::U32{bound}, ir.Imm32(bound_cap), is_signed);
+                inst.SetArg(bound_idx, capped);
+                ++caps;
                 continue;
             }
             const IR::Value a = inst.Arg(0);
@@ -194,6 +241,11 @@ void LoopWrapGuardPass(IR::Program& program) {
         LOG_INFO(Render_Recompiler, "[loopguard] shader {:#x}: {} wrap-prone loop exit(s) made "
                  "wrap-proof (INotEqual -> ordered compare on a +/-1 stepping counter)",
                  program.info.pgm_hash, rewrites);
+    }
+    if (caps != 0) {
+        LOG_INFO(Render_Recompiler,
+                 "[loopguard] shader {:#x}: {} loaded loop bound(s) capped at {} iterations",
+                 program.info.pgm_hash, caps, bound_cap);
     }
 }
 
