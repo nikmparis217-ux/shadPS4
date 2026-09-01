@@ -8,13 +8,30 @@
 
 namespace Shader::Optimization {
 
-static IR::Inst* SearchChain(IR::Inst* inst, u32 lane) {
+// GT7 run 237 (unifies runs 142/234/237 - all three were THIS): IR::Value is a union, so
+// calling InstRecursive() on an IMMEDIATE value returns the constant's bits as an Inst*. In
+// this emulator low addresses are mapped guest memory, so the garbage pointer READS - as
+// zeroed-ish data: opcode 0 (= Phi), parent null - which is why it masqueraded as a
+// "dangling phi" for three separate crashes (TrackSharp assert, then twice AV reading 0x8 in
+// Inst::Use when a use was registered into the fake inst's null-headed use list).
+// The immediate cases are all SEMANTICALLY WELL-DEFINED: an immediate register value holds
+// that constant in every lane, so ReadLane of it IS the immediate. Handle, don't refuse.
+//
+// chain_broken is set when a WriteLane chain's BASE register resolves to an immediate (the
+// chain ends without a matching lane write). The caller must then treat the chain's value
+// for this lane as `inst->Arg(0).Resolve()` of the returned WriteLane, NOT Arg(1).
+static IR::Inst* SearchChain(IR::Inst* inst, u32 lane, bool& chain_broken) {
     while (inst->GetOpcode() == IR::Opcode::WriteLane) {
         if (inst->Arg(2).U32() == lane) {
             // We found a possible write lane source, return it.
             return inst;
         }
-        inst = inst->Arg(0).InstRecursive();
+        IR::Inst* const next = inst->Arg(0).TryInstRecursive();
+        if (next == nullptr) {
+            chain_broken = true;
+            return inst;
+        }
+        inst = next;
     }
     return inst;
 }
@@ -31,22 +48,21 @@ static bool IsPossibleToEliminate(IR::Inst* inst, u32 lane) {
         queue.pop();
 
         // If it's a WriteLane search for possible candidates
-        if (inst = SearchChain(inst, lane); inst->GetOpcode() == IR::Opcode::WriteLane) {
-            // We found a possible write lane source, stop looking here.
+        bool chain_broken = false;
+        if (inst = SearchChain(inst, lane, chain_broken); inst->GetOpcode() == IR::Opcode::WriteLane) {
+            // Either a matching write lane source, or (chain_broken) a chain whose base is
+            // an immediate - the lane's value is that immediate. Both are eliminable.
             continue;
         }
         // If there are other instructions in-between that use the value we can't eliminate.
         if (inst->GetOpcode() != IR::Opcode::ReadLane && inst->GetOpcode() != IR::Opcode::Phi) {
             return false;
         }
-        // GT7 run 234: a node with no parent block here is a DANGLING reference - vs 0x41e57240
-        // carries one (the same shader that hit run 142's TrackSharp assert). Its storage reads
-        // as zeroed memory, which is also WHY it reads as a "phi": opcode 0 is Phi. GetRealValue's
-        // kept-as-is guard then handed the corpse to AddPhiOperand, whose Inst::Use crashed
-        // inserting into the corpse's null-headed use list (AV reading 0x8 on the
-        // GpuCommandProcessor thread). NOTHING on such a node is safe to touch - not its args,
-        // not its use list - so the only correct answer is "this ReadLane cannot be eliminated":
-        // the graph stays unmodified and the backend emits the ReadLane as-is.
+        // GT7 runs 234/237: what looked like a DANGLING node in vs 0x41e57240 was in fact an
+        // IMMEDIATE phi argument dereferenced as an Inst* (see the SearchChain comment) - the
+        // fake pointer read guest memory as opcode 0 (= Phi) with a null parent. The immediate
+        // routes are handled properly now; this stays as defense in depth for any REAL corpse:
+        // nothing on a parentless node is safe to touch, so refuse the elimination outright.
         if (!inst->HasParent()) {
             LOG_ERROR(Render_Recompiler,
                       "ReadLane chain reaches a parentless (likely dangling) node - elimination "
@@ -74,7 +90,13 @@ using PhiMap = std::unordered_map<IR::Inst*, IR::Inst*>;
 
 static IR::Value GetRealValue(PhiMap& phi_map, IR::Inst* inst, u32 lane) {
     // If this is a WriteLane op search the chain for a possible candidate.
-    if (inst = SearchChain(inst, lane); inst->GetOpcode() == IR::Opcode::WriteLane) {
+    bool chain_broken = false;
+    if (inst = SearchChain(inst, lane, chain_broken); inst->GetOpcode() == IR::Opcode::WriteLane) {
+        if (chain_broken) {
+            // No write to this lane anywhere in the chain and the base register is an
+            // immediate: every untouched lane holds the base constant.
+            return inst->Arg(0).Resolve();
+        }
         return inst->Arg(1);
     }
 
@@ -105,8 +127,16 @@ static IR::Value GetRealValue(PhiMap& phi_map, IR::Inst* inst, u32 lane) {
         // Gather all arguments.
         boost::container::static_vector<IR::Value, 5> phi_args;
         for (size_t arg_index = 0; arg_index < inst->NumArgs(); arg_index++) {
-            IR::Inst* arg_prod = inst->Arg(arg_index).InstRecursive();
-            const IR::Value arg = GetRealValue(phi_map, arg_prod, lane);
+            const IR::Value arg_value = inst->Arg(arg_index).Resolve();
+            if (arg_value.IsImmediate()) {
+                // THE run 142/234/237 crash: this used to call InstRecursive() on the
+                // immediate, turning the constant's bits into a fake Inst*. An immediate
+                // phi argument means every lane holds that constant on this path, so the
+                // lane's real value is simply the immediate itself.
+                phi_args.push_back(arg_value);
+                continue;
+            }
+            const IR::Value arg = GetRealValue(phi_map, arg_value.InstRecursive(), lane);
             phi_args.push_back(arg);
         }
         const IR::Value arg0 = phi_args[0].Resolve();
@@ -135,11 +165,19 @@ void ReadLaneEliminationPass(IR::Program& program) {
             }
 
             const u32 lane = inst.Arg(1).U32();
+            if (inst.Arg(0).Resolve().IsImmediate()) {
+                // ReadLane of an immediate register value: every lane holds the constant.
+                inst.ReplaceUsesWith(inst.Arg(0).Resolve());
+                continue;
+            }
             IR::Inst* prod = inst.Arg(0).InstRecursive();
 
             // Check simple case of no control flow and phis
-            if (prod = SearchChain(prod, lane); prod->GetOpcode() == IR::Opcode::WriteLane) {
-                inst.ReplaceUsesWith(prod->Arg(1));
+            bool chain_broken = false;
+            if (prod = SearchChain(prod, lane, chain_broken);
+                prod->GetOpcode() == IR::Opcode::WriteLane) {
+                // chain_broken: no write to this lane, immediate base - the value is the base.
+                inst.ReplaceUsesWith(chain_broken ? prod->Arg(0).Resolve() : prod->Arg(1));
                 continue;
             }
 
