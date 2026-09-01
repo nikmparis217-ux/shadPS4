@@ -39,6 +39,20 @@ static bool IsPossibleToEliminate(IR::Inst* inst, u32 lane) {
         if (inst->GetOpcode() != IR::Opcode::ReadLane && inst->GetOpcode() != IR::Opcode::Phi) {
             return false;
         }
+        // GT7 run 234: a node with no parent block here is a DANGLING reference - vs 0x41e57240
+        // carries one (the same shader that hit run 142's TrackSharp assert). Its storage reads
+        // as zeroed memory, which is also WHY it reads as a "phi": opcode 0 is Phi. GetRealValue's
+        // kept-as-is guard then handed the corpse to AddPhiOperand, whose Inst::Use crashed
+        // inserting into the corpse's null-headed use list (AV reading 0x8 on the
+        // GpuCommandProcessor thread). NOTHING on such a node is safe to touch - not its args,
+        // not its use list - so the only correct answer is "this ReadLane cannot be eliminated":
+        // the graph stays unmodified and the backend emits the ReadLane as-is.
+        if (!inst->HasParent()) {
+            LOG_ERROR(Render_Recompiler,
+                      "ReadLane chain reaches a parentless (likely dangling) node - elimination "
+                      "refused, ReadLane kept");
+            return false;
+        }
         // Visit the right most arguments first
         for (size_t arg = inst->NumArgs(); arg--;) {
             auto arg_value{inst->Arg(arg)};
