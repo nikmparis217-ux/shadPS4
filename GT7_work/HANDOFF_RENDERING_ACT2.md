@@ -1511,3 +1511,200 @@ and pulse UNCHANGED (separate roots, Act 12). If the decay persists with [dmasyn
 near-zero ranges, the remaining cost is elsewhere (measure again - do not guess); if TDR hits
 at split=1 again, implement queue pacing next. A/B switch: GT_DMA_DIRTY_LOG=0 restores the full
 walk in the same binary.
+
+# ACT 14 (1-2 Sep, runs 239-247): THE CRASH STACK DRAINS - FOUR MECHANISMS, EACH KILLED BY MEASUREMENT
+
+Act 13 ended with the game dying somewhere in the main-game race flow every session. Act 14 is
+nine runs that each died FURTHER ALONG in a NEW, rarer mechanism, until run 247 reached the
+furthest point this project has ever reached: **main menu -> World Circuits -> car select -> INTO
+A RACE, still running, with ZERO device faults across a 93 MB log.**
+
+Every mechanism traced to the same family - the game hands the GPU garbage data (stale flatbuf
+snapshots, torn descriptors, unfed tables) and the emulator obeyed it literally. The four fixes
+are four places where a garbage NUMBER is now clamped to something a GPU can survive.
+
+## The wrap-guard arc closes (runs 239-242, commits 9c4647f6 / 42abb59e)
+
+`GT_LOOP_WRAP_GUARD` rewrites `INotEqual`-terminated loop exits into ordered compares, so a
+counter that steps PAST its sentinel exits instead of wrapping 4 billion times. It had one gate:
+only rewrite a compare that feeds nothing but branch conditions.
+
+**That gate refused its own target shader TWICE, and each refusal cost a blind run.**
+- Run 239: `hs_0x3827418d`'s comparison feeds a `LogicalAnd`. The gate accepted only
+  `ConditionRef`/`LogicalNot`.
+- Run 241: widening to `LogicalAnd` was still not enough - the `LogicalAnd` ALSO feeds the
+  next-iteration bool phi (`%206 = OpPhi(true, %489)` at hs_3827418d.spvasm:1208). phi -> and ->
+  phi is a real cycle in this game's loop idiom.
+
+Final gate: an iterative worklist following ConditionRef/LogicalNot/LogicalAnd/LogicalOr/**Phi**
+with a visited set and a size cap of 64. Result: **962 shaders / 1746 rewrites** - the do-while
+with phi condition plumbing is GT7's NORMAL loop shape, not an exotic case.
+
+- ⚠ ⚠  **The real fix was the NEAR-MISS LOG, not the gate.** Any stepping-phi `INotEqual` the gate
+  refuses now logs WHICH user opcode refused it (`refused_by`). Two runs were spent asking a
+  question a log line answers for free. Run 242 then reported exactly 1 near-miss, correctly
+  refused (a compare feeding `SelectU1` is a value use, not a branch condition).
+- Run 242 was the longest session in days: Music Rally menu, a race, car-select browsing.
+
+## GT_LOOP_BOUND_CAP: the OTHER infinite loop (runs 243-244, commit 01621bd2)
+
+Run 242 then hung at race load after car pick - `cs_0xc3d5603f`, DispatchDirect 1x1x1 x 64
+threads, two IPs parked in one shader, **no bad memory access, 0 wrap rewrites, 0 near-misses**.
+Not a wrap loop. The mechanism, measured in its SPIR-V pulled out of the pipeline cache
+(`GT7_work/shaders/cs_c3d5603f.spvasm` - `spirv-dis` on the cached .spv, no run needed):
+
+```
+%102 = load(srt_flatbuf[16])        ; a record count the CPU SRT walker snapshotted
+%107 = (%102 + 63) >> 6             ; from guest memory
+while (counter < %107) { ... }      ; counter steps +1
+```
+
+Zeros EXIT INSTANTLY - this is the opposite of the wrap family. Garbage (float bits, leftover
+pointers) makes `%107` tens of millions, and one 64-thread group looping an SSBO-touching body
+tens of millions of times is a TDR by definition.
+
+`GT_LOOP_BOUND_CAP=N` wraps any LOADED loop bound in `UMin/SMin(bound, N)` right before the
+compare. Immediate bounds are never touched (a compile-time constant is the game's real intent);
+signed compares use signed min so negative garbage keeps exiting instantly. **425 distinct
+shaders / 704 compiles carry caps** - as widespread as the 962-shader wrap census implied.
+
+- Run 243: the cap worked, the race loaded and was driven.
+- ⚠ ⚠  **1,048,576 was too generous and the user felt it**: "the image would get stuck for a
+  couple of seconds but behind the game was still counting time". A garbage bound that used to
+  hang now GRINDS a million iterations. Legit per-invocation trip counts here are THOUSANDS
+  (cs_0x018256c0's own per-shader guard used 1024). Lowered to **16384** - env-only, no rebuild,
+  because the binary reads it at runtime.
+
+## The dead-buffer ring ACQUITTED its own theory (run 245, commit 535896cc)
+
+Runs 243+244 both died to a `WriteInvalid` a few dozen KB PAST THE END of the same multi-GB
+cache buffer at guest `0x1000dfc000` - whose SIZE DIFFERED per run (3.28 GB vs 2.44 GB). That is
+the game's streaming heap, which the cache keeps replacing with bigger generations as it grows
+(17.3 GB working set at death). Prime suspect: a stale write through the BDA of an
+already-replaced generation.
+
+The instrument: `UnregisterBdaRange` keeps a ring of the last 64 dead ranges, and
+`DescribeBdaAddressForFault` checks it - one log line to convict or acquit.
+
+**Verdict: ZERO "DEAD buffer CONTAINS the fault" lines. The theory was wrong.** The write really
+does land past the end of the LIVE generation. A cheap instrument that kills your own hypothesis
+in one run is worth more than a clever fix built on it.
+
+## ⚠ ⚠ ⚠  RUN 245'S REAL ANSWER: a T# whose TILED FOOTPRINT is gigabytes (run 246, commit 43d48395)
+
+The same log named the true culprit with exact address arithmetic. Seconds before the fault:
+
+```
+[detile] DetileImage REFUSED: extent 256x256x1 layers 1857 ... guest_size 0xbd840000 addr 0x100b460000
+[softclamp] refusing to (un)track region 0x100b460000 - 0x10c8ca0000 (3032 MB, torn descriptor)
+...
+address[0] WriteInvalid: 0x7724b7000
+    nearest-below buffer: bda [0x6aa600000, 0x7724a4000) guest 0x1000dfc000 - fault is 0x13000 past it
+```
+
+`0x1000dfc000 + 0xc7ea4000 = 0x10c8ca0000` - **the monster T#'s guest_size ends EXACTLY at the
+heap buffer's end, and the device died writing 76 KB past that end.**
+
+**Why every existing guard missed it, and this is the transferable part:**
+`sharp_extent_sane` counts TEXELS. That T# is 2^26.9 texels with 1857 <= 2048 layers - it
+**passes**. The 3.18 GB lives in the pitch/slice padding of the TILED layout, which only
+`ImageInfo::guest_size` can see - and guest_size exists only after ImageDesc construction, past
+every tsharp-level check. Detile refused it and the page tracker refused it, but **the Image was
+still created, registered and synchronized**. Two guards firing on the same object is not the
+same as the object being stopped.
+
+`GT_IMG_MAXMB=N`: in `BindTextures` - the same place the V# softclamp null-binds garbage V#s -
+any constructed desc whose `guest_size` exceeds N MiB is refused BEFORE `FindImage` can create
+anything. The slot's `image_id` stays null and the emit pass already writes `VK_NULL_HANDLE` for
+null ids, so a refused slot is an ordinary null binding. No Image means no registration, no
+multi-GB synchronize, no write past the heap. Both bind paths (windowed slots and plain T#s)
+share one lambda. Largest legitimate GT7 resource seen is ~256 MB; the cap ships at 512.
+
+**Run 247 verdict, measured:**
+```
+maxmb fires:        2      <- and BOTH on shader 0x3e50e1, the known bindless offender
+detile refused:     0      <- the image never exists now, so detile never sees it
+torn registration:  0      <- nor does the page tracker
+device faults:      0      across a 93 MB log
+  T# 0x1001800000  128x128 x 1857 layers tile_mode 13 -> 0xb9482000 (3.1 GB)
+  T# 0x100b460000  256x256 x  385 layers tile_mode  0 -> 0x8a5c0000 (2.3 GB)
+```
+The second is the SAME ADDRESS that killed run 245. **The downstream guards going silent is the
+proof the fix landed upstream of them**, and the game reached further than it ever has:
+main menu -> World Circuits -> car select -> into a race, still running.
+
+## stuckstack.ps1: the measurement runs 244 and 246 died without (commit e1c05e67)
+
+Both ended as a SILENT hang - process alive, log growing on service noise only, no fault, no
+TDR, and both were killed before anyone captured a stack. Run 246's post-mortem refuted its own
+first theory twice: the last renderer line was "Compiling graphics pipeline 0x4898b31b...", which
+reads as "the driver compiler is stuck" - but the pipeline's `g_*.key` record exists on disk with
+the SAME SECOND's mtime as the shader's .spv, so the ctor returned and `RegisterPipelineData`
+ran. The shader itself is 867 lines of plain arithmetic with **zero loops**.
+
+`GT7_work/stuckstack.ps1` + `STUCK.bat` walk every thread of the LIVE process with dbghelp
+`StackWalk64` (symbols from the build's own RelWithDebInfo PDB), print per-thread CPU over a 3 s
+window, wait reason, and full stacks for shadPS4-named or CPU-hot threads. Threads are suspended
+only for the microseconds of one context read.
+
+**It paid for itself on its first use.** Run 247's "stuck" was captured live and named in one
+line:
+```
+tid 26292  shadPS4:GpuCommandProcessor   cpu+3281ms/3s  Running
+    nvgpucomp64.dll  ... (15 frames of NVIDIA's shader compiler)
+    nvoglv64.dll     vkGetInstanceProcAddr+...
+    shadps4.exe      Vulkan::GraphicsPipeline::GraphicsPipeline+0x5922
+    shadps4.exe      Vulkan::PipelineCache::GetGraphicsPipeline+0x383
+    shadps4.exe      Vulkan::Rasterizer::Draw+0x4f6
+```
+**Not a hang - the NVIDIA driver compiling a pipeline at 100% CPU, synchronously, inside Draw.**
+The game was never stuck; it was compiling. 3,666 graphics pipelines / 4,571 modules in that
+session. A "stuck" that is really a compile storm and a "stuck" that is really a deadlock need
+opposite fixes, and nothing in the project could tell them apart before this.
+
+- ⚠  SYMBOL_INFOW offsets are the documented x64 layout (MaxNameLen at 80, Name at 84). The first
+  draft had them off by 4 and returned empty names for every frame - which looks exactly like
+  "symbols are not loading".
+
+## Uncharted 2 (CUSA03281): the dump is incomplete, the emulator is fine
+
+Run as a cross-check on the current binary. Booted clean, 55 shaders, the intro video decoded
+and finished, then black at 1 FPS. The log names it:
+`open: /app0/u2data/build/main/effect1/menu.bin failed, file does not exist` - and the `effect1`
+folder is **absent from the dump entirely** (4,412 files / 24.1 GB, no menu.bin anywhere). The
+game waits forever for a file that was never installed.
+
+Useful anyway: **4.5 minutes, zero faults, and our guards behaved correctly on a different
+game** - 3 loop bounds capped harmlessly, 0 wrap rewrites (U2 does not use GT7's do-while
+idiom), 0 false positives from GT_IMG_MAXMB. Filed in OTHER_GAMES.md territory: needs a complete
+dump before it can be judged.
+
+## THE STATE AFTER ACT 14
+
+**Fixed and verified:** the wrap hang (962 shaders), the loaded-bound TDR (425 shaders), the
+gigabyte-T# WriteInvalid (2 fires, 0 faults). **Refuted and on the record:** the stale-write
+theory, "the compiler is stuck", "sharp_extent_sane covers monster textures".
+
+**What the user sees, and what is next.** The crash front has drained enough that the DATA front
+is now the whole complaint, exactly as the user directed after run 241 ("we fix the hard
+whitewash and teselations then we check for other crashes"):
+1. **Whitewash / exposure pulse** - "like a huge sun passes in front of the screen", not constant.
+2. **Textures do not build** - washed white ground, half-drawn HUD, letters flying outside their
+   boxes.
+3. **MAGENTA GARBAGE** at car select (new, photographed run 247): magenta shards over the car
+   preview at 3 FPS. Magenta is this project's uninitialized-data colour; same family.
+4. **FPS**: 3-28 in menus, 13-18 in race. Run 247 shows 3,666 pipeline compiles - and the
+   stuckstack proves compilation is SYNCHRONOUS inside Draw. **Async pipeline compilation is now
+   a measured, named target, not a guess.**
+
+All four are the SAME ROOT the crash arc kept circling: first-read-zeros / garbage snapshots.
+The named structural direction remains **pre-registering BDA pages at descriptor-walk time**
+(the CPU SRT walker already sees every T#/V# address before submit) instead of on first GPU
+fault - `info.h`'s own comment says the honest answer would be GPU-time reads.
+
+## RUN 248 (pre-declared)
+Env unchanged from probe 246. Metrics: (1) does the race COMPLETE now that the monster T# is
+gated - the first end-to-end race of the arc; (2) `grep "exceeds GT_IMG_MAXMB"` - does it stay
+at ~2 per session or climb; (3) the magenta at car select - capture it with GT_IMG_TRACE on the
+car-preview shader if it recurs; (4) compile count per session, as the baseline for whether
+async pipeline compilation is worth building.
