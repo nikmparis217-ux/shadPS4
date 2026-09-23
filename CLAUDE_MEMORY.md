@@ -163,6 +163,18 @@ Each line is an incident that cost a run, a build, or the user's time.
 33. **`rax = 0xDEADBEEF54321ABC` in a guest crash is shadPS4's own `__stack_chk_guard`**
     (`kernel.cpp:45`, the stack canary a prologue loads into rax), not a poison pointer.
 
+34. **Crash D: never disassemble, inspect or instrument `eboot.bin`.** The first answer to the
+    RUN 356 spec (24 Sep) was stopped by a safety check while it headed into the guest's own code.
+    The user then limited crash D to the shadPS4 side: our HLE code, our logs, our state. Do not
+    propose guest-code tracing for it again in any wording.
+35. **The archived logs cannot show font handles or return codes.** `Lib.Font` runs at `info`
+    (config.json filter `*:info ...`) and every parameter line in font.cpp is `LOG_DEBUG`. And 12
+    of the 48 font functions GT7 imports log nothing at info - among them
+    `sceFontGetCharGlyphMetrics`, `sceFontGetKerning`, `sceFontDestroyRenderer`,
+    `sceFontMemoryTerm`, `sceFontCharacterRefersTextNext` - so the call order read off the log is
+    incomplete.
+    The only thing the log proves is failure: every error path of the audited calls logs at error.
+
 ---
 
 ## 3. Fixes that are proven and must stay
@@ -318,6 +330,27 @@ Rendr thread again, rcx=rdx=rsi=0 (a null base), rsp+0x38 holds 0x0e1f331b (the 
 RebindRenderer` calls with text "...Test Car Name 3 Lines..." in memory at r15 - i.e. inside the
 guest's font/text layout. Both runs crashed at the same point of the flow: Music Rally done, back
 in the menu, entering the next scene. Minidump `logs/run355_guest_crash.dmp`. Still parked.
+**Crash D, HLE-side audit (24 Sep, no run).** 354 and 355 are NOT the same instruction: 354 faults
+at `eboot+0x92f700` writing 0x2b4, 355 at `eboot+0x92f72f` writing 0x2a6. They share the return
+address `eboot+0x1f9331b`, rsp `0x7e930b8e0`, r15 `0xe40c1f6cc8` and zero rcx/rdx/rsi, so they are
+one crash family. The four calls in front of it (`sceFontSetScalePixel`, `SetEffectWeight`,
+`SetEffectSlant`, `RebindRenderer`) are clean by source: no output parameters, they write only
+non-pointer fields inside the 0x100-byte font object (+0x04 lock, +0x48..+0x63 style, +0x68..+0x8F
+cached copy, +0x94, +0x9C lock), and they never touch the renderer binding. Every one of the
+9288/9556 calls per run returned OK: no error line exists, and error lines do reach this log (the
+four `OpenFontSet` NO_SUPPORT_FONTSET for set type 0x190724C3 at startup prove it). The Rendr thread
+makes one `sceFontMemoryInit` and then only those four calls, never a render call. Both runs end
+the same way: a burst of 338/342 four-call groups, then one of 34, then the crash 3 log lines
+after the last `RebindRenderer`. A 34-group burst also happens earlier in both runs without a
+crash. Contract problems found next door, none proven to be on the crash path:
+- `sceFontGetKerning` never validates the handle; `GetState()` creates host state for any value,
+  it returns ORBIS_OK, and it calls `FT_Set_Char_Size` on a shared face without the font lock;
+- `sceFontDestroyRenderer` frees the renderer without unbinding the fonts bound to it and without
+  clearing its magic, so `RebindRenderer`'s 0x0F07 check can pass on freed memory;
+- `sceFontOpenFontMemory` returns ORBIS_OK when FreeType fails to create the face.
+The next step proposed is a bounded HLE-only observer (per-thread ring of font calls, dumped by the
+crash handler), not built yet.
+
 `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
 thumbnails); `resource_patching_pass.cpp:471` "Thread ID buffer addressing is not supported
