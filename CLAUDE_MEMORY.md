@@ -31,7 +31,7 @@ is an orphan history unrelated to `gt7-main`.
 - Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
 - Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
 - **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
-  numbers continue the global series (last used: 354).
+  numbers continue the global series (last used: 355).
 - **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
   meant: do not propose side investigations while a target is open.
 - A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
@@ -143,6 +143,14 @@ Each line is an incident that cost a run, a build, or the user's time.
     mip generation binds 2 mips (1+2) or 6 mips (3..8) of the same image per dispatch, so the
     victim grid marked only mip 2 and mip 8 as W and left mips 1 and 3-7 showing an older G. Record
     every bound view of the dispatch, not a per-image last view.
+29. **A `grep -q $'\r'` line-ending check in the Bash tool reported LF for CRLF files** (run 355
+    build). `texture_cache.cpp`, `texture_cache.h` and `image.cpp` ARE CRLF; the Edit tool keeps
+    CRLF, but a python patch with `\n` anchors matches nothing. Count bytes instead
+    (`b.count(b'\r\n')` in python, or `file x`), and patch scripts normalise to LF, patch, restore.
+30. **`#include <vk_mem_alloc.h>` must come AFTER the project headers** (after
+    `vk_instance.h`/`vk_scheduler.h`), exactly as `image.cpp` does. Placed among the system includes
+    it pulls in plain vulkan.h without the project's platform/beta defines, and vulkan_enums.hpp
+    fails with 20 "undeclared identifier ..._AMDX / _NV" errors that look unrelated to the edit.
 
 ---
 
@@ -240,6 +248,29 @@ window frames 4299..4302, 2973 rows, 0 suppressed). Verdict: CASE B.**
   cycle to cycle in a static scene. Proposed next step (not built, awaiting the user): a per-cell
   GPU content hash of the canonical at its first use over 3-4 cycles.
 
+**RUN 355 (built 23 Sep 23:22, `GT_CUBEGPU=0x100b1b0000`, wrapper `GT7_probe355_cubegpu.bat` = 354 +
+that one variable; awaiting the user's launch).** The user's spec: capture the actual VkImage of the
+canonical at the first consumer use after the rebuild, real cells only (mips 0-8 x layers 0-5, 54
+cells), ONE image->buffer copy per cycle with a region per cell, hash host-side (whole + per cell),
+compare cycle to cycle in the frozen replay; per changed cell log mip, layer, previous/current hash,
+producer class (mip0 SRC/face array, mips 1-2 cs 0x2673a048, mips 3-8 cs 0xc28178a3). Decision:
+A same hashes + flicker = cube cleared; B different + flicker = trace the changed cells' producer;
+**C capture on and the flicker disappears = barrier-sensitive, stop and redirect to
+producer->consumer sync; never read the disappearance as success**; D different but flicker gone =
+investigate the barrier effect. Report headings: RESULT / VISUAL BEHAVIOR WITH CAPTURE / WHOLE-CUBE
+HASHES / PER-CELL DIFFERENCES / PRODUCER CLASS OF CHANGED CELLS / PERTURBATION ASSESSMENT / ONE NEXT
+STEP.
+Implementation (`[cubegpu]` in `texture_cache.cpp`): trigger = FindTexture right after UpdateImage,
+texture binding of a class-C image through view base 0/0, all mips, exactly 6 layers, first per
+(uid, presented frame). `EndRendering`, `image.Transit(TransferSrc, TransferRead, view range)`, one
+`copyImageToBuffer` with 54 regions into one of 8 own VMA host-visible buffers (not the shared
+download stream buffer), a transfer->host buffer barrier, `DeferOperation` (not the priority queue,
+which signals guest fences) hands it to a detached worker that invalidates, XXH3-hashes, diffs
+against the previous cycle (differing texels, max decoded B10G11R11 delta, non-finite texels) and
+logs. Producer uid/VA per cell come from `GtCgNoteSrc/NoteDonor` at the cubelife SRC/DONOR sites.
+It runs EVERY cycle for the whole run on purpose, so the user can watch the flicker while it is on.
+Watcher: `scratchpad/watch355.sh`.
+
 **B. `SurfaceFormat` assert with Bc6(40)+Ubint(12)** (348, loading the Menu Book race after the
 Café). The source is proven to be T#-only, via the flatbuf path. It did not reproduce in
 351/351b/352/352b/353; the `[tsharp]` observer (`GT_TSHARP_PROV=1`) stayed armed and never fired.
@@ -262,10 +293,11 @@ pointer; 1.71 (`CUSA24767`) in general, until the offline chat makes it boot.
 
 **Uncommitted instruments in `gt7-main`** (strip before any PR): `[tsharp]` in `vk_rasterizer.cpp`
 plus `SurfaceFormatSupported()` in `liverpool_to_vk.*` (diagnostic only); `[cubetrace]`,
-`[cubekill]` and `[cubelife]` (run 354) in `texture_cache.cpp`, with `GtLifeNoteWrite` called from
+`[cubekill]`, `[cubelife]` (run 354) and `[cubegpu]` (run 355, `GtCg*`) in `texture_cache.cpp`, with `GtLifeNoteWrite` called from
 `MarkGpuWritten` in `texture_cache.h` and `g_gt_imgsrc_last` in `gt_va_watch.h` + `buffer_cache.cpp`; `GtBindCtx` in `gt_va_watch.h`; `GtPresentFrame()`. The
 wrappers are `GT7_probe351_tsharp_prov.bat`, `352_cubetrace.bat`, `353_cubekill.bat` and
-`354_cubelife.bat` (= 353 + `GT_CUBELIFE=0x100b1b0000+0x2ac000`). The logs
+`354_cubelife.bat` (= 353 + `GT_CUBELIFE=0x100b1b0000+0x2ac000`) and `355_cubegpu.bat` (= 354 +
+`GT_CUBEGPU=0x100b1b0000`). The logs
 are in `GT7_upstream/logs/shad_log_run35x_*`.
 
 ---
