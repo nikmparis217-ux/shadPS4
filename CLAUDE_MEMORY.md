@@ -151,6 +151,17 @@ Each line is an incident that cost a run, a build, or the user's time.
     `vk_instance.h`/`vk_scheduler.h`), exactly as `image.cpp` does. Placed among the system includes
     it pulls in plain vulkan.h without the project's platform/beta defines, and vulkan_enums.hpp
     fails with 20 "undeclared identifier ..._AMDX / _NV" errors that look unrelated to the edit.
+31. **Run 355's `[cubegpu]` compared each capture with the previous capture of ANY shape.** From
+    the post-race phase on, GT7 builds THREE cubes at 0x100b1b0000 per frame: q1 256x256 m9, and on
+    q0 a 64x64 m7 / 128x128 m8 that alternate frame by frame. Every comparison then read "NOT
+    comparable (different size)" and no per-cell line was printed for 110 s of the run. Compare with
+    the previous capture of the same (queue, levels, width) key.
+32. **A per-cell detail budget (64 cycles) was spent in the first 8 s of the race**, where every
+    frame changes 36-54 cells because the camera moves, and the later static-scene changes (1-3
+    cells) got only a grid line with no texel counts. Budget the big changes and always detail
+    the small ones - in a static scene the small change is the finding.
+33. **`rax = 0xDEADBEEF54321ABC` in a guest crash is shadPS4's own `__stack_chk_guard`**
+    (`kernel.cpp:45`, the stack canary a prologue loads into rax), not a poison pointer.
 
 ---
 
@@ -270,6 +281,22 @@ against the previous cycle (differing texels, max decoded B10G11R11 delta, non-f
 logs. Producer uid/VA per cell come from `GtCgNoteSrc/NoteDonor` at the cubelife SRC/DONOR sites.
 It runs EVERY cycle for the whole run on purpose, so the user can watch the flicker while it is on.
 Watcher: `scratchpad/watch355.sh`.
+**Run 355 RAN (23 Sep, log `logs/shad_log_run355_2026-09-23_cubegpu_b1cd966e.txt`, crash at
+t=363.7 s, see D).** 4993 cycles captured, 0 missed (buffers never all in flight). MEASURED:
+- A static menu scene gives a bit-identical cube for hundreds of frames: hash `bc6e2fc9b790ee56`
+  for 360 frames at t=33-39 (long-lived uid 0xa5, built S1+D53), again at t=171, 327 and 360. The
+  SAME hash also comes out of cubes rebuilt from scratch every frame through the eviction path
+  (t=172.7-173.0: 4 new uids, S6+D48; t=361.2: 8 new uids). So the rebuild (SRC + 48 DONOR copies)
+  is bit-exact and deterministic: it reproduces the in-place cube to the bit.
+- The race (t=52-158) and the post-race phase (t=183-292, three cubes per frame: q1 256 m9 plus q0
+  64 m7 / 128 m8 alternating, all rebuilt every frame) change almost every frame (q1: 833 distinct
+  hashes in 1748 frames, runs of identical frames up to 15, A-B-A returns only 41).
+- In the menu, when the long-lived cube changes, ONLY mip0 cells change (layers 1,3,5, or 1,5, or
+  0) and mips 1-8 stay bit-identical; t=331-336 alternates between two such versions
+  (`302ef27b` <-> `9895f17b`, 3 cells apart). Whether that is a real stale mip chain or a
+  sub-LSB change the box filter absorbs is unknown: the detail budget was gone (lesson 32).
+- NOT established: where the user's frozen replay was in this run, and whether the flicker stayed
+  visible with the capture on. Asked the user; the A/B/C/D decision waits on that answer.
 
 **B. `SurfaceFormat` assert with Bc6(40)+Ubint(12)** (348, loading the Menu Book race after the
 Café). The source is proven to be T#-only, via the flatbuf path. It did not reproduce in
@@ -285,6 +312,12 @@ page that has left a fault loop is not re-protected. Never special-case the addr
 `0xc0000005 at eboot.bin+0x92f700 while writing 0x2b4`, reached through a virtual call
 `call [rax+0x440]` whose return address is eboot.bin+0x1f9331b. It came after a 45 s guest
 heartbeat loss with netctl spam. Minidump `logs/run354_guest_crash.dmp`; not chased.
+**Reproduced in run 355** at t=363.7 s: `0xc0000005 at eboot.bin+0x92f72f while writing 0x2a6`,
+Rendr thread again, rcx=rdx=rsi=0 (a null base), rsp+0x38 holds 0x0e1f331b (the same caller as
+354), and it happens right after `sceFontSetScalePixel/SetEffectWeight/SetEffectSlant/
+RebindRenderer` calls with text "...Test Car Name 3 Lines..." in memory at r15 - i.e. inside the
+guest's font/text layout. Both runs crashed at the same point of the flow: Music Rally done, back
+in the menu, entering the next scene. Minidump `logs/run355_guest_crash.dmp`. Still parked.
 `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
 thumbnails); `resource_patching_pass.cpp:471` "Thread ID buffer addressing is not supported
