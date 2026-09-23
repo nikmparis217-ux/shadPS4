@@ -1,0 +1,251 @@
+# Claude's working memory for the shadPS4 / GT7 lane
+
+This branch (`claude` on the fork, remote `mine`) is Claude's own notebook for this lane. The
+user set it up on 23 Sep 2026: "this is your personal branch for anything you need to remember
+for next sessions, old fixes, old mistakes to not repeat". It holds notes only, no source, and it
+is an orphan history unrelated to `gt7-main`.
+
+- **Read this file first** in any new session on `C:\shadps4-gt7`:
+  `git -C /c/shadps4-gt7 show claude:CLAUDE_MEMORY.md`.
+- The detail behind every line here lives in the other files on this branch (`GT7_upstream/README.md`
+  = the state on 22 Sep, `GT7_work/HANDOFF_RENDERING_ACT3.md` = the long run history).
+- **Append, do not rewrite.** When a lesson, a proven fix, or a refuted hypothesis appears, add it
+  here and commit on top of `claude` (recipe at the end). Correct a wrong entry by marking it wrong
+  and saying why, rather than deleting it, so it does not get re-derived.
+- The fork is **public**. The user chose this knowingly. Push to `mine` only, never to `origin`
+  (shadps4-emu upstream). Another session (the 1.71 / offline chat) also commits here: fetch
+  first and build on the current tip.
+
+---
+
+## 1. Standing rules (the user's, not negotiable)
+
+- Reply to the user in **Greek**; everything written into the repo in **English**.
+- **Never launch the emulator or the game.** The user starts and closes every run. Claude
+  prepares the wrapper bat, arms a watcher, and reads the log.
+- **Archive `%APPDATA%\shadPS4\log\shad_log.txt` into `GT7_upstream/logs/` before every launch and
+  the moment a run exits, before any analysis.** The emulator truncates that one file on start,
+  and another chat shares it.
+- Never build or commit in `C:\shadps4-sync`. Never edit `GT7_work/GOW_probe*.bat` or
+  `GT7_work/psn_local/server_log.txt`. `gt7-v0.18.0` is reference only.
+- Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
+- Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
+- **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
+  numbers continue the global series (last used: 353).
+- **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
+  meant: do not propose side investigations while a target is open.
+- A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
+  Root cause, not symptom. "The game gets further" is not a fix.
+- **One general fix per PR branch.** PR-ready means: no comments narrating the investigation, no
+  `GT_*` gate, no game named in the code, no shader-hash or address special case, and **no
+  Co-Authored-By or "generated with" trailer anywhere** ("they dont want ai"). The shadPS4
+  CONTRIBUTING rules also say AI use must be disclosed and PR text must be human-written: Claude
+  supplies factual notes, the user writes the prose.
+- Instruments live in C++ behind `GT_*` env vars and stay in our tree; they are stripped from PR
+  branches. Emulator tooling is never python/ps1 (ad-hoc log greps in the chat are fine).
+- Report under **ROOT CAUSE / EVIDENCE / CHANGE / VALIDATION / REMAINING ISSUE / DIFF REVIEW**,
+  with MEASURED, SOURCE and INFERENCE kept apart.
+- Investigation constraints the user states for a target are binding for that target. Current
+  examples: "Do not patch/suppress the error. Do not add fallback behavior. We want the first
+  invalid state that causes it." and, for the texture-cache work, "Do not change TextureCache
+  behavior. Do not prevent FreeImage. Do not change MipOf/SliceOf. Do not suppress
+  SanitizeCopyLayers."
+- When the user specifies an instrument's report layout, build exactly that. A broader patch
+  than asked was rejected once (run 353's first draft); do not repeat it.
+
+---
+
+## 2. Mistakes already made. Do not repeat them.
+
+Each line is an incident that cost a run, a build, or the user's time.
+
+1. **Analysed before archiving the log** (run 336, 18 Sep). The next launch truncated a 117 MB log,
+   the only OFF control. First tool call after "closed/crashed" is the `cp`.
+2. **Two variables changed between a good and a bad run, and only one was blamed** (309 vs 310:
+   warm pipeline cache AND the fence-order commit 4720205e). Four runs were spent on the cache.
+   Before writing "X causes Y" from two runs, tabulate every difference: build, env, cache state
+   (`Preloaded N` line), game data, dump version (`Game id` line), route.
+3. **A fatal detector killed the run it was meant to observe** (311a, 16 s after boot). It counted
+   `CHAIN=1` indirect buffers as nesting; the bit field was one line below the one being read. New
+   instruments that can stop a run ship log-only first; read every bit field of a packet before
+   defining "impossible".
+4. **A verifier used its own rule instead of the runtime's** (312: 230 "spec DIFF" modules with
+   identical SPIR-V). The emulator's `operator==` is deliberately asymmetric. Copy the deciding
+   line of code into the instrument, and ask "which output byte changes if this is true?"
+5. **Magnitude was never compared with the symptom** (GoW run 020). A proven race of 0.1065 was
+   credited with black blobs that need ~0.4, and no probe even sampled a blob.
+6. **Read log-line counts as frequencies.** Budgeted lines (`[softclamp]` 32/64, the logger itself
+   dropping ~95% of `SanitizeCopyLayers` warnings) lie. Use the counters (`[fprof]`,
+   `[copylayers] #N`).
+7. **Edited a shell script while a background job was executing it.** Bash reads by byte offset,
+   so the running copy died. Write a new file under a new name.
+8. **Built without verifying the edit reached disk.** A broken heredoc plus `a && b || build` ran a
+   no-op build, and a whole run was judged on a binary without the fix. Write edit scripts with the
+   Write tool, grep the new text on disk, and make the build conditional on the edit.
+9. **Heredocs with quotes break in the Bash tool.** Any script longer than 3 lines, or containing
+   quotes, is written to the scratchpad with Write and then run.
+10. **PowerShell 5.1 `Get-Content`/`Set-Content` corrupts UTF-8 on the READ** (CP1253). Use the Edit
+    tool, or .NET with UTF8 on both ends. Several repo files are CRLF (e.g. `liverpool_to_vk.*`);
+    normalise, patch, restore, and check.
+11. **Git Bash rewrites `/FI`-style flags into paths.** `tasklist /FI ...` fails silently and
+    `| grep -c` then reports 0, which reads as "process not running". Use `Get-Process`, and confirm
+    a negative with a second signal.
+12. **"Intermittent" was written as "random/race"** (340). The user rejected it: a state-dependent
+    bug looks identical. If it does not reproduce, follow the one captured submission upstream, or
+    run the cross-game matrix (GT7 / GoW 2018 / Ghost of Tsushima). Do not keep squeezing GT7.
+13. **A monitor's silence meant two things** (340). The GPU stopped while netctl spam kept the log
+    growing. Name every quiet state: `GUEST FRAME HEARTBEAT STOPPED` (no SubmitFlip) is not
+    `GPU TIMELINE STOPPED` (only `[gpuwait]` plus a frozen fresh driver tick).
+14. **A guard read one half of a packed field that is written 16 bits at a time**
+    (`SetFlags<u16>` leaves the upper half stale). The first "fix" nulled a real image. Grep every
+    reader of a packed field, and fix the WRITE before trusting a bit.
+15. **Called a zero a bug without reading the model** (GoW: `CompositeExtract(ballot, 1) == 0`).
+    shadPS4 models a guest wave64 as one 32-lane subgroup, so the zero is correct. Before calling
+    something wrong, find the other places that share the assumption.
+16. **A metric derived from speed "explained" why the speed was zero** (the same shape appears in
+    any ratio). Read how a number is computed before building on it.
+17. **Blamed the merge for a new dump's crash** (1.71's `5_6_5+Ubint`). Read the log's `Game id` and
+    `App Version` before judging any log. Two dumps share the `CUSA24~*` 8.3 aliases; select with
+    `GT_GAME=<full path>\eboot.bin`.
+18. **A scripted merge left 9 compile errors over 3 builds** (b1cd966e). After the scripted conflict
+    resolution, census the old identifiers across the whole tree (`->member` as well as `.member`),
+    check duplicates in auto-merged files, and run the first build with `ninja -k 0`.
+19. **Trusted `last_crumb.txt` "DIED"**. `DeathCrumb::Finish(true)` is not reached on a normal exit,
+    and the crumb records the render thread's phase, not the crashing thread's.
+20. **An arming-free null result** (351). A run whose instrument never fires proves nothing until
+    the log shows the instrument was armed. Every observer now prints one `... observer ARMED
+    (GT_X=...)` line at start.
+21. **A one-shot trigger would have fired on the wrong object** (353 draft, caught before the run).
+    A donor at 0x100b170000 is freed inside the same range before the canonical image, so the trigger
+    was narrowed to `levels > 1 && layers > 1`. Before arming a one-shot, list every object that
+    could match first.
+22. **Assumed OLD cells held last frame's data** for a freshly created image. A new image has no last
+    frame; OLD there means uninitialised.
+23. **Proposed a live-memory search for the 1.71 index key.** The safety system stopped it twice
+    (21 Sep). Never propose or rebuild it again, in any wording. If a dump cannot be read, stay on
+    1.00 and tell the user.
+24. **`sleep` in the foreground Bash tool is blocked.** Check immediately, or use a background
+    watcher with notification.
+25. **`C:\shadps4-gt7\.git` is a pointer file** (linked worktree of `Documents\GitHub\shadPS4`), so a
+    temp index under `.git/` fails. Put it in the scratchpad. `git status` with a stale
+    `GIT_INDEX_FILE` shows everything as `D`/`??`, which is an artifact and not damage.
+
+---
+
+## 3. Fixes that are proven and must stay
+
+| commit | what | evidence |
+|---|---|---|
+| `65b03b2f` (branch `pr-lds-stream-commit`, worktree `C:\shadps4-pr-lds`, on upstream `37cacc59`, **unpushed**) | `lds_buffer.Commit();` after the memset in `BindBuffers`' `SharedMemory` branch. `StreamBuffer::Map` without `Commit` left the emulated-LDS region unreserved, and the next small stream copy landed inside it, so the LDS dispatch overwrote it on the GPU. | 345: 2 corrupt indirect-arg tables in 56k plus device lost. After the fix, 264,551 tables with 0 events (346-349), 77,519 of them with the diagnostic barrier off. All 4 events hit records 1/17, which is exactly the predicted `A+16 mod 64` overlap. Still pending before the PR: a Vulkan validation run, GoW/GoT regression. |
+| `4720205e` | Deferred EOP/EOS/ReleaseMem fences complete in order (`FenceWaitTick`). | 309: >3000 `[fenceorder]` and a type-0 death. 310: 0, and Single Race setup survived for the first time. The user said to leave it untouched. |
+| `387baa06` | `MappedPrefixAt` returns `it->upper() - addr`. It had required the mapping to *start* at the descriptor base. | This was our own bug: it null-bound 22026 of 22026 tail descriptors per 2 s window. |
+| `1cba6562` | GoW: flags-0 ReadConst goes to read_const_dynamic always, plus selective per-shader DMA. | This replaced "turn DMA on for this game" and is the model for a general fix. |
+| `e991e369` | On a guest wild jump, log the 24 bytes ending at the innermost return address (the `call` instruction itself). | This is general and ungated. |
+| `2b7cf784` | `abandon()` fix for the PushUd crash that our own instrument introduced. | — |
+| `SetFlags<u32>` for the SRT window flags | Write the whole packed field, then guard on the bit. | Run 050. |
+
+Earlier upstream-style branches: `pr-general-fixes` (6 fixes) and `pr-descriptor-dword-mask`.
+
+---
+
+## 4. Hypotheses refuted. Do not retry them.
+
+- A warm pipeline cache causes the lost UI text. Refuted: 315 had no preload and lost the text
+  progressively, and `GT_INFO_PERM0` (314) changed nothing.
+- The priority runner starves on a stale `KnownGpuTick`. Refuted: `MasterSemaphore::Wait` blocks on
+  a real `waitSemaphores`. What stays suspect is the single strict-FIFO `PriorityPendingOpsThread`.
+- "54 nested IndirectBuffers = garbage". Wrong: these are chained IBs (`CHAIN=1`), implemented
+  recursively.
+- 230 cache modules differ (312). Wrong: identical SPIR-V, and the instrument used the wrong rule.
+- The "black polygon" is missing barriers. It is flat grey untextured geometry (measured in the
+  pixels). There were 0 T# null-binds and 0 shader stubs in those runs.
+- The GT7 stall is a shader loop. The chain producer CS -> RAM -> stream -> draw was intact; the
+  corruption was the LDS overlap above.
+- **Texture-cache target (351-353):** the "half-built cube" theory is dead. All 48 donor copies
+  precede the first consumer return (352b). An out-of-range SliceOf layer write is refuted: the max
+  destination layer is 5 of 8. The killer is not one of the 48 donors (353).
+- Bc6+Ubint comes from a V# or a color buffer. Impossible: only a T# has room for dfmt 40 / nfmt 12.
+
+---
+
+## 5. Open targets, with their exact state (23 Sep 2026)
+
+**A. Visual mutation in a static paused replay (the current target).** Shadows and textures
+change every frame. The recurring error is `SanitizeCopyLayers` at ~48 per frame (true rate from
+the `[copylayers] #N` counter) on the canonical image at **0x100b1b0000**: 256x256, 9 mips, 8 layers
+(6 real plus 2 pow2 padding), B10G11R11, array_mode 2, tile 13, pitch 256. It is not stable: it is
+rebuilt from 48 donors every frame and then **freed by `ResolveOverlapImpl`'s right-overlap
+"chance overlap" branch**, so its uid changes each frame. Frames 2052/2053 served it 239/250 times
+with only the 6 mip0 cells written.
+Run 353 (`GT_CUBEKILL`) identified the killer: a **RenderTarget 960x540 R16G16Sfloat at
+0x100b200000 + 0x240000**, tile 14, array_mode 4, pitch 1024. `IsCompatible` is 1 (both are 32-bit).
+MipOf returns -1 at the `array_mode 4 vs 2` gate; mip0 is also not slice-aligned (0x50000 % 0x40000)
+and has no pitch match. SliceOf is never reached. `safe_to_delete` is 1 (86 ticks > 32). The killer
+is not in the donor family and is not a mip0 face; 0x100b440000 is the RT's end.
+**Verdict: decision-tree branch 3.** This is a legal alias of a genuinely different resource, so
+MipOf is right. What remains unproven is whether the texture cache's single-owner eviction is
+wrong here. The emulator is wrong only if the cube and the RT are **alive at the same time**
+(`cube ... RT ... cube` within one frame); eviction is correct if they are sequential
+(`cube cube | RT RT`).
+**Next step, awaiting the user's go:** run 354 with an instrument that answers exactly that
+ordering question. Do not build it without the user's approval.
+
+**B. `SurfaceFormat` assert with Bc6(40)+Ubint(12)** (348, loading the Menu Book race after the
+Café). The source is proven to be T#-only, via the flatbuf path. It did not reproduce in
+351/351b/352/352b/353; the `[tsharp]` observer (`GT_TSHARP_PROV=1`) stayed armed and never fired.
+It is state-dependent. A third impossible pair appeared on 1.71: 52/11.
+
+**C. PCL Event fault loop** (349b). The guest polls 0x1000fffd80 on a GPU-tracked page. After a
+second 4096-fault streak, `BreakFaultLoop` refuses the fault and the guest dies at
+`eboot+0x3b590e0`. This predates the merge (346 already had the first streak). Fix direction: a
+page that has left a fault loop is not re-protected. Never special-case the address.
+
+**D. Parked:** `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
+investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
+thumbnails); `resource_patching_pass.cpp:471` "Thread ID buffer addressing is not supported
+outside of compute" (344); the Single Race deadline dispatcher reading a signalled label as a
+pointer; 1.71 (`CUSA24767`) in general, until the offline chat makes it boot.
+
+**Uncommitted instruments in `gt7-main`** (strip before any PR): `[tsharp]` in `vk_rasterizer.cpp`
+plus `SurfaceFormatSupported()` in `liverpool_to_vk.*` (diagnostic only); `[cubetrace]` and
+`[cubekill]` in `texture_cache.cpp`; `GtBindCtx` in `gt_va_watch.h`; `GtPresentFrame()`. The
+wrappers are `GT7_probe351_tsharp_prov.bat`, `352_cubetrace.bat` and `353_cubekill.bat`. The logs
+are in `GT7_upstream/logs/shad_log_run35x_*`.
+
+---
+
+## 6. Environment and tooling facts
+
+- Active game: `CUSA24769 v01.00`. `CUSA24767 v01.71` is parked. A fresh profile reaches Music
+  Rally and the Café, but not Single Race.
+- `run_gt7.ps1` applies defaults with `Set-GtDefault`, and a value already in the environment wins.
+  So a wrapper `set GT_X=...` then `call` works end to end; this was verified.
+- Watcher: `RUN=NNN bash GT7_upstream/watch_run.sh`, or a per-run copy in the scratchpad with the
+  run's tags added to `KEYS`. Re-arm mid-run with `WATCH_RESUME=1`.
+- A 25-45 s heartbeat loss with `netctl`/`np_manager` spam is a loading screen. A GPU stall is
+  established only by `[gpuwait]`.
+- The texture cache code that matters: `ResolveOverlapImpl(image_info, binding, cache_image_id,
+  merged_image_id)`; `ImageInfo::MipOf` gates (IsCompatible, array_mode, levels == 1, mip search with
+  in-range / slice-aligned / pitch match, dims, type); `SanitizeCopyLayers` = min(src, dst) layers;
+  `NumLayers()` pads to pow2 (6 -> 8). `IsCompatible` compares only bit width, so R16G16Sfloat and
+  B10G11R11 pass it.
+- `SharpFetch<T>::Fetch`: per dword, `load_mask` bit set selects `flatbuf[offsets[i]]`, otherwise
+  `immediates[i]`. dword1 holds dfmt [25:20] and nfmt [29:26].
+- The Unreal project at `C:\GTNikos` is a different lane. Its huge CLAUDE.md is not this lane's
+  rules; `C:\shadps4-gt7\CLAUDE.md` is.
+
+---
+
+## 7. How to add to this branch without touching `gt7-main`
+
+```sh
+cd /c/shadps4-gt7
+git fetch mine claude && git update-ref refs/heads/claude FETCH_HEAD   # only if mine is ahead
+export GIT_INDEX_FILE=<scratchpad>/claude-notes.index                   # never under .git/
+git read-tree claude
+b=$(git hash-object -w --path=CLAUDE_MEMORY.md <scratchpad>/CLAUDE_MEMORY.md)
+git update-index --add --cacheinfo "100644,$b,CLAUDE_MEMORY.md"
+C=$(git commit-tree "$(git write-tree)" -p claude -m "<what changed>")   # no trailer
+git update-ref refs/heads/claude "$C"; unset GIT_INDEX_FILE
+git push mine refs/heads/claude:refs/heads/claude
+```
