@@ -31,7 +31,7 @@ is an orphan history unrelated to `gt7-main`.
 - Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
 - Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
 - **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
-  numbers continue the global series (last used: 353).
+  numbers continue the global series (last used: 354).
 - **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
   meant: do not propose side investigations while a target is open.
 - A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
