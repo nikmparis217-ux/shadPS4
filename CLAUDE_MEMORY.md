@@ -129,6 +129,20 @@ Each line is an incident that cost a run, a build, or the user's time.
 25. **`C:\shadps4-gt7\.git` is a pointer file** (linked worktree of `Documents\GitHub\shadPS4`), so a
     temp index under `.git/` fails. Put it in the scratchpad. `git status` with a stale
     `GIT_INDEX_FILE` shows everything as `D`/`??`, which is an artifact and not damage.
+26. **Read an unmarked cell as "not counted", not "not written"** (352b, corrected by 354). The
+    `[cubetrace]` grid had no mark for render-target writes through a subresource view or for
+    in-place storage writes, so its "66 OLD cells" were cells the GPU had written that frame.
+    Before a grid can say "never written", list every mechanism that writes the resource and
+    check that each one has a mark.
+27. **A write hook on `MarkGpuWritten` is blind to storage writes into separate images.**
+    `ResetBindings` calls it only for `is_target || force_general`; a compute dispatch that writes
+    a separate storage image sets neither. In 354 the 48 donors show "0 GPU writes before the
+    copy" although each was bound as storage by the mip-generation dispatch. The BIND row is the
+    evidence of the write, not the WRITE row.
+28. **Remembering only the last bound view of an image under-marks multi-mip dispatches.** GT7's
+    mip generation binds 2 mips (1+2) or 6 mips (3..8) of the same image per dispatch, so the
+    victim grid marked only mip 2 and mip 8 as W and left mips 1 and 3-7 showing an older G. Record
+    every bound view of the dispatch, not a per-image last view.
 
 ---
 
@@ -190,6 +204,42 @@ wrong here. The emulator is wrong only if the cube and the RT are **alive at the
 **Next step, awaiting the user's go:** run 354 with an instrument that answers exactly that
 ordering question. Do not build it without the user's approval.
 
+**RUN 354 RESULT (23 Sep; `GT_CUBELIFE`, log `logs/shad_log_run354_2026-09-23_cubelife_b1cd966e.txt`,
+window frames 4299..4302, 2973 rows, 0 suppressed). Verdict: CASE B.**
+- The cube's WHOLE range [0x100b1b0000, 0x100b45c000) is reused every cycle by four contiguous
+  post-process render targets: 48x1080 RG16F @0x100b170000, 48x27 RG16F @0x100b1f8000, 960x540
+  RG16F @0x100b200000 (the killer), 960x540 RGBA16F @0x100b440000. This is PS4 transient-memory
+  aliasing, so on PS4 the cube cannot survive the cycle either, and the game rebuilds it completely
+  every cycle.
+- Healthy regime (frames 4299-4300, canonical uid 0x9f alive since frame 3778): the game writes the
+  canonical IN PLACE. mip0 faces come from 209 render-target draws through a subresource view;
+  cs 0x2673a048 reads face N of mip0 and writes mips 1-2 of layer N, and cs 0xc28178a3 reads mip 2
+  and writes mips 3-8. Consumers cs 0x7c3468f9 / 0x7fbc7859 / 0xda05e7f8 sample view mip 0+9 layer
+  0+6 (11x per cycle); fs 0x698cf958 samples each face of mip0.
+- From frame 4300 on, every cycle runs: last use of the cube -> the RT request finds
+  `safe_to_delete` = 1 -> FREE (3 of 3 decisions FREE, 0 KEEP) -> the 4 aliases are created, each
+  GUEST-uploaded and written once -> the next cycle's face and mip requests kill the aliases as
+  chance overlaps -> a 256x256x6 face array plus 48 single-mip donors are created, each
+  GUEST-uploaded and then GPU-written (169-170 RT draws for the faces; a storage bind by the
+  mip-generation dispatch for every donor) -> the canonical is recreated by ExpandImage (GUEST all
+  9 mips x 8 layers "from cached", then SRC face array -> mip0 layers 0-5, then 48 DONOR ->
+  mips 1-8 layers 0-5) -> 11 uses -> FREE.
+- At the first use of each recreated canonical (0x495, 0x4e5): 0 of 72 cells were never written.
+  All 54 real cells hold this cycle's GPU output (S 6 + D 48). The 18 cells of layers 6-7 (pow2
+  padding) hold GUEST bytes and are never sampled (the consumer view is layer 0+6).
+- Case C is excluded: no use of a canonical after an alias bind or write, and each canonical's
+  last-use tick (34107 / 34242 / 34404) was already known complete (done 34160 / 34324 / 34445)
+  when the alias was requested.
+- The Case D mechanism exists but its effect is confined to the padding. The guest hash of the
+  overlap is 1413d82a92a10bf1 at every alias create, every first write and every cube upload across
+  3 cycles, so no GPU write of either image ever reaches guest memory (0 downloads: the RTs are
+  tiled). Only the 18 padding cells, 4 of which lie in the overlap, keep those bytes.
+- So the 48 `SanitizeCopyLayers` warnings per frame are the per-cycle rebuild, and the copy itself
+  is correct (1 donor layer into 1 slice). The cube eviction is NOT shown to cause the visual
+  mutation. What 354 cannot see is GPU CONTENT: whether the rebuilt cube's bytes are identical from
+  cycle to cycle in a static scene. Proposed next step (not built, awaiting the user): a per-cell
+  GPU content hash of the canonical at its first use over 3-4 cycles.
+
 **B. `SurfaceFormat` assert with Bc6(40)+Ubint(12)** (348, loading the Menu Book race after the
 Café). The source is proven to be T#-only, via the flatbuf path. It did not reproduce in
 351/351b/352/352b/353; the `[tsharp]` observer (`GT_TSHARP_PROV=1`) stayed armed and never fired.
@@ -200,16 +250,22 @@ second 4096-fault streak, `BreakFaultLoop` refuses the fault and the guest dies 
 `eboot+0x3b590e0`. This predates the merge (346 already had the first streak). Fix direction: a
 page that has left a fault loop is not re-protected. Never special-case the address.
 
-**D. Parked:** `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
+**D. Parked:** a NEW crash class, run 354 at ~t=377 s: guest "Rendr" thread,
+`0xc0000005 at eboot.bin+0x92f700 while writing 0x2b4`, reached through a virtual call
+`call [rax+0x440]` whose return address is eboot.bin+0x1f9331b. It came after a 45 s guest
+heartbeat loss with netctl spam. Minidump `logs/run354_guest_crash.dmp`; not chased.
+`PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
 thumbnails); `resource_patching_pass.cpp:471` "Thread ID buffer addressing is not supported
 outside of compute" (344); the Single Race deadline dispatcher reading a signalled label as a
 pointer; 1.71 (`CUSA24767`) in general, until the offline chat makes it boot.
 
 **Uncommitted instruments in `gt7-main`** (strip before any PR): `[tsharp]` in `vk_rasterizer.cpp`
-plus `SurfaceFormatSupported()` in `liverpool_to_vk.*` (diagnostic only); `[cubetrace]` and
-`[cubekill]` in `texture_cache.cpp`; `GtBindCtx` in `gt_va_watch.h`; `GtPresentFrame()`. The
-wrappers are `GT7_probe351_tsharp_prov.bat`, `352_cubetrace.bat` and `353_cubekill.bat`. The logs
+plus `SurfaceFormatSupported()` in `liverpool_to_vk.*` (diagnostic only); `[cubetrace]`,
+`[cubekill]` and `[cubelife]` (run 354) in `texture_cache.cpp`, with `GtLifeNoteWrite` called from
+`MarkGpuWritten` in `texture_cache.h` and `g_gt_imgsrc_last` in `gt_va_watch.h` + `buffer_cache.cpp`; `GtBindCtx` in `gt_va_watch.h`; `GtPresentFrame()`. The
+wrappers are `GT7_probe351_tsharp_prov.bat`, `352_cubetrace.bat`, `353_cubekill.bat` and
+`354_cubelife.bat` (= 353 + `GT_CUBELIFE=0x100b1b0000+0x2ac000`). The logs
 are in `GT7_upstream/logs/shad_log_run35x_*`.
 
 ---
