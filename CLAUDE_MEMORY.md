@@ -352,8 +352,8 @@ The next step proposed is a bounded HLE-only observer (per-thread ring of font c
 crash handler), not built yet.
 **Run 356 is built** (`GT7_probe356_fontwatch.bat` = 355 + `GT_FONTWATCH=1`; watcher
 `scratchpad/watch356.sh`). The user's two safeguards, both kept: (1) the observer never
-dereferences a guest pointer - every read is `ReadProcessMemory` (cannot fault, and does not trip
-the emulator's page tracking), and an unreadable pointer is classed by `VirtualQuery` as unmapped or
+dereferences a guest pointer - every read is `ReadProcessMemory`, which cannot fault, so it cannot
+enter the emulator's fault handler either; an unreadable pointer is classed by `VirtualQuery` as unmapped or
 committed-but-protected; (2) the crash dump is frozen rings of fixed POD entries written with a
 hand-rolled formatter and `WriteFile` to `log/fontwatch_crash.txt`, opened at arm time, AFTER the
 existing report and minidump - no lock, no allocation, no CRT formatting. Why not the logger: it is
