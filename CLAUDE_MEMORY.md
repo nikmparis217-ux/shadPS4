@@ -31,7 +31,7 @@ is an orphan history unrelated to `gt7-main`.
 - Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
 - Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
 - **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
-  numbers continue the global series (last used: 357, built 24 Sep, not yet run).
+  numbers continue the global series (last used: 357, run 24 Sep).
 - **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
   meant: do not propose side investigations while a target is open.
 - A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
@@ -410,6 +410,27 @@ write address / return address / rsp / r15 / thread; the Rendr fontwatch ring ju
 every font lifecycle event. After the first skip the GPU stream is no longer faithful, so
 nothing after it says anything about PM4 or graphics state. No upstream fix, and the
 soft-skip never becomes default behaviour.
+**Run 357 result (24 Sep): crash D did NOT fire, and the run lasted ~65 min.** Log:
+`logs/shad_log_run357_2026-09-24_dcbskip_b1cd966e.txt` (299 MB), dump `run357_fontwatch_crash.txt`,
+minidump `run357_guest_crash.dmp`. 4 `[dcbskip]`, all at t~175-205 s: 3 x `dword 264 of 266` in
+submission #14900 (three 266-dword IBs 0x480 apart) and 1 x `dword 2 of 4` in #15822; none after.
+The scene pattern that preceded crash D in 354/355 - a Rendr font burst of 300-400 followed
+within seconds by a burst of exactly 34 - occurred TWICE (t~898, t~3122) with no crash
+(`scratchpad/run357_timeline.py` finds it; 354 and 355 each have it once, at the crash).
+Fontwatch over 3848 s: 0 of every anomaly, 62 threads, 0 dropped; lifecycle = 1 CreateRenderer
+(t=0), 50 Bind, 48 Open, and NO Destroy/Unbind/Close/MemoryTerm/DestroyLibrary at all. The run
+ended on the parked PCL Event fault loop (`eboot+0x3b590e0` reading 0x1000fffd80 after two
+BreakFaultLoop READ streaks of 6.2 and 5.5 min), so the dump holds THAT crash, not crash D; its
+Rendr ring is quads + GetKerning on a valid font and the one renderer. Not a fix: versus 355
+two things changed (GT_FONTWATCH on every Rendr font call, GT_DCB_SOFTSKIP acting 4 times ~12 min
+before the first window) and 2/2 vs 0/2 is a small sample. The dump header still says "run 356
+armed" - the string is hard-coded in `gt_font_watch.cpp`.
+**Source fact for the PM4 look (not yet tested):** `ProcessGraphics`'s IndirectBuffer case
+recurses into the child and then resumes the PARENT whatever the `chain` bit says (upstream
+`4621b6a1` identical). On AMD's CP a CHAIN=1 IB is a jump, not a call. If so, the parser reads the
+parent's trailing dwords after the whole chain returns - 57-107 ms late, after the game has
+reused the chunk - which fits the 266- and 16-dword shapes (2 dwords after a 4-dword slot). The
+4-dword shape (`dword 2 of 4`) is NOT explained by it.
 
 `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
