@@ -574,13 +574,53 @@ and "keep it saved tho so we have a backup to play the game whenever / have the 
 - Clean-worktree submodules: `git submodule update --reference <lab module dir>` failed for most of
   the 45; plain network clones worked. The lab worktree's module repos live under
   `Documents/GitHub/shadPS4/.git/worktrees/shadps4-gt7/modules`, not under C:/shadps4-gt7/.git.
+- Clean build 1 (24 Sep 22:01): `NINJA_EXIT=0`, exe 69,622,784 bytes, tree `19700eba`, no local edits.
+
+**Clean run 01 on 1.00 (24 Sep 22:10) - PARKED, the user switched to 1.71 before it was analysed.**
+Access violation `0xc0000005 at 0xc3faac6` = eboot+0x101aac6 (eboot loaded at 0xb3e0000) at t=17 s,
+BootProject::TopRootWindow, on the thread that had just made 19 `sceSaveDataGetSaveDataMemory2`
+calls. Log: `logs/shad_log_clean01_at_exit_221026.txt`. Not a clean A/B against the lab: the save
+itself changed too - run 359 made 42 `sceSaveDataSetSaveDataMemory2` calls before its OOM, and the
+lab passed this point on the save 358 had left (359 read it 20 times and went on). The save-data HLE
+is identical in `main` and `gt7-main` (empty diff). Copies of that save and config:
+`backup_exe/save_CUSA24769_pre_clean01_20260924_2205`, `backup_exe/config_lab_pre_clean01_*.json`.
+
+**GAME SWITCH (24 Sep ~23:00, user): "we work with 1.71 from now on".** CUSA24767 v01.71,
+`ps4games\CUSA24767` (8.3 alias `CUSA24~2`; `CUSA24~1` is 1.00). Run as installed: eboot SHA256
+`8101d76a...f4a3f2fd` (the owner's two local-save patches P1/P2, online sign-in sites removed;
+`eboot.bin.orig` = `65f75f6b...`) and `app_param_0.sfo` with automation (`d7319018...`). The game
+files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify them.
+- PRIVATE PROFILE for the clean line: `C:\shadps4-clean-run\user` = shadPS4's portable user dir
+  (`current_path()/user`, path_util.cpp:90). Copies (24 Sep 23:0x) of config.json, users.json,
+  keys.json, input_config, trophy, home/1000/{trophy,inputs}, home/1000/savedata/CUSA24767,
+  download/CUSA24767. Cache and shader dirs start EMPTY. Why: (1) a clean run never touches the real
+  1.71 save; (2) the other lane's runs use %APPDATA%\shadPS4 and its log; (3) on the SHARED profile
+  the clean build ran with NO pipeline cache at all: clean01 log line 109 `WarmUp: Pipeline cache
+  profile has unexpected size (60 != 64). Ignoring the cache`, then `Close: Cache dumped` - upstream
+  meets the lab's profile blob, drops the whole cache and closes it, so it neither reads nor writes
+  (measured: 0 files in cache/CUSA24769 newer than 21:21). The lab's blobs use the same names but
+  other versions (lab ShaderBinaryVersion 14 / ShaderMetaVersion 9 XOR BuildGeneration(); upstream
+  5 / 5), so the two caches can never share a directory. And upstream has NO build identity in its
+  cache key: after a fix that changes codegen, a clean rebuild replays its own stale modules - clear
+  `C:\shadps4-clean-run\user\cache` after any recompiler change.
+- Launcher `GT7_upstream\GT7_clean171_run01.bat`: clears GT_*, refuses if any shadps4.exe runs,
+  `cd /d C:\shadps4-clean-run`, starts the clean exe on the 1.71 eboot, pauses at exit.
+- Watcher `scratchpad/watch_clean171.sh` (+ `watch_clean.awk`): only the CLEAN exe counts (`ps -W`
+  shows full Windows paths, so a lab shadps4.exe is ignored); at exit archives the private log AND the
+  game's own `download/CUSA24767/APP_DATA/logs/archived.log` as `logs/shad_log_<RUN>_at_exit_*` and
+  `logs/game_log_<RUN>_at_exit_*`.
+- Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
+  num_format=12 (Ubint) at ~3 min (21 Sep); the offline lane says the emulator dies in ~4 of 5 1.71
+  runs within minutes (renderer), and that sceNpAuth* stubs made a polling storm when the online
+  sign-in sites were patched (those sites are removed in the current eboot).
 
 ---
 
 ## 6. Environment and tooling facts
 
-- Active game: `CUSA24769 v01.00`. `CUSA24767 v01.71` is parked. A fresh profile reaches Music
-  Rally and the Café, but not Single Race.
+- Active game (since 24 Sep ~23:00, user): `CUSA24767 v01.71` on the clean line, private profile
+  `C:\shadps4-clean-run\user`. `CUSA24769 v01.00` is parked (a fresh profile reached Music Rally and
+  the Café on the lab build, but not Single Race).
 - `run_gt7.ps1` applies defaults with `Set-GtDefault`, and a value already in the environment wins.
   So a wrapper `set GT_X=...` then `call` works end to end; this was verified.
 - Watcher: `RUN=NNN bash GT7_upstream/watch_run.sh`, or a per-run copy in the scratchpad with the
