@@ -209,6 +209,11 @@ Each line is an incident that cost a run, a build, or the user's time.
 
 Earlier upstream-style branches: `pr-general-fixes` (6 fixes) and `pr-descriptor-dword-mask`.
 
+**CORRECTION (24 Sep): the `65b03b2f` row above says "unpushed" - wrong by then.** Upstream
+`bc028b7c` "video_core: commit the emulated-LDS allocation taken from the stream buffer (#5070)",
+authored by the user on 23 Sep, is the identical one-line change (diffed). The PR was submitted
+and merged; `pr-lds-stream-commit` is redundant now and was left untouched.
+
 ---
 
 ## 4. Hypotheses refuted. Do not retry them.
@@ -506,6 +511,37 @@ wrappers are `GT7_probe351_tsharp_prov.bat`, `352_cubetrace.bat`, `353_cubekill.
 `354_cubelife.bat` (= 353 + `GT_CUBELIFE=0x100b1b0000+0x2ac000`) and `355_cubegpu.bat` (= 354 +
 `GT_CUBEGPU=0x100b1b0000`). The logs
 are in `GT7_upstream/logs/shad_log_run35x_*`.
+
+**MERGE WITH UPSTREAM 19700eba (24 Sep evening) - READ THIS BEFORE TOUCHING THE BUFFER CACHE.**
+`gt7-main` = merge `4e0b250f` (parents: checkpoint `ed3a4ba5` "runs 351-358 observers and the
+[dcbskip] stub", upstream `19700eba`). Pre-merge state kept as branch `gt7-pre-upstream-5047`
+(= `ed3a4ba5`). The full per-hunk table is `GT7_upstream/MERGE_upstream_19700eba.md` (untracked).
+The user chose UPSTREAM-FIRST: upstream's sparse-arena buffer manager (#5047), `buffer.*`,
+`memory_tracker.h` and `region_manager.h` are taken whole; lab code built on the old manager is
+DROPPED, not transplanted. Gates that no longer exist (setting them does nothing): GT_BDA_IMPORT,
+GT_DIRECT_IMPORT, GT_BIND_SKIP, GT_TEXEL_MEMO, GT_STREAM_MEMO, GT_DMA_DIRTY_LOG, GT_FAULT_WIDE,
+GT_HOT_PIN, GT_IMGARRAY_SYNC, GT_INDARGS_GPU, GT_DISPGPU, GT_READBACKS_ONRACE, GT_READ_PREFETCH,
+GT_READ_TRACE/WINDOW, GT_CSIN_HASH ([csin]), GT_CSOUT_CAPTURE ([csout]), GT_INVAL_IMG_ON_SSBO
+(superseded: upstream c8fcf4d7 invalidates images after EVERY written storage buffer). Also gone:
+[indargs-anomaly], the buffer profilers, the writer ring, readback history in [ibchain]/[badpacket],
+the buffer-side GT_SOFT_CLAMP null-binds and clamps, the buffer OOM step-down (the image one stays).
+Kept: [ldsring], [badpacket]/[ibchain], [dcbskip], [fontwatch], [tsharp], all [cube*], GT_18256C0_GUARD,
+GT_WATCH_VA notes, the run-281 TrackerReentry guard, BDA registry, IsFaultAddressValid, [protprof]/
+[faulthist] (re-hosted in the [fprof] window). Shader cache formats bumped to 14/9.
+- LESSON: the build proving it compiles found NONE of the semantic losses. A census of `getenv("GT_*")`
+  and `"[tag]"` strings before vs after the merge found three probes my BindBuffers rewrite had
+  dropped by accident (GT_18256C0_GUARD - set to 1 by the 317 chain -, the GT_WATCH_VA bind note,
+  the [fprof] obtain scope) and one feed that lived in the removed code (`g_gt_imgsrc_last` for
+  [cubelife]). Run that census after every merge, before the commit.
+- Readbacks: nothing switches them on at race start any more, and `run_gt7.ps1` defaults to 0, so a
+  race may show the run-264 symptom again (environment draws culled on stale readbacks). Expected.
+- [fprof] fields that are now structurally 0 (their writers were in the dropped code): bufgc, deaths,
+  clamp, findbuf, bufscan, bufemit, softclamp[0..7]. Never read them as measurements.
+**Run 359 is built, not yet run:** `GT7_probe359_upstream_merge.bat` = the 355 chain unchanged on the
+merged binary, `GT_DCB_SOFTSKIP` and `GT_FONTWATCH` cleared. Watcher `scratchpad/watch359.sh`
+(358's + SCENE lines from `EVENT_ROOT`, `[badpacket]`/`[ibchain]`, `[cshang]`, and af090eb7's new
+"unimplemented shader stage" warning). Same route as 358. If the known type-0 abort occurs:
+archive, then a second run may set `GT_DCB_SOFTSKIP=1`.
 
 ---
 
