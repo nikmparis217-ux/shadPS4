@@ -622,8 +622,8 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   (`attr.is_flat || inst.src[0].code == 2`) after PlayGo BuddyWindowRoot. Full analysis:
   `GT7_upstream/patches_clean/f64_trunc_min_NOTES.md`. NOT committed, NOT a PR (user: "first
   testing then if clean we pr").
-- **Semantics, checked against the official specs (Sea Islands ISA Rev 1.3 pdf in the scratchpad as
-  `sea_islands_isa.pdf/.txt`; GLSL.std.450; SPV_KHR_float_controls2; Vulkan-Docs spirvenv.adoc):
+- **Semantics, checked against the official specs (copies in `GT7_upstream/docs/`: AMD Sea Islands ISA
+  Rev 1.3 pdf + txt, GLSL.std.450.html, Vulkan-Docs spirvenv.adoc; SPV_KHR_float_controls2 online):
   passing the assert is NOT correct semantics.** (1) GLSL.std.450 ext insts (Trunc, FMin, NMin) are
   NOT covered by SignedZeroInfNanPreserve; Vulkan assumes NSZ/NotInf/NotNaN for them unless
   SPV_KHR_float_controls2 is used (upstream uses it nowhere; this GPU exposes it). So +-0/+-Inf/NaN
