@@ -31,7 +31,7 @@ is an orphan history unrelated to `gt7-main`.
 - Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
 - Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
 - **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
-  numbers continue the global series (last used: 357, run 24 Sep).
+  numbers continue the global series (last used: 358, built 24 Sep, not yet run).
 - **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
   meant: do not propose side investigations while a target is open.
 - A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
@@ -431,6 +431,19 @@ recurses into the child and then resumes the PARENT whatever the `chain` bit say
 parent's trailing dwords after the whole chain returns - 57-107 ms late, after the game has
 reused the chunk - which fits the 266- and 16-dword shapes (2 dwords after a 4-dword slot). The
 4-dword shape (`dword 2 of 4`) is NOT explained by it.
+**Run 358 is built** - a controlled ablation of 357 (`GT7_probe358_dcbskip_nofw.bat`: clears
+`GT_FONTWATCH`, which 356/357 set without setlocal, sets `GT_DCB_SOFTSKIP=1`, calls the 355 bat
+unchanged; same binary as 357, the fontwatch code inert). Watcher `scratchpad/watch358.sh`
+prints `MARK hh:mm:ss | log byte N` every 30 s so the user's transition times map onto the log,
+archives `fontwatch_crash.txt` only if newer than the run (357's file is still in the folder),
+and files a PCL Event crash separately. The user's rules for reading it: Dealership -> Main Map
+at least twice; per transition the time, whether the characteristic Rendr burst appears,
+whether crash D occurs, and every soft-skip before it; never judge by elapsed runtime. If crash
+D returns: the exact 354/355/358 signature comparison. If it does not after >= 2 CONFIRMED
+transitions: evidence that the soft-skip may alter upstream state - NOT proof that PM4 type-0
+caused crash D. No PM4 fix.
+**The PCL Event crash has its own folder**: `logs/pcl_event_0x1000fffd80/` (357's report with
+every `[faultloop]` line, the 357 and 349b minidumps). It has recurred in 349b, 351b and 357.
 
 `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
