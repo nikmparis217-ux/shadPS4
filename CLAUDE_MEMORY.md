@@ -31,7 +31,7 @@ is an orphan history unrelated to `gt7-main`.
 - Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
 - Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
 - **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
-  numbers continue the global series (last used: 358, built 24 Sep, not yet run).
+  numbers continue the global series (last used: 358, run 24 Sep).
 - **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
   meant: do not propose side investigations while a target is open.
 - A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
@@ -185,6 +185,13 @@ Each line is an incident that cost a run, a build, or the user's time.
     or unwritten (mine). Neither: the live copy in the report shows dword 0, which the parser had
     already accepted as a header, no longer parsing as one. Before theorising about a bad
     packet, compare what the parser ALREADY consumed with what the memory holds now.
+38. **Inferred a scene from a burst shape while the game was naming its scenes** (357, 358).
+    The "300-400 then 34" Rendr burst was read as "Dealership -> Main Map", and 357 went into
+    the notes as two transitions without a crash. The game prints every scene change itself
+    (`__AUTOMATION__ EVENT_ROOT`, with its own wall clock): 357's two were Dealer -> Map WITHOUT a
+    purchase and Cafe -> Map, and 358's one was Cafe -> Map. The same shape belongs to several
+    scenes. Read the game's scene log before counting a transition, and match the CRASHING
+    run's whole sequence, not its last burst.
 
 ---
 
@@ -425,6 +432,11 @@ Rendr ring is quads + GetKerning on a valid font and the one renderer. Not a fix
 two things changed (GT_FONTWATCH on every Rendr font call, GT_DCB_SOFTSKIP acting 4 times ~12 min
 before the first window) and 2/2 vs 0/2 is a small sample. The dump header still says "run 356
 armed" - the string is hard-coded in `gt_font_watch.cpp`.
+**Corrected by the game's own scene log (read after 358):** the two "windows" were NOT the
+crash-D scene. t~898 = Dealer -> Map WITHOUT a purchase, t~3122 = Cafe -> Map. 357's one
+purchase (08:28) showed ONE `CollectorsLevelDialog` (no achievement) and the map then showed a
+Pavilion notifier with no 34-burst. So 357 never reached the crash-D sequence; it says nothing about fontwatch
+or the soft-skip either way (lesson 38).
 **Source fact for the PM4 look (not yet tested):** `ProcessGraphics`'s IndirectBuffer case
 recurses into the child and then resumes the PARENT whatever the `chain` bit says (upstream
 `4621b6a1` identical). On AMD's CP a CHAIN=1 IB is a jump, not a call. If so, the parser reads the
@@ -442,6 +454,34 @@ whether crash D occurs, and every soft-skip before it; never judge by elapsed ru
 D returns: the exact 354/355/358 signature comparison. If it does not after >= 2 CONFIRMED
 transitions: evidence that the soft-skip may alter upstream state - NOT proof that PM4 type-0
 caused crash D. No PM4 fix.
+**Run 358 result (24 Sep): crash D did not fire, and the run cannot answer the ablation.**
+Log `logs/shad_log_run358_2026-09-24_dcbskip_nofw_replay_hang_b1cd966e.txt` (99.9 MB). 0
+`[dcbskip]`, 0 bad packets, 0 `[fontwatch]` lines, no guest crash, no PCL Event, no PM4 death.
+The stub never acted, so up to every transition the parser ran unmodified. The binaries' own
+logged line numbers (355 vs 358) moved only in `font.cpp`, `font_internal.cpp` and
+`liverpool.cpp`; `texture_cache.cpp` has 14 identical sites and 0 moved, so the texture code
+is 355's - the user's "we worked on the textures" cannot explain the difference either.
+**THE CRASH-D SCENE, from the game's scene log:** in 354 AND 355 the last scenes are an
+`UsedCarDealerProject` purchase (`GTCreditPurchaseDialogRoot`, `CarDeliveryService_TopRoot`)
+with SEVEN `CollectorsLevelDialog` + `CollectorsLevelAchievementDialog` pairs (seven level-ups by
+the dialog names), back to the dealer `TopRoot`, `MapViewProject::MapViewRoot`,
+then the 338/342-call burst, then the 34-call burst, then crash D 3 lines later (22:39:23 /
+23:41:14). In 357 and 358 the purchase showed 0 and 1 achievement dialogs and the map showed
+`PavilionNotifierRoot` with NO 34-burst (358: 18:16:08.9, burst 306, no crash, 0 soft-skips
+before it). The 34-burst after a map entry also appears in other contexts (Cafe -> Map
+18:17:52.6: 352 then 34, then the Pavilion notifier; the map re-entry at 18:17:05) without a
+crash. 358 had ONE confirmed Dealer -> Map (the user's rule asks for >= 2) and without the
+seven-level condition. What reproduces crash D is therefore most likely the SAME purchase
+(a car whose purchase jumps the Collector level several times) - a save-state question for
+the user. 354 and 355 both showed exactly seven, which suggests that purchase was never saved
+(the crash came first).
+**358 ended in a NEW freeze, not a crash:** entering the post-race Replay screen
+(`RaceCommon_ReplayRoot`, 18:22:50.9, then `replay_a.dat` read twice) the last five frames took
+0.27-1.1 s each, almost all WaitRegMem on gfx and asc, then no frame, no scene and no GPU work
+for 27 min; 0 `[gpuwait]` samples, 0 BreakFaultLoop; only Netwk polling and
+`sndz_stream_task_service` event-flag waits. The user closed it at 18:50:19. Filed apart in
+`logs/hang_postrace_replay/run358_replay_hang.txt` with the scene log, the frame timings and
+everything the guest logged after the last frame.
 **The PCL Event crash has its own folder**: `logs/pcl_event_0x1000fffd80/` (357's report with
 every `[faultloop]` line, the 357 and 349b minidumps). It has recurred in 349b, 351b and 357.
 
@@ -478,7 +518,13 @@ are in `GT7_upstream/logs/shad_log_run35x_*`.
 - Watcher: `RUN=NNN bash GT7_upstream/watch_run.sh`, or a per-run copy in the scratchpad with the
   run's tags added to `KEYS`. Re-arm mid-run with `WATCH_RESUME=1`.
 - A 25-45 s heartbeat loss with `netctl`/`np_manager` spam is a loading screen. A GPU stall is
-  established only by `[gpuwait]`.
+  established only by `[gpuwait]`. 358's lasted 27 min with 0 `[gpuwait]` and never recovered:
+  the guest itself stopped (post-race Replay screen), which is neither.
+- **The game names its own scenes.** With `automation` in APP_ARGS the Rendr thread's TTY carries
+  `[stderr] [hh:mm:ss.mmm] [INFO] [__AUTOMATION__] MRenderContext.cpp:3974: EVENT_ROOT
+  <Project>::<Root>` (and `FOCUS` lines) with the guest's wall clock. `grep -a EVENT_ROOT` gives
+  the whole scene history of a run: dealer visits, purchases, collector levels, map entries,
+  races, replays. Use it to confirm a transition before counting it.
 - The texture cache code that matters: `ResolveOverlapImpl(image_info, binding, cache_image_id,
   merged_image_id)`; `ImageInfo::MipOf` gates (IsCompatible, array_mode, levels == 1, mip search with
   in-range / slice-aligned / pitch match, dims, type); `SanitizeCopyLayers` = min(src, dst) layers;
