@@ -199,6 +199,13 @@ Each line is an incident that cost a run, a build, or the user's time.
 40. **Wrote tests for an encoding the ISA does not have** (25 Sep). The VOP3 form of V_TRUNC_F64
     looked natural (LLVM-style e64), the decoder aborted on it, and the Sea Islands VOP3 map lists
     407-415 as reserved. Check the ISA's opcode map for every encoding before testing or adding it.
+41. **Reported the emulator's own default as the guest's register value** (25 Sep, asked for "the
+    real per-shader MODE bits"). The cache census said 83 compute shaders = FLOAT_MODE 0x00 and the
+    report called that the per-shader value; the user then called the flush finding strong. It was
+    zero by definition: `BuildRuntimeInfo`'s Compute case never reads FLOAT_MODE (Initialize
+    memsets it, ComputeProgram::settings has no such fields). The cache meta and the emitter's
+    warnings both read that same internal value, so they "confirmed" each other. Before calling a
+    stored value a measurement of the guest, find the line of code that copies it FROM the guest.
 
 ---
 
@@ -680,8 +687,34 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   cached shaders pass spirv-val; its f64 FMin/Trunc are gone (FMax 1 + Fma 3 left), the integer
   lowering with the mode-0 flush is in; distinct error set identical to run 02 (76); same next
   blocker fs 0x74f5f10c V_INTERP_MOV_F32 (line 41700). Log `logs/shad_log_clean171_03_at_exit_001307.txt`.
+- **Series v2 (25 Sep ~00:45, reviewer: move the Float64 test to the commit that uses it, fix the
+  runner's feature mismatch or list the VUIDs, measure IEEE_MODE/DX10_CLAMP with a run).** Local,
+  nothing pushed; v1 kept as tags `f64-v1-literal` / `f64-v1-trunc-min`, patches regenerated
+  (`patches_clean/0001-0003`, v1 in `superseded_v1/`):
+  `pr-gcn-test-features` 57ab6276 (runner enables storageBuffer8/16BitAccess) ->
+  `pr-f64-literal` 0dd36386 (`if constexpr (is_float)` only + shaderFloat64 + floor test) ->
+  `pr-f64-trunc-min` 84e32311 (TRUNC/MIN + `|| operand.type == ScalarType::Float64`). The src tree
+  of 84e32311 is byte-identical to 65fa8e0c. No upstream GetSrc64<U64> caller reads a Float64
+  operand (grep), so the operand-type test had no user in the literal commit.
+  Tests, validation layer on, no repeat limit (`VK_LAYER_DUPLICATE_MESSAGE_LIMIT=100000`): main 51
+  pass / 98 errors (49 creations x 2, only VUID 08740); runner commit 51 / 0; literal 52 / 0;
+  TRUNC/MIN 62 / 0 (0 warnings everywhere; loader log shows the layer inserted). Negative controls:
+  floor literal test fails with upstream translate.cpp; trunc_f64_literal fails without the
+  operand-type test (floor still passes).
+- **CORRECTION (mistake 41): the compute FLOAT_MODE is never read by the emulator.** The Compute
+  case of `BuildRuntimeInfo` sets no fp_* props after the memset, and ComputeProgram::settings has
+  no FLOAT_MODE fields, so all compute shaders translate as RNE/flush/flush. "83 compute = 0x00" and
+  "0x1c0f802e is mode 0" were that default. Graphics (0xC0) is real. Separate general-fix candidate.
+- **clean171_04 PREPARED, not run:** `instr-pgm-modes` 7e70405b (= 84e32311 + `[pgmmode]` log of raw
+  PGM_RSRC1/RSRC2 per program under GT_PGMMODE_LOG, before the cache lookup), exe SHA256 3a19e9a8...
+  in the RelWithDebInfo folder (copy `backup_exe/shadps4_clean_7e70405b_pgmmode_instr.exe`),
+  launcher `GT7_clean171_run04_pgmmode.bat`, warm cache of run 03, profile snapshot
+  `user_after_clean171_03`, watcher `RUN=clean171_04 bash scratchpad/watch_clean171.sh` in the
+  background. Do not rebuild the RelWithDebInfo folder before the run.
+- Static fact for the mode question: 0x1c0f802e has no f64 output modifier (14 FClamp, all f32), so
+  DX10_CLAMP cannot touch its V_MIN_F64/V_TRUNC_F64.
 - Upstream CONTRIBUTING "A.I. Rules": AI use must be disclosed; descriptions AND COMMENTS must be
-  human-written. The comments and commit messages in 2c692b70/65fa8e0c are drafts for the user.
+  human-written. The comments and commit messages in 57ab6276/0dd36386/84e32311 are drafts for the user.
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
   num_format=12 (Ubint) at ~3 min (21 Sep); the offline lane says the emulator dies in ~4 of 5 1.71
   runs within minutes (renderer), and that sceNpAuth* stubs made a polling storm when the online
