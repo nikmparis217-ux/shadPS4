@@ -180,6 +180,11 @@ Each line is an incident that cost a run, a build, or the user's time.
     the observer never reached the crash it was built for. Before reading a clean instrument as
     a verdict, compare where the run ended with where the target fault strikes (the Rendr font
     bursts: 84 in 354, 98 in 355, 22 in 356).
+37. **A parser's own dump can prove the memory moved under it.** The PM4 type-0 header in the
+    last two dwords looked deliberate (its count fits the space exactly - the review's reading)
+    or unwritten (mine). Neither: the live copy in the report shows dword 0, which the parser had
+    already accepted as a header, no longer parsing as one. Before theorising about a bad
+    packet, compare what the parser ALREADY consumed with what the memory holds now.
 
 ---
 
@@ -378,8 +383,17 @@ and five `shad_log_prev_*` logs. All 8 recorded `[badpacket] CORRUPTION POINT`s 
 TWO dwords of the submitted DCB (slot 0, depth 0) - `dword 2 of 4` five times, also 14 of 16
 and 264 of 266 - in two shapes: `0x00000000` then a zero, or `0x00000002` (type 0, base 2,
 count 0) then a non-zero dword. In every case the header's own count consumes exactly the two
-dwords left. `4720205e` (fence order) fixed 309's variant only. Open for after the stub: who
-writes, or fails to write, those two tail dwords.
+dwords left. `4720205e` (fence order) fixed 309's variant only.
+**It is not a packet, and not a truncation.** `DescribeGfxSubmit`'s AT PARSE side is a
+`GtSafeCopy` taken at REPORT time, and in all 5 reports that carry a dump (320, 351, 353, 356,
+`prev_2026-09-14_2314`) the buffer's dword 0 - which the parser had already accepted as the
+first header - now reads `0x00000000` or `0x00000001`, not PM4. The memory under the parser was
+rewritten while it was still inside it, 57-107 ms (114-128 ticks) after the submit; 356's buffer
+now holds a small struct (`00000001 00000242 00000004 00000000 01400068 ...`) and zeros. The
+type-0 "packet" is what the rewritten tail looks like, so its register (base 0 or 2) and value
+mean nothing. The ACB tolerance is our own run-72 `[softclamp]` (`e5c2634f`); upstream `4621b6a1`
+hits UNREACHABLE on type 0 in CE, GFX and ACB alike. Open for after 357: why the guest rewrites
+(or unmaps - the run 332 note in `DescribeGfxSubmit`) an IB our CP is still parsing.
 **Run 357 is built** (`GT7_probe357_dcbskip.bat` = 356 + `GT_DCB_SOFTSKIP=1`; watcher
 `scratchpad/watch357.sh`). The user asked to stub the crashing point to make progress and look
 at the cause afterwards. The stub skips a non-type-2/3 GFX DCB header the way the ACB
@@ -388,6 +402,14 @@ dword, clamped to what remains - instead of UNREACHABLE; the first 4 keep the fu
 `[badpacket]` report. The register write the packet carries is not applied. Gate off = the
 parser is unchanged, so the other lane running this binary is unaffected. GT_FONTWATCH stays
 armed so 357 can catch crash D at ~365 s.
+357 must answer this and only this (the user's review, 24 Sep): how many `[dcbskip]` before
+Dealership -> Main Map, and when the first came relative to that transition (the lines carry
+no clock: use log position against the Rendr font bursts and the nearest `t=`; the running
+count is exact to 64, then sampled every 1024th); whether crash D was reached and, if so, RIP /
+write address / return address / rsp / r15 / thread; the Rendr fontwatch ring just before it;
+every font lifecycle event. After the first skip the GPU stream is no longer faithful, so
+nothing after it says anything about PM4 or graphics state. No upstream fix, and the
+soft-skip never becomes default behaviour.
 
 `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
