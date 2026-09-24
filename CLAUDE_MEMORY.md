@@ -31,7 +31,7 @@ is an orphan history unrelated to `gt7-main`.
 - Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
 - Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
 - **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
-  numbers continue the global series (last used: 355).
+  numbers continue the global series (last used: 356, built 24 Sep, not yet run).
 - **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
   meant: do not propose side investigations while a target is open.
 - A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
@@ -350,6 +350,18 @@ crash. Contract problems found next door, none proven to be on the crash path:
 - `sceFontOpenFontMemory` returns ORBIS_OK when FreeType fails to create the face.
 The next step proposed is a bounded HLE-only observer (per-thread ring of font calls, dumped by the
 crash handler), not built yet.
+**Run 356 is built** (`GT7_probe356_fontwatch.bat` = 355 + `GT_FONTWATCH=1`; watcher
+`scratchpad/watch356.sh`). The user's two safeguards, both kept: (1) the observer never
+dereferences a guest pointer - every read is `ReadProcessMemory` (cannot fault, and does not trip
+the emulator's page tracking), and an unreadable pointer is classed by `VirtualQuery` as unmapped or
+committed-but-protected; (2) the crash dump is frozen rings of fixed POD entries written with a
+hand-rolled formatter and `WriteFile` to `log/fontwatch_crash.txt`, opened at arm time, AFTER the
+existing report and minidump - no lock, no allocation, no CRT formatting. Why not the logger: it is
+spdlog with `dup_filter_sink_mt` (a mutex) and fmt (allocations). The wrapped bodies keep their
+names inside `GtFwImpl`, so `__func__` - and every existing log line - is unchanged.
+Decisive readings the user named: stale renderer accepted after DestroyRenderer; GetKerning creating
+FontState for an invalid handle; OpenFontMemory OK without a face; or all HLE font state valid up to
+the crash - which moves the search away from the font HLE.
 
 `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
@@ -357,7 +369,11 @@ thumbnails); `resource_patching_pass.cpp:471` "Thread ID buffer addressing is no
 outside of compute" (344); the Single Race deadline dispatcher reading a signalled label as a
 pointer; 1.71 (`CUSA24767`) in general, until the offline chat makes it boot.
 
-**Uncommitted instruments in `gt7-main`** (strip before any PR): `[tsharp]` in `vk_rasterizer.cpp`
+**Uncommitted instruments in `gt7-main`** (strip before any PR): `[fontwatch]` (run 356:
+`src/core/libraries/font/gt_font_watch.{h,cpp}` + its two CMakeLists lines, the 15 wrappers at the
+end of `font.cpp` with each wrapped body moved into `namespace GtFwImpl`, `GtFwStateExists` in
+`font_internal.*`, and one `GtFontWatch::OnGuestCrash(pExp)` after each `WriteGuestCrashDump` in
+`signals.cpp`); `[tsharp]` in `vk_rasterizer.cpp`
 plus `SurfaceFormatSupported()` in `liverpool_to_vk.*` (diagnostic only); `[cubetrace]`,
 `[cubekill]`, `[cubelife]` (run 354) and `[cubegpu]` (run 355, `GtCg*`) in `texture_cache.cpp`, with `GtLifeNoteWrite` called from
 `MarkGpuWritten` in `texture_cache.h` and `g_gt_imgsrc_last` in `gt_va_watch.h` + `buffer_cache.cpp`; `GtBindCtx` in `gt_va_watch.h`; `GtPresentFrame()`. The
