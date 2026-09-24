@@ -673,8 +673,13 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   (`result_type.value != 0`, stream.h:36) because F64 types exist only with Pack/UnpackDouble2x32;
   VOP3 format entries 401-404 (V_CVT_F32_UBYTE0-3) have Undefined types; the test runner does not
   enable storageBuffer8/16BitAccess (validation errors on every test).
-- clean171_03 prepared (commit 2 exe SHA256 27be7d2d..., `backup_exe/shadps4_clean_65fa8e0c_f64_trunc_min_bits.exe`;
-  fresh profile, empty cache; run 02's profile kept as `C:\shadps4-clean-run\user_after_clean171_02`).
+- **clean171_03 (25 Sep 00:12, commit 2 exe SHA256 27be7d2d...,
+  `backup_exe/shadps4_clean_65fa8e0c_f64_trunc_min_bits.exe`; fresh profile, empty cache; run 02's
+  profile kept as `C:\shadps4-clean-run\user_after_clean171_02`):** 0 LogMissingOpcode, 0x1c0f802e
+  translated (log 37952/37960, same pipeline 0x4459a7d1b9af63b0), its blob (80,048 B) and all 218
+  cached shaders pass spirv-val; its f64 FMin/Trunc are gone (FMax 1 + Fma 3 left), the integer
+  lowering with the mode-0 flush is in; distinct error set identical to run 02 (76); same next
+  blocker fs 0x74f5f10c V_INTERP_MOV_F32 (line 41700). Log `logs/shad_log_clean171_03_at_exit_001307.txt`.
 - Upstream CONTRIBUTING "A.I. Rules": AI use must be disclosed; descriptions AND COMMENTS must be
   human-written. The comments and commit messages in 2c692b70/65fa8e0c are drafts for the user.
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
