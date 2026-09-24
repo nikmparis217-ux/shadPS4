@@ -31,7 +31,7 @@ is an orphan history unrelated to `gt7-main`.
 - Build with `GT7_upstream\build.bat` and read **`NINJA_EXIT`**, not the shell exit code.
 - Use the 8.3 path `C:\Users\3E30~1\...` for any toolchain. The Greek username breaks CMake/MSVC.
 - **One variable per run**, through a wrapper bat that `call`s the unchanged previous probe. Run
-  numbers continue the global series (last used: 356, built 24 Sep, not yet run).
+  numbers continue the global series (last used: 357, built 24 Sep, not yet run).
 - **Strictly one problem at a time.** When the user said "no. we strictly fix one problem", that
   meant: do not propose side investigations while a target is open.
 - A fix enters only when the **PS4 semantics are explained and the emulator is shown wrong**.
@@ -174,6 +174,12 @@ Each line is an incident that cost a run, a build, or the user's time.
     `sceFontMemoryTerm`, `sceFontCharacterRefersTextNext` - so the call order read off the log is
     incomplete.
     The only thing the log proves is failure: every error path of the audited calls logs at error.
+36. **A clean observer only speaks for the stretch of the run it saw.** Run 356's fontwatch
+    counters were zero for every anomaly, and the first reading was "the font HLE is cleared".
+    But 356 died at t=185 s on a different fault, while crash D struck 354/355 at t=368/364 s:
+    the observer never reached the crash it was built for. Before reading a clean instrument as
+    a verdict, compare where the run ended with where the target fault strikes (the Rendr font
+    bursts: 84 in 354, 98 in 355, 22 in 356).
 
 ---
 
@@ -362,6 +368,26 @@ names inside `GtFwImpl`, so `__func__` - and every existing log line - is unchan
 Decisive readings the user named: stale renderer accepted after DestroyRenderer; GetKerning creating
 FontState for an invalid handle; OpenFontMemory OK without a face; or all HLE font state valid up to
 the crash - which moves the search away from the font HLE.
+**Run 356 result (24 Sep): crash D was NOT reached.** The process ended at t=185 s on the GFX
+parser's own `UNREACHABLE_MSG("Unimplemented PM4 type 0")` in `ProcessGraphics` - a host
+exception, so no `guest_crash.dmp` and no fontwatch dump. Fontwatch was clean for those 185 s
+(0 of every anomaly; the four quad calls ~2500 each, 0 errors; 4 threads, 0 dropped), which
+says nothing about the crash itself. Log: `logs/shad_log_run356_2026-09-24_fontwatch_b1cd966e.txt`.
+**The PM4 type-0 death is recurring and was never parked**: runs 309, 313, 320, 351, 353, 356
+and five `shad_log_prev_*` logs. All 8 recorded `[badpacket] CORRUPTION POINT`s are the LAST
+TWO dwords of the submitted DCB (slot 0, depth 0) - `dword 2 of 4` five times, also 14 of 16
+and 264 of 266 - in two shapes: `0x00000000` then a zero, or `0x00000002` (type 0, base 2,
+count 0) then a non-zero dword. In every case the header's own count consumes exactly the two
+dwords left. `4720205e` (fence order) fixed 309's variant only. Open for after the stub: who
+writes, or fails to write, those two tail dwords.
+**Run 357 is built** (`GT7_probe357_dcbskip.bat` = 356 + `GT_DCB_SOFTSKIP=1`; watcher
+`scratchpad/watch357.sh`). The user asked to stub the crashing point to make progress and look
+at the cause afterwards. The stub skips a non-type-2/3 GFX DCB header the way the ACB
+`[softclamp]` path (run 72) already does - type 0 by `type0.NumWords() + 1`, anything else by one
+dword, clamped to what remains - instead of UNREACHABLE; the first 4 keep the full
+`[badpacket]` report. The register write the packet carries is not applied. Gate off = the
+parser is unchanged, so the other lane running this binary is unaffected. GT_FONTWATCH stays
+armed so 357 can catch crash D at ~365 s.
 
 `PatchImageSampleArgs` UNREACHABLE at Lago Maggiore (347; the user said not to
 investigate it); `sceJpegDecDecode` rejecting `jpeg_mem_size=0` (our jpegdec; garbled loading
@@ -369,7 +395,10 @@ thumbnails); `resource_patching_pass.cpp:471` "Thread ID buffer addressing is no
 outside of compute" (344); the Single Race deadline dispatcher reading a signalled label as a
 pointer; 1.71 (`CUSA24767`) in general, until the offline chat makes it boot.
 
-**Uncommitted instruments in `gt7-main`** (strip before any PR): `[fontwatch]` (run 356:
+**Uncommitted instruments in `gt7-main`** (strip before any PR): `[dcbskip]` (run 357, a STUB not
+an observer: `GtDcbSoftSkipOn()` after `NextPacket` in `liverpool.cpp`, its call at the top of the
+`Liverpool` constructor, and the skip block in front of the `switch (type)` of `ProcessGraphics`);
+`[fontwatch]` (run 356:
 `src/core/libraries/font/gt_font_watch.{h,cpp}` + its two CMakeLists lines, the 15 wrappers at the
 end of `font.cpp` with each wrapped body moved into `namespace GtFwImpl`, `GtFwStateExists` in
 `font_internal.*`, and one `GtFontWatch::OnGuestCrash(pExp)` after each `WriteGuestCrashDump` in
