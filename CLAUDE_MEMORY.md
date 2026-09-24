@@ -609,6 +609,19 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   shows full Windows paths, so a lab shadps4.exe is ignored); at exit archives the private log AND the
   game's own `download/CUSA24767/APP_DATA/logs/archived.log` as `logs/shad_log_<RUN>_at_exit_*` and
   `logs/game_log_<RUN>_at_exit_*`.
+- **clean171_01 (22:27, pure upstream):** first fatal = cs 0x1c0f802e, `LogMissingOpcode V_MIN_F64`
+  + `V_TRUNC_F64`, then `recompiler.cpp:48 Shader translation has failed` (log line 54825-54829).
+  Both opcodes are one indivisible test (same shader, one sticky `translation_failed` flag).
+- **clean171_02 (22:53, 19700eba + uncommitted +17 lines: V_MIN_F64 -> FPMin, V_TRUNC_F64 -> FPTrunc,
+  exe `backup_exe/shadps4_clean_19700eba_f64_trunc_min_test.exe`):** single variable vs run 01 (same
+  eboot/sfo hashes, byte-identical config, profile rebuilt from unchanged sources, empty cache; run
+  01's profile kept as `C:\shadps4-clean-run\user_after_clean171_01`). 0x1c0f802e translated,
+  pipeline created, spirv-val (vulkan1.3) passes on it and on all 218 cached shaders; SPIR-V from
+  the pipeline cache blob (raw SPIR-V), no dump. Only that shader uses f64 FMin/Trunc. NEXT
+  BLOCKER, not fixed: fs 0x74f5f10c, `vector_interpolation.cpp:103 V_INTERP_MOV_F32` ASSERT
+  (`attr.is_flat || inst.src[0].code == 2`) after PlayGo BuddyWindowRoot. Full analysis incl. the
+  NaN/signed-zero gap of FMin: `GT7_upstream/patches_clean/f64_trunc_min_NOTES.md`. NOT committed,
+  NOT a PR (user: "first testing then if clean we pr").
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
   num_format=12 (Ubint) at ~3 min (21 Sep); the offline lane says the emulator dies in ~4 of 5 1.71
   runs within minutes (renderer), and that sceNpAuth* stubs made a polling storm when the online
