@@ -192,6 +192,13 @@ Each line is an incident that cost a run, a build, or the user's time.
     purchase and Cafe -> Map, and 358's one was Cafe -> Map. The same shape belongs to several
     scenes. Read the game's scene log before counting a transition, and match the CRASHING
     run's whole sequence, not its last burst.
+39. **Took a device feature as "supported" because a warning did not appear** (24 Sep, f64 notes).
+    The emitter's float-control warnings are `std::call_once`, so their absence says nothing about
+    a given shader; the notes claimed DenormPreserve 64 support that vulkaninfo denies. Read the
+    device's properties (vulkaninfo) before any claim about what the host can do.
+40. **Wrote tests for an encoding the ISA does not have** (25 Sep). The VOP3 form of V_TRUNC_F64
+    looked natural (LLVM-style e64), the decoder aborted on it, and the Sea Islands VOP3 map lists
+    407-415 as reserved. Check the ISA's opcode map for every encoding before testing or adding it.
 
 ---
 
@@ -635,6 +642,41 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   (5) IEEE_MODE and DX10_CLAMP are not decoded (unnamed `u32 : 4` in ShaderProgram::settings);
   fp64 denorm flush is unsupported on the RTX 4070 SUPER. Options A (exact core-op lowering in the
   handlers) / B (float_controls2) / C (mode plumbing) - awaiting the user's decision.
+- **Option A done (25 Sep ~00:00), user/reviewer: "A as the base, no PR, nothing on
+  V_INTERP_MOV_F32".** Two LOCAL commits in `C:\shadps4-clean`, nothing pushed:
+  `pr-f64-literal` 2c692b70 (GetSrc64: 32-bit literal = HIGH dword of a 64-bit float operand, by
+  template type or `operand.type == ScalarType::Float64`; runner enables shaderFloat64 when
+  supported) and `pr-f64-trunc-min` 65fa8e0c on top (V_TRUNC_F64 / V_MIN_F64 on the BIT PATTERN with
+  64-bit integer IR ops: no Float64 capability, no float control involved; V_MIN_F64 flushes both
+  operands to a signed zero unless `runtime_info.props.fp_denorm_mode16_64 == InOutAllow`;
+  NaN operand -> other operand (the V_MIN_F32 rule); omod/clamp via `SetDstF64Bits` -> shared float
+  path). Patches + table + all evidence: `GT7_upstream/patches_clean/0001-*.patch`, `0002-*.patch`,
+  `f64_trunc_min_NOTES.md`. **PR ON HOLD: AMD publishes no F64 NaN rule.**
+- Upstream HAS a GPU unit-test harness: `tests/gcn` (GTest; `TranslateToSpirv(raw u64 insts)` runs
+  the real decoder+translator+passes+SPIR-V backend, `gcn_test::Runner` executes it with Vulkan
+  shader objects; inputs = 4 u32 push constants mirrored to s0-s3/v0-v3, output = v0). Build:
+  `GT7_upstream\build_clean_tests.bat` (Debug, `Build\x64-Clang-Debug-tests`, validation layer on;
+  needs `-Wno-character-conversion` for googletest 1.17 + clang 22). Baseline main: 51 pass,
+  `bitcmp1_b64_bit32` aborts (pre-existing) - run with `--gtest_filter=-GcnTest.bitcmp1_b64_bit32`.
+  After the two commits: 62 pass; a local 1500-pair x 4-mode random run (GPU vs CPU reference) gave
+  0 mismatches; spirv-val passes on the dumped modules. Result tests go here, not into game runs.
+- **V_TRUNC_F64 is VOP1-ONLY on Sea Islands** (VOP3 map: "407 - 415 reserved"; upstream's VOP3
+  format entries 407-415 are empty, the decoder asserts). So TRUNC never has abs/neg/omod/clamp -
+  matches this shader, whose TRUNC operand is a separate `v_add_f64 0, -x`.
+- WRONG in the first notes, corrected: "mode 3 would have produced DenormPreserve 64 (supported)" -
+  vulkaninfo says shaderDenormPreserveFloat64 = false AND shaderDenormFlushToZeroFloat64 = false on
+  this GPU. The emitter's "not supported" warnings are `std::call_once`: their ABSENCE near a shader
+  proves nothing. Mode 0 of 0x1c0f802e stands on the whole-run log instead (only the "flushing" once-
+  warning appears; the non-once "Unknown Float16/64 denorm mode" never does).
+- Pre-existing upstream bugs seen (not fixed): F64 ops whose double operands are all constants and
+  whose result is not a double register (e.g. `v_cvt_i32_f64 v0, 1.0`) abort in sirit
+  (`result_type.value != 0`, stream.h:36) because F64 types exist only with Pack/UnpackDouble2x32;
+  VOP3 format entries 401-404 (V_CVT_F32_UBYTE0-3) have Undefined types; the test runner does not
+  enable storageBuffer8/16BitAccess (validation errors on every test).
+- clean171_03 prepared (commit 2 exe SHA256 27be7d2d..., `backup_exe/shadps4_clean_65fa8e0c_f64_trunc_min_bits.exe`;
+  fresh profile, empty cache; run 02's profile kept as `C:\shadps4-clean-run\user_after_clean171_02`).
+- Upstream CONTRIBUTING "A.I. Rules": AI use must be disclosed; descriptions AND COMMENTS must be
+  human-written. The comments and commit messages in 2c692b70/65fa8e0c are drafts for the user.
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
   num_format=12 (Ubint) at ~3 min (21 Sep); the offline lane says the emulator dies in ~4 of 5 1.71
   runs within minutes (renderer), and that sceNpAuth* stubs made a polling storm when the online
