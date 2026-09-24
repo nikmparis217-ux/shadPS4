@@ -619,9 +619,22 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   pipeline created, spirv-val (vulkan1.3) passes on it and on all 218 cached shaders; SPIR-V from
   the pipeline cache blob (raw SPIR-V), no dump. Only that shader uses f64 FMin/Trunc. NEXT
   BLOCKER, not fixed: fs 0x74f5f10c, `vector_interpolation.cpp:103 V_INTERP_MOV_F32` ASSERT
-  (`attr.is_flat || inst.src[0].code == 2`) after PlayGo BuddyWindowRoot. Full analysis incl. the
-  NaN/signed-zero gap of FMin: `GT7_upstream/patches_clean/f64_trunc_min_NOTES.md`. NOT committed,
-  NOT a PR (user: "first testing then if clean we pr").
+  (`attr.is_flat || inst.src[0].code == 2`) after PlayGo BuddyWindowRoot. Full analysis:
+  `GT7_upstream/patches_clean/f64_trunc_min_NOTES.md`. NOT committed, NOT a PR (user: "first
+  testing then if clean we pr").
+- **Semantics, checked against the official specs (Sea Islands ISA Rev 1.3 pdf in the scratchpad as
+  `sea_islands_isa.pdf/.txt`; GLSL.std.450; SPV_KHR_float_controls2; Vulkan-Docs spirvenv.adoc):
+  passing the assert is NOT correct semantics.** (1) GLSL.std.450 ext insts (Trunc, FMin, NMin) are
+  NOT covered by SignedZeroInfNanPreserve; Vulkan assumes NSZ/NotInf/NotNaN for them unless
+  SPV_KHR_float_controls2 is used (upstream uses it nowhere; this GPU exposes it). So +-0/+-Inf/NaN
+  through the new TRUNC and MIN are not guaranteed. (2) FMin's NaN result is implementation-
+  dependent; its "-0 compares less than +0" matches AMD's min(-0,+0)=min(+0,-0)=-0. (3) AMD does not
+  publish the F64 min NaN rule ("see the SP Numeric spec"); the F32 entry gives minNum + IEEE-mode
+  sNaN quieting. (4) AMD: an F64 literal is the HIGH dword -> upstream GetSrc64<F64> (literal in
+  the low dword) is wrong for VOP1/VOP2/VOPC F64 literals; VOP3 takes no literal on GFX7.
+  (5) IEEE_MODE and DX10_CLAMP are not decoded (unnamed `u32 : 4` in ShaderProgram::settings);
+  fp64 denorm flush is unsupported on the RTX 4070 SUPER. Options A (exact core-op lowering in the
+  handlers) / B (float_controls2) / C (mode plumbing) - awaiting the user's decision.
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
   num_format=12 (Ubint) at ~3 min (21 Sep); the offline lane says the emulator dies in ~4 of 5 1.71
   runs within minutes (renderer), and that sceNpAuth* stubs made a polling storm when the online
