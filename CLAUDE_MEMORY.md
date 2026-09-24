@@ -536,12 +536,44 @@ GT_WATCH_VA notes, the run-281 TrackerReentry guard, BDA registry, IsFaultAddres
 - Readbacks: nothing switches them on at race start any more, and `run_gt7.ps1` defaults to 0, so a
   race may show the run-264 symptom again (environment draws culled on stale readbacks). Expected.
 - [fprof] fields that are now structurally 0 (their writers were in the dropped code): bufgc, deaths,
-  clamp, findbuf, bufscan, bufemit, softclamp[0..7]. Never read them as measurements.
-**Run 359 is built, not yet run:** `GT7_probe359_upstream_merge.bat` = the 355 chain unchanged on the
-merged binary, `GT_DCB_SOFTSKIP` and `GT_FONTWATCH` cleared. Watcher `scratchpad/watch359.sh`
-(358's + SCENE lines from `EVENT_ROOT`, `[badpacket]`/`[ibchain]`, `[cshang]`, and af090eb7's new
-"unimplemented shader stage" warning). Same route as 358. If the known type-0 abort occurs:
-archive, then a second run may set `GT_DCB_SOFTSKIP=1`.
+  clamp, findbuf, bufscan, bufemit, softclamp[6..7] (softclamp[0..5] are live again since
+  `f540244b`). Never read the dead ones as measurements.
+**Run 359 (24 Sep 21:18) died at t=65s on `vk::Result=ErrorOutOfDeviceMemory`** (vk_platform.h:66,
+`Vulkan::Check(allocateMemory)` in the new arena's `EnsureResident`): 9.70 GiB committed in 1571
+allocations on the 12 GiB RTX 4070 SUPER, 9.4 GiB of it in THREE single commits of tail descriptors
+over memory that is not GPU-mapped (0xe3de80000 3417 MiB, 0x470070000 2283 MiB, 0xc73dfb0000
+3704 MiB). Cause: MY merge dropped the buffer-side GT_SOFT_CLAMP scan (256 MB tail cap + GPU-mapped
+prefix, torn-V# null-binds, guest floor) together with the old buffer cache; run 358's log shows it
+catching the very same 3417 MB descriptor. Restored in `f540244b` on the new BindBuffers and
+BindVertexBuffers (30 of 33 pre-merge [softclamp] messages back; the 3 left out check per-buffer
+backing sizes the arena does not have). Log: `logs/shad_log_run359_upstream_merge_vkcheck_crash.txt`.
+Run 359 was NOT a clean-upstream baseline (reviewer, correctly): it changed two things at once -
+new upstream AND fewer lab guards - and still ran 117 GT_* gates' worth of lab code.
+- LESSON: "dropped with the old buffer manager" must be checked feature by feature. The guard lived in
+  the binding scan and was not tied to the old manager at all; the string census could not see the
+  loss because the guard's strings left with it. The run found it in 65 seconds.
+
+**DIRECTION CHANGE (24 Sep ~21:40, user): "remove GT_* and we start from error one for general fix",
+and "keep it saved tho so we have a backup to play the game whenever / have the gt code ready for use".**
+- CLEAN LINE = the local branch `main` (pure upstream, 0 GT_* gates; fast-forwarded 7a8caf12 ->
+  19700eba) in worktree `C:\shadps4-clean` with its own Build folder. Build:
+  `GT7_upstream\build_clean.bat` (= build.bat with `cd /d C:\shadps4-clean`). Run:
+  `GT7_upstream\GT7_clean_run01.bat` - clears every GT_* variable, runs `run_gt7.ps1 -WhatIfOnly`
+  (same config.json as the lab runs: log filter, 1 GiB log, validation off, pipeline cache on,
+  readbacks 0, network off; -WhatIfOnly exits before the script's GT_* section), then starts the clean
+  exe on the same eboot. Same save and user dir (%APPDATA%\shadPS4 - upstream uses it whenever the
+  cwd has no `user` folder). Watcher: `scratchpad/watch_clean.sh` + `watch_clean.awk` (scenes, the
+  first occurrence of every Critical/Error stem, fatal lines with 6 continuation lines; archives the
+  log at exit as `logs/shad_log_<RUN>_at_exit_*.txt`).
+- METHOD from here: the first error of pure upstream -> root cause -> ONE general fix on its own
+  branch off `main` (no GT_*, no game names, no investigation comments, no trailer) -> the next error.
+- LAB = PLAY BACKUP, kept intact: `gt7-main` `f540244b`, tag `gt7-lab-backup-20260924`, exe copy
+  `GT7_upstream/backup_exe/shadps4_lab_f540244b.exe`; play with `GT7_probe359_upstream_merge.bat`
+  (NOT run yet since the restore). Last PROVEN playable state: branch `gt7-pre-upstream-5047`
+  (runs 355-358; needs its own build to get an exe).
+- Clean-worktree submodules: `git submodule update --reference <lab module dir>` failed for most of
+  the 45; plain network clones worked. The lab worktree's module repos live under
+  `Documents/GitHub/shadPS4/.git/worktrees/shadps4-gt7/modules`, not under C:/shadps4-gt7/.git.
 
 ---
 
