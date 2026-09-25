@@ -217,6 +217,13 @@ Each line is an incident that cost a run, a build, or the user's time.
     patterns with backslashes silently did not match, so only one of five edits landed and the file
     became LF. Restored from a copy made first. Edit CRLF .bat files with the Edit tool (it keeps
     CRLF), or write them new and run `unix2dos`; always check `tr -cd '\r' < f | wc -c` = line count.
+45. **Drafted an upstream reply that asked a maintainer for a shader dump** (PR #5114, 26 Sep). The
+    user posted it; StevenMiller123: "No, we do not allow any shader dump sharing." Never ask for
+    or offer a dump upstream; ask for the game and the instruction, give snippets / tests / refs.
+46. **Opened an ISA-derived fix as a game fix without checking the game uses it** (PR #5114). The
+    body said it "fixes incorrect values"; `scratchpad/f64lit_scan.exe` (GCN2 length walker over
+    the `*.bin` dumps, 0 desyncs) later found 0 F64 literals in all 267 GT7 shaders. Scan the
+    dumps for the touched encoding BEFORE a PR and state the count.
 
 ---
 
@@ -912,6 +919,16 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `logs/shots_clean171_12`, profile `user_after_clean171_12`. `compute-float-mode` 5db8d018 PUSHED to
   mine (clang-format clean), draft filled; no PR opened. Watcher re-armed as RUN=clean171_12_rerun
   on the same exe path.
+- **PR #5114 thread, 21:03-21:12Z:** the user posted the technical paragraph (with a dump request
+  that StevenMiller123 refused: no shader dump sharing upstream). Steven then asked which game this
+  fixes and for small shader snippets, and said changing GetSrc64 would mishandle "genuine 64-bit
+  literals (if those exist)". Facts for the answer: (1) GT7 1.71 has **0** F64 literals in 267
+  dumped shaders (run 11; run 10: 0 in 262) - VOP1/VOPC double sources are 21 V_CVT_F32_F64, 1
+  V_RCP_F64, 1 V_TRUNC_F64, all registers; the fix came from the ISA while adding TRUNC/MIN F64,
+  not from a bad value in a game. (2) GCN2 has no 64-bit literal: one dword after a 32-bit encoding,
+  VOP3 takes none; decode.cpp reads it with one `readu32()` (lines 420/431, only when the encoding is
+  4 bytes, line 133) into `u32 InstOperand::code` (instruction.h:90). Draft reply for the user
+  offers to close the PR.
 
 ---
 
