@@ -732,6 +732,25 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
 - **clean171_05 PREPARED** = 04 with an EMPTY cache only: `GT7_clean171_run05_pgmmode_coldcache.bat`,
   profile rebuilt from `user_after_clean171_03` minus cache/log (post-04b profile kept as
   `user_after_clean171_04b`), watcher `RUN=clean171_05` in the background.
+- **clean171_05 (25 Sep 08:11:40-08:13:06): NO device lost with the empty cache** - SDRSettingRoot
+  passed twice (13 s + 6 s inside), then ResultRoot, PlayGo, EventSelectRoot, BuddyWindowRoot, end at
+  the known fs 0x74f5f10c V_INTERP_MOV_F32 assert (line 64888). Cache A/B now: warm 04/04b died,
+  cold 03/05 passed; 04 -> 05 changed only the cache. **The fp64 shaders were measured**:
+  0x2b96ae5c (rsrc1 0x002c0089) and 0x1c0f802e (rsrc1 0x002c00cd) = FLOAT_MODE 0xC0, DX10_CLAMP 1,
+  IEEE_MODE 0, runtime denorm64 0 against register 3. All 187 programs (62 cs) the same modes; all
+  62 compute mismatch. Error stems: nothing new against run 03. Closes NOTES section 9 item 2; item 3
+  becomes a prerequisite (compute FLOAT_MODE fix before commit 3 is exact in this shader); item 1
+  (F64 NaN rule) and 4 (omod) stay open. Text: log cannot show it (462 glyph renders, 03: 454) -
+  asked the user. Logs `logs/shad_log_clean171_05_at_exit_081306.txt` + game log; profile snapshot
+  `user_after_clean171_05`. CORRECTION on the way: `fp_denorm_mode16_64` also drives the fp16 half of
+  `SetupDenormFlushMode` (emit_spirv.cpp:481-512) - it is not only commit 3's input.
+- **clean171_06 PREPARED** = 05 with its WARM cache (built by the same exe):
+  `GT7_clean171_run06_pgmmode_warmcache.bat` (refuses to start without
+  `cache\CUSA24767\0x000000001c0f802e_0.spv`), profile untouched since 05, watcher
+  `RUN=clean171_06` in the background.
+- Mistake 42 (25 Sep): notes commit c8e77542 was pushed EMPTY - the Edit and `commit_mem.sh` were
+  sent in one parallel batch, the Edit failed (file not read in this context) and the commit still
+  ran. Never batch a commit with the edit it depends on; check `git diff --stat` before the push.
 - Upstream CONTRIBUTING "A.I. Rules": AI use must be disclosed; descriptions AND COMMENTS must be
   human-written. The comments and commit messages in 57ab6276/0dd36386/84e32311 are drafts for the user.
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
