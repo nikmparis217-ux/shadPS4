@@ -722,6 +722,16 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   own fonts via OpenFontMemory + 4 sets on the Noto fallback; metrics fail only for U+254B; 161
   RenderCharGlyphImageHorizontal. Where the glyphs are lost is not established (not one of the 3
   parked font defects). Logs `logs/shad_log_clean171_04_at_exit_065248.txt` + game log.
+- **clean171_04b = an UNWATCHED relaunch (06:52:58-06:53:34), archived by hand afterwards**
+  (`logs/shad_log_clean171_04b_unwatched_at_exit_065334.txt`): same path, same death at the first
+  SDRSettingRoot. Runs 03 (EMPTY cache, 219 compiles) passed that screen; 04/04b (warm, "WarmUp:
+  Preloaded 186 pipelines", 0 compiles) died there - the clean line's first warm-cache runs. The
+  lab's two upstream preload defects (info from the first record read; half-loaded state on early
+  return) are the suspect, not shown. LESSON: a watcher stops at the first exit, so a relaunch is
+  unarchived - re-arm the watcher right after every exit.
+- **clean171_05 PREPARED** = 04 with an EMPTY cache only: `GT7_clean171_run05_pgmmode_coldcache.bat`,
+  profile rebuilt from `user_after_clean171_03` minus cache/log (post-04b profile kept as
+  `user_after_clean171_04b`), watcher `RUN=clean171_05` in the background.
 - Upstream CONTRIBUTING "A.I. Rules": AI use must be disclosed; descriptions AND COMMENTS must be
   human-written. The comments and commit messages in 57ab6276/0dd36386/84e32311 are drafts for the user.
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
