@@ -713,6 +713,15 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   background. Do not rebuild the RelWithDebInfo folder before the run.
 - Static fact for the mode question: 0x1c0f802e has no f64 output modifier (14 FClamp, all f32), so
   DX10_CLAMP cannot touch its V_MIN_F64/V_TRUNC_F64.
+- **clean171_04 (25 Sep 06:52:08-06:52:48):** 50 programs logged (21 cs, 29 graphics), ALL with
+  FLOAT_MODE 0xC0 / DX10_CLAMP 1 / IEEE_MODE 0; all 21 compute get runtime denorm64 0 against
+  register 3 (the compute defect is live). 0x1c0f802e/0x2b96ae5c NOT reached: the run died at the
+  first SDRSettingRoot with `vk_presenter.cpp:1113 Device lost during waiting for a frame` (new;
+  run 03 passed that screen); in run 03 they ran after PlayGo EventSelectRoot. User screenshot: NO
+  TEXT on the StartUpSetting screens. No dumped system fonts in either profile, but GT7 opens ~48
+  own fonts via OpenFontMemory + 4 sets on the Noto fallback; metrics fail only for U+254B; 161
+  RenderCharGlyphImageHorizontal. Where the glyphs are lost is not established (not one of the 3
+  parked font defects). Logs `logs/shad_log_clean171_04_at_exit_065248.txt` + game log.
 - Upstream CONTRIBUTING "A.I. Rules": AI use must be disclosed; descriptions AND COMMENTS must be
   human-written. The comments and commit messages in 57ab6276/0dd36386/84e32311 are drafts for the user.
 - Known 1.71 facts from earlier runs (lab binary): `SurfaceFormat` assertion data_format=16 (5_6_5) +
