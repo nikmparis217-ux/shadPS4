@@ -213,7 +213,7 @@ Each line is an incident that cost a run, a build, or the user's time.
 
 | commit | what | evidence |
 |---|---|---|
-| `65b03b2f` (branch `pr-lds-stream-commit`, worktree `C:\shadps4-pr-lds`, on upstream `37cacc59`, **unpushed**) | `lds_buffer.Commit();` after the memset in `BindBuffers`' `SharedMemory` branch. `StreamBuffer::Map` without `Commit` left the emulated-LDS region unreserved, and the next small stream copy landed inside it, so the LDS dispatch overwrote it on the GPU. | 345: 2 corrupt indirect-arg tables in 56k plus device lost. After the fix, 264,551 tables with 0 events (346-349), 77,519 of them with the diagnostic barrier off. All 4 events hit records 1/17, which is exactly the predicted `A+16 mod 64` overlap. Still pending before the PR: a Vulkan validation run, GoW/GoT regression. |
+| `65b03b2f` (branch `pr-lds-stream-commit`) = **UPSTREAM since 23 Sep: PR #5070, `bc028b7c`, in main 19700eba** (`vk_rasterizer.cpp:767`; the worktree `C:\shadps4-pr-lds` no longer exists) | `lds_buffer.Commit();` after the memset in `BindBuffers`' `SharedMemory` branch. `StreamBuffer::Map` without `Commit` left the emulated-LDS region unreserved, and the next small stream copy landed inside it, so the LDS dispatch overwrote it on the GPU. | 345: 2 corrupt indirect-arg tables in 56k plus device lost. After the fix, 264,551 tables with 0 events (346-349), 77,519 of them with the diagnostic barrier off. All 4 events hit records 1/17, which is exactly the predicted `A+16 mod 64` overlap. Still pending before the PR: a Vulkan validation run, GoW/GoT regression. |
 | `4720205e` | Deferred EOP/EOS/ReleaseMem fences complete in order (`FenceWaitTick`). | 309: >3000 `[fenceorder]` and a type-0 death. 310: 0, and Single Race setup survived for the first time. The user said to leave it untouched. |
 | `387baa06` | `MappedPrefixAt` returns `it->upper() - addr`. It had required the mapping to *start* at the descriptor base. | This was our own bug: it null-bound 22026 of 22026 tail descriptors per 2 s window. |
 | `1cba6562` | GoW: flags-0 ReadConst goes to read_const_dynamic always, plus selective per-shader DMA. | This replaced "turn DMA on for this game" and is the model for a general fix. |
@@ -748,6 +748,27 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `GT7_clean171_run06_pgmmode_warmcache.bat` (refuses to start without
   `cache\CUSA24767\0x000000001c0f802e_0.spv`), profile untouched since 05, watcher
   `RUN=clean171_06` in the background.
+- **clean171_06 (25 Sep 08:27:59-08:28:41): warm cache (run 05's, same exe, `Preloaded 185`, no
+  stale/conflict warning) -> device lost at the first SDRSettingRoot again.** Warm 3/3 died, cold
+  2/2 passed. NEW EVIDENCE: the Windows System log has nvlddmkm **Event 153 (GPU reset) twice in
+  every warm run, the first within the second the SDR page opens** (06:52:43, 06:53:31, 08:28:34),
+  and none in runs 03/05. User: "in the lab tests we had the same problem and we somehow found and
+  fixed it" -> checked: the lab's device lost was the LDS Commit bug = upstream now (#5070); the
+  lab's text loss was its own GT_STREAM_MEMO (never upstream); `4720205e` fixes the lab's own
+  GT_DEFER_EOP deferral (upstream signals EOP/EOS at parse time). None applies to the clean line.
+  Upstream preload defects found by reading (NOTES section 15), none yet shown to be the hang:
+  (1) `LoadShaderMeta` overwrites `fetch_shader` for every stage, so a GS pipeline keeps the GS's
+  empty value - GT7's es 0x72d3a762 (3 vertex inputs) + gs 0x227b3323 draw with no vertex input
+  when preloaded (live path keeps only a stage that has data, vk_pipeline_cache.cpp:521); (2) the
+  abandoned-record leftovers (lab 2b7cf784, not upstream; did not fire); (3) preloaded SRT walkers
+  are outside the fault handler's range and the handler is only registered by a live compile
+  (latent, 0 patches ever); (4) dangling `spec.info` for a program's second record (latent);
+  (5) `runtime_infos` never filled by the preload but read for `clip_distance_emulation`.
+- **clean171_07 PREPARED** = 06 + the LunarG Crash Diagnostic Layer only
+  (`GT7_clean171_run07_crashdiag_warmcache.bat`, `config_run07_crashdiag.json` = live config with
+  `vkcrash_diagnostic_enabled` true, swapped in and restored by the launcher; the layer runs with
+  sync_after_commands). Hang reproduces -> the dump names the command; no hang -> a sync race.
+  Watcher `RUN=clean171_07`; copy the layer's dump out of `user\log` by hand after the exit.
 - Mistake 42 (25 Sep): notes commit c8e77542 was pushed EMPTY - the Edit and `commit_mem.sh` were
   sent in one parallel batch, the Edit failed (file not read in this context) and the commit still
   ran. Never batch a commit with the edit it depends on; check `git diff --stat` before the push.
