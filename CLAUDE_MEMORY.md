@@ -206,6 +206,13 @@ Each line is an incident that cost a run, a build, or the user's time.
     memsets it, ComputeProgram::settings has no such fields). The cache meta and the emitter's
     warnings both read that same internal value, so they "confirmed" each other. Before calling a
     stored value a measurement of the guest, find the line of code that copies it FROM the guest.
+43. **Searched upstream only after the analysis** (25 Sep, V_INTERP_MOV_F32; 42 is in section 5).
+    The ISA / CIK register / Mesa research was done before finding that upstream PR #5087 already
+    implemented the fix (open, maintainer-reviewed); it was merged the same evening as `23356292`.
+    The next blocker's assert turned out to be open issue #5018 as well. First step for any blocker:
+    `git fetch origin`, then search open AND merged PRs plus issues for the assert text or the
+    function name. With `gh` logged out, `https://api.github.com/search/issues?q=<text>+repo:shadps4-emu/shadPS4`
+    works unauthenticated.
 
 ---
 
@@ -805,6 +812,42 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
 - **clean171_09 PREPARED** = run 08 + the compute fix: `GT7_clean171_run09_computefloat_warmcache.bat`,
   exe 9098734f... = `test-compute-float-mode` 6d36f830 (0db8c566 + 69818cd1), backup
   `shadps4_clean_6d36f830_computefloat_test.exe`, profile = run 08's end, watcher v2 `RUN=clean171_09`.
+- **V_INTERP_MOV_F32 blocker: FIXED UPSTREAM by #5087, merged 25 Sep as `23356292`** (w1naenator,
+  reviewed by raphaelthegreat; byte-identical to the squash of PR head be76844d tested here). Root
+  cause: upstream treated MOV P10/P20 as raw vertex reads and allowed them only on flat inputs; per the
+  Sea Islands ISA 10.3.2 and the CIK SPI_PS_INPUT_CNTL description, LDS holds P0, P1-P0, P2-P0 unless
+  passthrough (OFFSET[5] AND FLAT_SHADE) - RADV relies on the same rule. Unit tests: 53/53 on the PR head
+  (only the known VUID 08740 lines); negative control (PR tests + main's code, local branch
+  `negctl-pr5087-tests-on-main` d231f390) crashes both new tests. Gaps left in #5087, code reading only:
+  a default-valued input (OFFSET[5] without FLAT_SHADE) still makes MOV read an undeclared per-vertex
+  input; with neither AMD explicit nor KHR barycentric a non-flat P10/P20 still asserts.
+- **clean171_10 (25 Sep 23:14-23:15, cold, capture exe `b17b3fcb` = F64 series + `GT_INTERP_LOG`
+  instrument, branch `instr-interp-capture`, never for a PR):** fs 0x74f5f10c off 0x0bd8 raw 0xc81e1e00
+  = `V_INTERP_MOV_F32 v7, P10, attr7.z` (0x0bd4 = MOV v18, P0, attr7.z). SPI_PS_INPUT_CNTL_7 = 0x7
+  (smooth, not default, not passthrough), num_interp 8, ps_input_ena 0x2b03; profile khr_bary=1
+  manual=1 amd_explicit=0 (RTX 4070 SUPER). The shader MOVs P0/P10/P20 of attr7.xyz, adds P0 back
+  (V_ADD_F32 at 0x0be0/0x0bf0/0x0c24-0x0c30), interpolates z itself with (1-I-J, I, J) from the
+  PERSP_CENTER VGPRs (V_MAD_F32 0x0be8/0x0bf4) and converts the x/y vertex values to int: it needs the
+  hardware deltas. Dump byte offsets equal the instrument's `off=`.
+- **clean171_11 (23:27-23:28, cold, exe `8e358395` = run 10 + #5087; the window title still reads
+  b17b3fcb - stale scm_rev - the #5087 assert string inside the binary is the proof):** fs 0x74f5f10c
+  translates 65/65 VINTRP (run 10: 20), the IR has exactly 6 FPSub32 on Param7 (vertex1/2 - vertex0),
+  SPIR-V 109064 bytes, pipeline 0x1a2b6d556d681efe compiled. **Next blocker: `image_info.cpp:185`
+  `ASSERT(!props.is_block)`** (line 184 on upstream 41f2a428), macro-tiled branch of
+  `ImageInfo::UpdateSize`, 23:28:08 at PlayGo BuddyWindowRoot, in BindTextures of fs 0x74f5f10c (the
+  log shows BindBuffers' clamp for that stage right before; the fs samples 20 images): a BC texture in
+  a macro-tiled array mode, never supported - the assert predates #5001, which only turned the other
+  macro modes' UNREACHABLE into this assert. Upstream issue #5018 (The Swapper CUSA00315, same assert,
+  open since 13 Sep, no PR). The same fs logs 16 SRT-walker failures ("Unexpected instruction for
+  offset computation, Phi") but no "Sharp source was not flatenned", so they did not place the T#. A
+  V# with num_records 0xFFFFFFFF was clamped (handled). NOT started: the first step is a capture of
+  the T# fields (dfmt/nfmt, tile mode, array mode, size, pitch, levels, address) at the assert.
+- Dependency, explicit: on plain main GT7 stops earlier at cs 0x1c0f802e (Unknown opcode V_MIN_F64 /
+  V_TRUNC_F64 -> EmitControlFlowGraph assert, clean171_01), so every run that reaches fs 0x74f5f10c
+  carries the local F64 series (57ab6276/0dd36386/84e32311); #5087 itself does not depend on it.
+- Profiles now: `user` = end of run 11; `user_after_clean171_10`; `user_before_clean171_10` = run 09's
+  precondition (run 09 never ran). Launchers `GT7_clean171_run10_interpcapture_coldcache.bat` and
+  `GT7_clean171_run11_pr5087_coldcache.bat`; watcher `scratchpad/watch_interp.sh` (RUN and EXE from env).
 - Mistake 42 (25 Sep): notes commit c8e77542 was pushed EMPTY - the Edit and `commit_mem.sh` were
   sent in one parallel batch, the Edit failed (file not read in this context) and the commit still
   ran. Never batch a commit with the edit it depends on; check `git diff --stat` before the push.
