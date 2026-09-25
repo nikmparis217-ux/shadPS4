@@ -769,6 +769,25 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `vkcrash_diagnostic_enabled` true, swapped in and restored by the launcher; the layer runs with
   sync_after_commands). Hang reproduces -> the dump names the command; no hang -> a sync race.
   Watcher `RUN=clean171_07`; copy the layer's dump out of `user\log` by hand after the exit.
+- **clean171_07 (08:51-08:53): ROOT CAUSE of the warm-cache GPU hang.** The Crash Diagnostic Layer
+  loaded (dump went to its DEFAULT `%USERPROFILE%\cdl\<stamp>\cdl_dump.yaml` - shadPS4's layer
+  settings did not reach it: `output_path ""`, `sync_after_commands false`; archived as
+  `logs/cdl_dump_clean171_07_085141.yaml`). Last started, never completed: `vkCmdDispatch 4x4x6` on
+  `Compute Pipeline cs_0x490b6362`; DeviceFaultInfo: Invalid Read at GPU VA 0x100000. That shader has
+  4 cached permutations whose DynamicIndex storage-image mip array is 9 / 1 / 7 / 8 bindings (sampler
+  at binding 11 / 3 / 9 / 10). `NumBindings` reads the mip count from `info.flattened_ud_buf` and both
+  pipeline kinds size their descriptor layout with it; the live path refreshes that buffer before
+  building a pipeline, but `LoadPipelineStage` keeps the establishing record's snapshot and drops every
+  later record's, so 3 of the 4 preloaded pipelines got a layout for another permutation. FIX UNDER
+  TEST: branch `test-preload-udsnapshot` (7e70405b + `0db8c566`, one line: adopt the record's
+  flattened_ud_buf in the existing-program branch); exe 930a1b2a...6197 (backup_exe copy).
+  User: "still no font". Text is separate: no font files in the lab profile either; the upstream
+  dynamic-ReadConst gap (lab 1cba6562) hits only compute shaders in run 05.
+- **clean171_08 PREPARED** = run 06 + the fixed exe only (`GT7_clean171_run08_preloadfix_warmcache.bat`,
+  profile restored from `user_after_clean171_05` = run 06's start; after-07 kept). New watcher
+  `scratchpad/watch_clean171_shots.sh` (`RUN=clean171_08`) also saves screenshots (3 s after each
+  scene + every 10 s) to `logs/shots_clean171_08/` - the user asked for a screenshot after run 07 had
+  already exited.
 - Mistake 42 (25 Sep): notes commit c8e77542 was pushed EMPTY - the Edit and `commit_mem.sh` were
   sent in one parallel batch, the Edit failed (file not read in this context) and the commit still
   ran. Never batch a commit with the edit it depends on; check `git diff --stat` before the push.
