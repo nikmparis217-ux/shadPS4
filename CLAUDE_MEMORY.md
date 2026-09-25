@@ -788,6 +788,23 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `scratchpad/watch_clean171_shots.sh` (`RUN=clean171_08`) also saves screenshots (3 s after each
   scene + every 10 s) to `logs/shots_clean171_08/` - the user asked for a screenshot after run 07 had
   already exited.
+- **clean171_08 (25 Sep 16:17-16:20): the preload fix holds.** Warm cache (`Preloaded 185`), SDR
+  opened twice with no device lost, PlayGo, BuddyWindowRoot, end at the known V_INTERP_MOV_F32 assert
+  (the cold runs' path); NO nvlddmkm 153 in the System log. User: "the letters still dont show but the
+  game progressed". The watcher quit after 5 s (one failed `ps -W` poll ended the loop, 1 screenshot,
+  20 KB log) - full log archived by hand (`logs/shad_log_clean171_08_full_162112.txt`); the v2 watcher
+  (`scratchpad/watch_clean171_v2.sh`) needs 4 failed polls in a row. Profile `user_after_clean171_08`.
+- **F64 PR split (user instruction 25 Sep evening; NOTES section 17)**, branches on upstream main
+  e4ca3496: `tests-gcn-storage-buffer-access` 88b44339 PUSHED (validation errors 98 -> 0);
+  `f64-literal-high-dword` 11d8b765 PUSHED (new comments removed; test fails without the fix);
+  `compute-float-mode` 69818cd1 LOCAL until the GT7 check (names FLOAT_MODE of COMPUTE_PGM_RSRC1 as u64
+  fields, BuildRuntimeInfo copies them); `f64-trunc-min` 228bf562 LOCAL and not for a PR (F64 NaN rule
+  unpublished, IEEE_MODE and DX10_CLAMP not decoded, omod via float path, needs compute-float-mode).
+  Drafts in `patches_clean/pr_drafts/`. Not fixed, own PRs later: compute num_allocated_vgprs is
+  `num_vgprs * 4` (graphics `+1`), signed 64-bit literals are zero-extended (ISA: sign-extend).
+- **clean171_09 PREPARED** = run 08 + the compute fix: `GT7_clean171_run09_computefloat_warmcache.bat`,
+  exe 9098734f... = `test-compute-float-mode` 6d36f830 (0db8c566 + 69818cd1), backup
+  `shadps4_clean_6d36f830_computefloat_test.exe`, profile = run 08's end, watcher v2 `RUN=clean171_09`.
 - Mistake 42 (25 Sep): notes commit c8e77542 was pushed EMPTY - the Edit and `commit_mem.sh` were
   sent in one parallel batch, the Edit failed (file not read in this context) and the commit still
   ran. Never batch a commit with the edit it depends on; check `git diff --stat` before the push.
