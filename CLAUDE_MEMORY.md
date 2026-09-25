@@ -213,6 +213,10 @@ Each line is an incident that cost a run, a build, or the user's time.
     `git fetch origin`, then search open AND merged PRs plus issues for the assert text or the
     function name. With `gh` logged out, `https://api.github.com/search/issues?q=<text>+repo:shadps4-emu/shadPS4`
     works unauthenticated.
+44. **Ran Git Bash `sed -i` on a CRLF launcher** (25 Sep, run 09 .bat). It stripped every CR and the
+    patterns with backslashes silently did not match, so only one of five edits landed and the file
+    became LF. Restored from a copy made first. Edit CRLF .bat files with the Edit tool (it keeps
+    CRLF), or write them new and run `unix2dos`; always check `tr -cd '\r' < f | wc -c` = line count.
 
 ---
 
@@ -857,6 +861,44 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   num_format=12 (Ubint) at ~3 min (21 Sep); the offline lane says the emulator dies in ~4 of 5 1.71
   runs within minutes (renderer), and that sceNpAuth* stubs made a polling storm when the online
   sign-in sites were patched (those sites are removed in the current eboot).
+- **Synced with upstream main 41f2a428 (25 Sep 23:30-23:50; user: "first synch our code with main").**
+  +11 upstream commits since 19700eba: #5087 (V_INTERP P10/P20), #5100 (buffer cache memory tracker
+  rework + batched uploads), #5106 (logger), #5110 (image validation), #5113 (vk_scheduler on_submit
+  before EndSession), #5111, #5104, #5102, #5097, #5094, #5078. No submodule change; the only file
+  overlap with our stack is tests/gcn (#5087 appended tests); every patch re-applied with the same
+  +/- lines (checked per branch). Local `main` = 41f2a428. `f64-literal-high-dword` = 466af2b1 (the
+  user's two GitHub "Sync fork" merges; our patch unchanged). `tests-gcn-storage-buffer-access` =
+  70f538ab (merge of origin/main) PUSHED as a fast-forward. `compute-float-mode` rebased = 5db8d018
+  LOCAL. `f64-trunc-min` rebased onto the literal branch = 474ccb01 LOCAL. Run stack
+  `test-compute-float-mode-41f2a428` 68d953be = main + the six commits of run 09's exe (1f29476d
+  runner, b1735da2 literal, e93c2ff8 TRUNC/MIN, 292710f4 GT_PGMMODE_LOG, 2e767aab preload, 68d953be
+  compute); exe SHA256 2b675f8c..., backup `shadps4_clean_68d953be_synced_computefloat_test.exe`.
+- gcn tests on 41f2a428 (Debug + validation layer; `bitcmp1_b64_bit32` excluded, still exit 3 on
+  main): main 53 passed / 98 errors; runner 53/0; literal 54/102; runner+literal 54/0; literal branch
+  with main's translate.cpp FAILS the new test (negative control); compute 53/98; TRUNC/MIN + runner
+  64/0; run stack 64/0.
+- **PR #5114 "Fix F64 literal operand decoding"** (opened by the user 25 Sep 20:08Z from
+  `f64-literal-high-dword`, head 466af2b1; CI 10 checks green, 1 skipped). 20:40Z DanielSvoboda
+  (Member): "In GTA V, the brightness gets really intense with this PR" (main vs PR screenshots, PR
+  overexposed). Not reproducible here: the user does not have GTA V. What the change can touch: only a
+  32-bit literal read through GetSrc64<IR::F64>, i.e. VOP1 V_CVT_I32_F64, V_CVT_F32_F64, V_FLOOR_F64,
+  V_RCP_F64, V_FREXP_EXP_I32_F64, V_FREXP_MANT_F64, V_FRACT_F64 and VOPC V_CMP_*_F64 (the VOP3 F64
+  ops cannot take a literal on GCN2). Before the fix such a literal read as the denormal
+  0x00000000_LLLLLLLL, effectively 0.0. Second source for the rule: LLVM
+  AMDGPUDisassembler::decodeLiteralConstant shifts the literal left by 32 for OPERAND_REG_IMM_FP64,
+  and AMDGPUAsmParser warns "Low 32-bits will be set to zero". Open: which main build the maintainer
+  compared (the PR build carries 41f2a428 with #5100/#5110/#5113), and which GTA V shader has an F64
+  literal (ask for a shader dump). No known GTA V brightness issue upstream (search, 25 Sep).
+- **clean171_12 PREPARED, not launched:** `GT7_clean171_run12_synced_computefloat_warmcache.bat`, the
+  68d953be backup exe, profile `user` = end of run 11 (copied first to `user_after_clean171_11`),
+  GT_PGMMODE_LOG=1. Expected: no V_INTERP assert, then image_info.cpp:184 at BuddyWindowRoot. Check:
+  compute [pgmmode] lines runtime == register (denorm64=3), no GPU reset, whether the letters show.
+  Watcher `scratchpad/watch_clean171_v3.sh` (EXE from env) armed with RUN=clean171_12 and that exe's
+  path; the v2 watcher (RUN=clean171_09) was stopped. The run 09 launcher now runs its own backup exe
+  (the Build dir holds 68d953be now) and its "already running" guard matches any shadps4* image.
+- Two sessions share C:\shadps4-clean: this one (F64 / compute / preload; Build/x64-Clang-RelWithDebInfo
+  and Build/x64-Clang-Debug-tests) and the V_INTERP / image_info one (Build/x64-Clang-RelWithDebInfo-interp).
+  Checkout handover by SendMessage. The peer's next cold capture run is to be clean171_13.
 
 ---
 
