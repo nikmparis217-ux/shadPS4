@@ -899,6 +899,19 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
 - Two sessions share C:\shadps4-clean: this one (F64 / compute / preload; Build/x64-Clang-RelWithDebInfo
   and Build/x64-Clang-Debug-tests) and the V_INTERP / image_info one (Build/x64-Clang-RelWithDebInfo-interp).
   Checkout handover by SendMessage. The peer's next cold capture run is to be clean171_13.
+- **clean171_12 (25 Sep 23:57-23:59, WARM, exe 68d953be = main 41f2a428 + runner/literal/TRUNC-MIN +
+  GT_PGMMODE_LOG + preload fix + compute FLOAT_MODE):** `WarmUp: Preloaded 184 pipelines`; SDR twice,
+  PlayGo EventSelect, BuddyWindowRoot (= the Music Rally screen GT7 offers while PlayGo installs; the
+  user saw it drawn, album art and the logo, UI text still MISSING - #5100 did not bring the letters
+  back). Ends at `image_info.cpp:184` (the logger rework prints the function as "lambda") = run 11's
+  blocker, as expected. **compute-float-mode VALIDATED:** 63/63 cs programs runtime_info == register
+  (round 0/0, denorm32 0, denorm64 3; run 05 before the fix: 62/62 got 0); fs 75, vs 48, gs 2, es 1
+  also equal. System log: 0 nvlddmkm/Display events 23:56-00:01 (no GPU reset). Error set vs runs
+  11/08: only the image_info assert and two pad stubs (scePadInit, scePadSetTiltCorrectionState -
+  newly reached code). Logs `logs/shad_log_clean171_12_at_exit_235917.txt` + game log, 28 shots in
+  `logs/shots_clean171_12`, profile `user_after_clean171_12`. `compute-float-mode` 5db8d018 PUSHED to
+  mine (clang-format clean), draft filled; no PR opened. Watcher re-armed as RUN=clean171_12_rerun
+  on the same exe path.
 
 ---
 
