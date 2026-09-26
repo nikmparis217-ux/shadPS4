@@ -1099,6 +1099,36 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   SQ_TEX_MIP_FILTER is NONE/POINT/LINEAR on gfx7; gfx8 and gfx9 add 3 = POINT_ANISO_ADJ (this profile
   runs with neo_mode false). Per the peer: gt7-main softclamped it to Linear as a "torn GPU-driven
   S#" (e5c2634f, never proven), and GitHub has 0 upstream issues/PRs for it.
+- **26 Sep ~22:40 - TEST8: the mip filter 3 S# is not a sampler; it is shader constants read at the
+  sampler's flattened offsets.** TEST8 = local `test8-main41c0` a3eb4339 = TEST7 merged with main
+  41c0fca5 (3ffa23e7, so + #5129) + ONE log-only instrument commit (`GT_SAMPLERDUMP=1`: in
+  `Rasterizer::BindTextures`, a stage whose fetched S# has mip_filter > 2 logs every sampler's dwords,
+  decoded fields and SharpFetch, then flushes); exe `backup_exe\shadps4_test8_a3eb4339_gt7.exe` SHA256
+  0a3dd1ea...8a02, PDB `backup_exe\pdb_test8_a3eb4339`, profile `C:\shadps4-test8-gt7\user` = fresh
+  copy of state A; built and set up by the peer. Run 1 (22:38:36-22:39:54) stopped at the same
+  `MipFilter: Unreachable code!` (22:39:53), right after `Compiling fs shader 0x2a265dff (permutation)`
+  and pipeline 0xfa76150f7858eb39, so #5129 does not fix it. `[samplerdump] stage 0x2a265dff: 1
+  sampler(s), flatbuf 51 dwords`; `#0 dw 3f540000 3c192437 3e5ca3b2 3acbd902 | summary 0 (SingleLoad)
+  mask 0xf off 40 41 42 43`, no immediates. Those four dwords are floats (0.828, 0.0093, 0.216,
+  0.0016) and the decoded fields are nonsense (min_lod 1079 > max_lod 402, lod_bias 9138, border_ptr
+  2306). So handling value 3 (the old softclamp) would only hide a wrong sharp location; the question
+  is why this permutation's sampler resolves to flatbuf dwords 40-43. The run wrote a new save
+  (DRFILEIV 22:39:00, memory.dat 22:39:23; md5 4c0ade4e / ca8df9ab) and cache 628 -> 1434, so this
+  profile is not state A any more either (no backup copy: the user stopped it). Logs
+  `shad_log_test8_gt7_at_exit_224006.txt`, `game_log_test8_gt7_at_exit_224006.txt`,
+  `crashcatch_test8\crashcatch_report_run1.txt` + `crash_80000003_tid31980.dmp`.
+- **26 Sep ~22:50 - the sample_index fix is on a PR branch (made and pushed by the peer; the user
+  opens and writes the PR).** `bary-smooth-sample-index` 12d41c22 on origin/main 41c0fca5, pushed
+  only to `mine`: one title-only commit "shader_recompiler: Define SampleId for BaryCoordSmoothSample
+  on the KHR path", author and committer the fork identity, diff = spirv_emit_context.cpp +5/-3, blob
+  95853db7 = the 738d4095 blob that ran in TEST7 and TEST8 (checked read-only here). clang-format
+  clean; no upstream issue or PR for this bug (only #4401 matches "sample_index"; the open barycentric
+  PR #4863 does not touch the file). Regression argument (peer): `sample_index` for
+  IR::Attribute::SampleIndex is defined earlier (line 368) and both `!ValidId` guards stay, so every
+  shader that compiled before emits identical SPIR-V; only shaders that used to abort change. Open,
+  for the user: the three-game check. GT7 on main + this fix alone stops earlier, at
+  image_info.cpp:184; GoW on main stops at DS_ORDERED_COUNT. TEST3's GoT death (log cut at 184320
+  bytes, no assert) has the same silent fast-fail signature, so a GoT run on this branch could tell.
   **The boot deaths of TEST6 runs 1-3 were the save, not the build.** All three:
   `BootProject::TopRootWindow`, thread Updat, guest 0xc0000005 at the same eboot-relative address,
   each right after one ADHOC `nil object cannot be used in '(nil).np'` line
