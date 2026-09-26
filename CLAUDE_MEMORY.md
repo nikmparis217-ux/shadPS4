@@ -1091,6 +1091,14 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `shad_log_test7_gt7_at_exit_221238.txt`, `game_log_test7_gt7_at_exit_221238.txt`, report
   `crashcatch_test7\crashcatch_report_run1.txt` (6918 first-chance 0xc0000005 while attached, the
   normal kind; TEST6 run 4 had 4120).
+  The run wrote a new save (DRFILEIV.dat 22:11:19, memory.dat 22:11:50 + backup 22:11:53; md5
+  ad61697f / 62b3eef5 against state A's aec8a874 / ca8ecb83) = "state E", copied to
+  `C:\shadps4-test7-gt7\stateE_backup_after_test7_run1`, plus 826 cache files (628 -> 1454). So the
+  TEST7 profile is no longer state A; the next run starts from a fresh copy of
+  `user_warm_after_runs1to3`. Mesa's AMD register DB (`src/amd/registers/gfx*.json`):
+  SQ_TEX_MIP_FILTER is NONE/POINT/LINEAR on gfx7; gfx8 and gfx9 add 3 = POINT_ANISO_ADJ (this profile
+  runs with neo_mode false). Per the peer: gt7-main softclamped it to Linear as a "torn GPU-driven
+  S#" (e5c2634f, never proven), and GitHub has 0 upstream issues/PRs for it.
   **The boot deaths of TEST6 runs 1-3 were the save, not the build.** All three:
   `BootProject::TopRootWindow`, thread Updat, guest 0xc0000005 at the same eboot-relative address,
   each right after one ADHOC `nil object cannot be used in '(nil).np'` line
