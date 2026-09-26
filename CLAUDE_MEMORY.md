@@ -976,6 +976,24 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   high word 0, low word non-zero; checked on a synthetic control): GoW 1860 modules and GoT 28 carry
   no f64 constant at all, GT7 1.71/1.00 one module each with two ordinary doubles. GoT evidence is
   thin; the TEST3 GoW/GoT runs dump every shader for a rescan.
+- **26 Sep ~18:50 - the 3-game test is clean for trunc-min-f64.** TEST3 GT7 (18:18-18:20): cs
+  0x1c0f802e translates (0 "Unknown opcode"), then `SignalHandler: Unhandled Exception code
+  0xc0000005 at 0x700000affb65` (thread Job#33@@Job#063) BEFORE BuddyWindowRoot. A/B **TEST3b** =
+  local `test-3games-bitexact-c6b24ec1` c227b3c7 (the TEST3 tree with the bit-exact e93c2ff8
+  TRUNC/MIN; exe SHA256 8c381f52...cc85; the scm_rev string only refreshed after a CMake
+  reconfigure): BuddyWindowRoot 18:36:06, then `image_info.cpp:184` `ASSERT(!props.is_block)`, the
+  end of runs 12/13. **TEST3r** = the TEST3 binary again (`shadps4_test3r_e9125614_gt7.exe`), fresh
+  copy of `C:\shadps4-clean-run14\user` (`diff -rq` identical, 0 cache files): BuddyWindowRoot
+  18:47:27 -> `image_info.cpp:184`. So the 0xc0000005 came in 1 of 2 runs of the PR exe and is not
+  the PR (user: "random crash"). The address is host memory; not a module trampoline (those sit in
+  guest memory right after each module, module.cpp:133) and not a #5109 NID stub (each is its own
+  page-aligned `Xbyak::CodeGenerator(32, AutoGrow)`, 22 bytes; the fault is 0xb65 into its page).
+  If it comes back: archive, compare RIP and thread. New `scratchpad/f64op_scan.exe` (the bitcmp
+  walker; control cs 0x1c0f802e = 1 VOP1 V_TRUNC_F64 + 1 VOP3 V_MIN_F64): GoW 0 in 51 and GoT 0 in
+  75 TEST3 dumps; in the 1080 older APPDATA dumps only GT7 1.00's copy of the same shader (cs
+  0xa911a841, CUSA24769); 0 desyncs. The PR's code never runs in GoW/GoT: GoW's stop is
+  `DS_ORDERED_COUNT` (known upstream gap), GoT's silent exit is unexplained and not this PR. The PR
+  decision is the user's.
 
 ---
 
