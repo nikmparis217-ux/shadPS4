@@ -238,6 +238,14 @@ Each line is an incident that cost a run, a build, or the user's time.
     test 53 with no `[  PASSED  ]` line, so our two new tests at the end of the file never ran.
     Read the exit code and the `[  PASSED  ] N` summary; when upstream crashes, run the rest with
     `--gtest_filter=-<crasher>` and our tests by name, and say so.
+49. **Blamed a log setting for a boot crash on a 3-vs-0 count, before listing every difference**
+    (26 Sep, TEST6). `"flush_level": "info"` was the only CONFIG difference from TEST5, so three
+    early deaths with it against none in six without it read as a timing effect (the peer and I both
+    said so to the user). Run 3 with `""` died identically. The real difference was STATE: the TEST6
+    profile had been copied from a run that died seconds after writing its save. The count also
+    lumped together crashes with different codes and addresses (TEST4 run 4's 0xc0000096 elsewhere).
+    Diff the whole profile against the last known-good starting state, file by file, before
+    believing any count.
 
 ---
 
@@ -279,6 +287,10 @@ and merged; `pr-lds-stream-commit` is redundant now and was left untouched.
   precede the first consumer return (352b). An out-of-range SliceOf layer write is refuted: the max
   destination layer is 5 of 8. The killer is not one of the 48 donors (353).
 - Bc6+Ubint comes from a V# or a color buffer. Impossible: only a T# has room for dfmt 40 / nfmt 12.
+- `"flush_level": "info"` causes TEST6's early boot deaths. Refuted by TEST6 run 3 (`""`, identical
+  death); the cause was the copied save state (section 5, TEST6).
+- The 16 flatten `Phi` / `VisitPointer` errors of fs 0xf10530e6 kill the emulator. Refuted by TEST6
+  run 4: every recompiler pass finishes; the death is in EmitSPIRV (undefined `sample_index`).
 
 ---
 
@@ -1029,6 +1041,53 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   earlier cold clean171 runs (not significant yet). Guest code is not looked at (rule 34).
   Logs `shad_log_test4_gt7{,_2,_3,_4}_at_exit_*`, `shad_log_test3r_gt7_2_at_exit_195422.txt`,
   `shad_log_test5_gt7_at_exit_201902.txt`, `console_test5_gt7_at_exit.txt`.
+- **26 Sep ~21:50 - TEST6: the 0xC0000409 at fs 0xf10530e6 is Sirit's `std::abort()` on an
+  undefined SPIR-V id; `sample_index` is never defined when an earlier barycentric input already
+  created `bary_coord`.** TEST6 = local `test6-passtrace` d4461c4e = TEST5 + ONE instrument commit
+  (`GT_PASSTRACE=<hash>` logs and flushes one line per compile step of that one program; exe SHA256
+  001ca2d9...14a2, PDB in `backup_exe\pdb_test6_d4461c4e`), with `scratchpad/crashcatch.exe`
+  attached from the PlayGo event list. Runs 1-3 died at boot (below); run 4, with the save
+  restored, reached Music Rally. Last trace line: `CompileModule: TranslateProgram returned,
+  emitting SPIR-V` - every recompiler pass finished, so the 16 flatten Phi lines are not the cause.
+  crashcatch: second-chance 0xC0000409 on `shadPS4:GpuCommandProcessor`, FAST_FAIL code 7 (abort);
+  stack `ucrtbase!abort` <- `Sirit::Module::OpLoad` (memory.cpp:23) <- `EmitGetAttribute`
+  (emit_spirv_context_get_set.cpp:152) <- `EmitSPIRV` <- `CompileModule:634` <- `GetProgram:672` <-
+  `RefreshGraphicsStages` <- `Rasterizer::Draw`. Sirit's `Stream::operator<<(Id)` (stream.h:158-161)
+  calls `std::abort()` with no message on id 0. Line 152 is the non-AMD `BaryCoordSmoothSample`
+  path, `OpInterpolateAtSample(F32[3], bary_coord, OpLoad(U32[1], sample_index))`. In
+  `spirv_emit_context.cpp:411-419` `sample_index` is defined only inside `else if
+  (supports_fragment_shader_barycentric && !ValidId(bary_coord))`, so an earlier BaryCoordSmooth /
+  PullModel / SmoothCentroid load leaves it 0 (unless SampleIndex itself is loaded). RTX 4070 SUPER:
+  `VK_KHR_fragment_shader_barycentric` enabled (`vk_instance.cpp:302` sets the profile flag from it),
+  `VK_AMD_shader_explicit_vertex_parameter` unavailable. Upstream bug from #4401 (ff62c995, 19 Aug),
+  unchanged on origin/main 41c0fca5; the peer confirmed it independently. The capability side is
+  right (`emit_spirv.cpp:336-342`) and PullModel's frag_coord is defined on its own. Not proven
+  directly: which other barycentric input fs 0xf10530e6 loads (no dump of that shader, no cdb for the
+  minidump `logs\crashcatch_test6\crash_c0000409_tid7844.dmp`). **TEST7** = `test7-sampleindex`
+  738d4095 = TEST6 + ONE fix commit (on the KHR path, define `bary_coord` and `sample_index`
+  independently; clang-format clean), profile `C:\shadps4-test7-gt7\user` = the TEST6 profile at
+  save state A, launcher `TEST7_GT7_738d4095_sampleindex.bat`; exe
+  `backup_exe\shadps4_test7_738d4095_gt7.exe` SHA256 1a4ccfac...3615, PDB in
+  `backup_exe\pdb_test7_738d4095`; same `GT_PASSTRACE=0xf10530e6` and the same crashcatch trigger as
+  TEST6 run 4 (out `logs\crashcatch_test7`).
+  **The boot deaths of TEST6 runs 1-3 were the save, not the build.** All three:
+  `BootProject::TopRootWindow`, thread Updat, guest 0xc0000005 at the same eboot-relative address,
+  each right after one ADHOC `nil object cannot be used in '(nil).np'` line
+  (gt7/network/Environment.swift:12, init_network.ad:33) that is in none of the other 10 clean
+  archives. Profile diff against TEST5 run 1's starting state
+  (`C:\shadps4-test4-gt7\user_warm_after_runs1to3`, "state A"): only `APP_DATA/logs/archived.log` and
+  the saves `DRFILEIV.dat` + `sce_sdmemory/memory.dat` (+ backup), written by TEST5 run 2 between
+  20:25:00 and 20:25:32, seconds before its own 0xC0000409 ("state C"). `temp/` differs too, but
+  shadPS4 wipes it on every boot (`emulator.cpp:604-608`). Run 4 with state A booted. State C is kept
+  in `C:\shadps4-test6-gt7\stateC_backup_after_test5_run2`, run 4's save in
+  `...\stateD_backup_after_test6_run4`; the TEST5 profile still holds state C. Why the game dies on
+  state C is a separate, parked question (guest side, rule 34).
+  Logs `shad_log_test6_gt7{,_2,_3,_4}_at_exit_*` (run 2 archived by the peer), crashcatch reports in
+  `logs\crashcatch_test6`. `APP_DATA/logs/archived.log` is the game's own log of the last run that got
+  far enough to write it: `game_log_test6_gt7{,_3}_at_exit_*` are TEST5 run 2's.
+  Upstream main moved to 41c0fca5 "Fix ConstructSharpFetch (#5129)": it moves `summary =
+  SingleLoad` inside the `!= Invalid` block, the #5112 bug the peer had reported. A PR branch for the
+  sample_index fix starts from 41c0fca5.
 
 ---
 
@@ -1058,6 +1117,15 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `immediates[i]`. dword1 holds dfmt [25:20] and nfmt [29:26].
 - The Unreal project at `C:\GTNikos` is a different lane. Its huge CLAUDE.md is not this lane's
   rules; `C:\shadps4-gt7\CLAUDE.md` is.
+- `scratchpad/crashcatch.exe <image> <log> <trigger> <out dir> <pdb dir>` (26 Sep): attach-only
+  debugger (DebugActiveProcess, KillOnExit off). It waits for <trigger> in the log, passes every
+  first-chance exception back, and on a fast fail or any second-chance exception writes the
+  exception record (with the FAST_FAIL code name), a symbolized StackWalk64 of the faulting thread,
+  every thread's top frames and a minidump into `<out dir>\crashcatch_report.txt`. It exits when the
+  process ends, so re-arm it after every run like the watcher, and move an old `shad_log.txt` that
+  contains the trigger out of the way first or it attaches during boot. Validated on
+  `ffail_test.exe` (codes 2 and 7). A 0xC0000409 cannot be caught in-process, and
+  `emulator.cpp:75` (`SEM_NOGPFAULTERRORBOX`) leaves no WER dump; this is the only way to see it.
 
 ---
 
