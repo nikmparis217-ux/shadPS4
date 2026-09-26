@@ -41,6 +41,12 @@ is an orphan history unrelated to `gt7-main`.
   Co-Authored-By or "generated with" trailer anywhere** ("they dont want ai"). The shadPS4
   CONTRIBUTING rules also say AI use must be disclosed and PR text must be human-written: Claude
   supplies factual notes, the user writes the prose.
+- **Division of labour for a PR (user, 26 Sep): "i do the pr you just make the branch. always
+  remember the rules of main no ai does writing or pushing" / "you will push to our fork not to
+  main".** Claude makes the branch from `origin/main` with ONE commit whose message is the TITLE
+  ONLY (a body pre-fills the PR description with AI text), pushes it to `mine` only, never to
+  `origin`, and hands over facts (branch, hash, diff, tests, measurements). No drafted PR
+  description, GitHub comment or maintainer reply. Before a PR: test GT7 + GoW + GoT.
 - Instruments live in C++ behind `GT_*` env vars and stay in our tree; they are stripped from PR
   branches. Emulator tooling is never python/ps1 (ad-hoc log greps in the chat are fine).
 - Report under **ROOT CAUSE / EVIDENCE / CHANGE / VALIDATION / REMAINING ISSUE / DIFF REVIEW**,
@@ -224,6 +230,14 @@ Each line is an incident that cost a run, a build, or the user's time.
     body said it "fixes incorrect values"; `scratchpad/f64lit_scan.exe` (GCN2 length walker over
     the `*.bin` dumps, 0 desyncs) later found 0 F64 literals in all 267 GT7 shaders. Scan the
     dumps for the touched encoding BEFORE a PR and state the count.
+47. **Handed the user a finished PR description in prose** (26 Sep, trunc-min-f64), and a commit
+    body that GitHub would have copied into the PR. The user: "no ai does writing or pushing". Facts
+    only, title-only commit, push to `mine` only (section 1).
+48. **Trusted a gtest total without the exit code.** On any base with #5034, upstream's own
+    `GcnTest.bitcmp1_b64_bit32` dies with 0x80000003 (UNREACHABLE in UConvert) and the run stops at
+    test 53 with no `[  PASSED  ]` line, so our two new tests at the end of the file never ran.
+    Read the exit code and the `[  PASSED  ] N` summary; when upstream crashes, run the rest with
+    `--gtest_filter=-<crasher>` and our tests by name, and say so.
 
 ---
 
@@ -929,6 +943,39 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   VOP3 takes none; decode.cpp reads it with one `readu32()` (lines 420/431, only when the encoding is
   4 bytes, line 133) into `u32 InstOperand::code` (instruction.h:90). Draft reply for the user
   offers to close the PR.
+- **26 Sep ~18:10 - V_TRUNC_F64 / V_MIN_F64 as its own PR, and a 3-game test before it.** GT7's crash
+  on plain main (cs 0x1c0f802e "Unknown opcode V_MIN_F64 / V_TRUNC_F64") is fixed by these two
+  alone; #5114 does not touch it. Branch `trunc-min-f64` = **6487aba7** on origin/main **c6b24ec1**,
+  pushed to `mine`, title-only commit (same tree as ce445dd1); 5 files +63: dispatch + V_TRUNC_F64
+  (FPTrunc) + V_MIN_F64 (FPMin) like V_FLOOR_F64 / V_MAX_F64, runner enables shaderFloat64 when the
+  device has it (same lines as #5114), tests `trunc_f64` / `min_f64` (skip without shaderFloat64).
+  clang-format 19 (VS-bundled, CI's version) leaves every added line unchanged; CI only lints
+  `src/`, and the pre-existing `tests/gcn` files are not clang-format clean. Old local
+  `trunc-min-f64-7e0c8111` (f71592ec) = the never-launched run 14 exe.
+  **Test build:** local `test-3games-c6b24ec1` **e9125614** = c6b24ec1 + mine/f64-literal-high-dword
+  (e591fedd, #5114 with the user's main merge) + compute-float-mode + tests-gcn-storage-buffer-access
+  + trunc-min-f64 (one test-file conflict, both sides kept). gcn: 56/56 without the crasher, 0
+  validation errors, `floor_f64_literal_is_high_dword` / `trunc_f64` / `min_f64` OK. Exe SHA256
+  63ceefa6...01001e55 as `backup_exe/shadps4_test3_e9125614_{gt7,gow,got}.exe` (one copy per game so
+  each watcher knows its game); launchers `GT7_upstream/TEST3_{GT7,GOW,GOT}_e9125614.bat` (CRLF);
+  profiles `C:\shadps4-test3-{gt7,gow,got}\user`, all COLD (#5112 changed the cache layout without a
+  version bump, peer's static finding): gt7 = copy of run 14's profile; gow (CUSA07411) / got
+  (CUSA13323) = the clean config with the general log filter, the lab saves, dump_shaders ON.
+  Watchers v4 RUN=test3_gt7/gow/got. #4999/#4996 (closed, not merged) are not in it.
+  **Upstream bug 1 (#5034, 98bc3205, 24 Sep):** S_BITCMP0/1_B64 -> `ir.UConvert(32, U64)`; UConvert
+  has no U64->U32 case -> UNREACHABLE "Conversion from U64 to 32 bits". Its own test crashes on
+  c6b24ec1 and on fc5d2cc2 (so not #5112); CI runs `ctest -E 'GcnTest'`. Found with a local-only
+  stderr fallback in log.cpp VLog (reverted). `scratchpad/bitcmp_scan.exe`: 0 S_BITCMP*_B64 in 1519
+  dumped shaders (GT7 1.00/1.71, GoW, GoT), so it blocks none of our games.
+  **Upstream bug 2 (#5112, suspected, static only):** EmitPrologue `!fetch_data` became
+  `!fetch_data.Empty()` (Empty() = size == 0), i.e. inverted, for the vertex and the instance offset;
+  a VS whose fetch shader takes the offset from the base-vertex SGPR now subtracts BaseVertex and the
+  ASSERT_MSG branch is unreachable. Suspect first if geometry breaks on a c6b24ec1+ build.
+  **F64 literals (#5114):** `f64lit_scan` 0 in 1131 dumps (GoW 520 shaders, GT7); new
+  `scratchpad/f64const_scan.exe` over the pipeline caches (a pre-fix literal = f64 OpConstant with
+  high word 0, low word non-zero; checked on a synthetic control): GoW 1860 modules and GoT 28 carry
+  no f64 constant at all, GT7 1.71/1.00 one module each with two ordinary doubles. GoT evidence is
+  thin; the TEST3 GoW/GoT runs dump every shader for a rescan.
 
 ---
 
