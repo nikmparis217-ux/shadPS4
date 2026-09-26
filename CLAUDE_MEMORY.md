@@ -291,6 +291,11 @@ and merged; `pr-lds-stream-commit` is redundant now and was left untouched.
   death); the cause was the copied save state (section 5, TEST6).
 - The 16 flatten `Phi` / `VisitPointer` errors of fs 0xf10530e6 kill the emulator. Refuted by TEST6
   run 4: every recompiler pass finishes; the death is in EmitSPIRV (undefined `sample_index`).
+- The mip filter 3 S# of fs 0x2a265dff is fetched from the wrong place (TEST8 note, 26 Sep 22:40), or
+  it is a genuine gfx8 POINT_ANISO_ADJ. Both refuted 26 Sep ~23:20: offsets 40-43 are the right
+  dwords, but the only samples on that sampler are behind `if (flatbuf[50] != 0)` and flatbuf[50] is 0
+  in every snapshot, so the slot holds the draw's other data (five stops, five different values).
+  The fix is to survive a garbage S#, not to fetch it differently (section 5, 23:20).
 
 ---
 
@@ -1147,6 +1152,40 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   Upstream main moved to 41c0fca5 "Fix ConstructSharpFetch (#5129)": it moves `summary =
   SingleLoad` inside the `!= Invalid` block, the #5112 bug the peer had reported. A PR branch for the
   sample_index fix starts from 41c0fca5.
+- **26 Sep ~23:20 - root cause of the MipFilter stop: the S# is read correctly, the sampler is UNUSED
+  in that draw, and its slot holds whatever the draw put there. MaxAniso is the second assert on the
+  same path.** The user ran TEST7 run 2 (23:11:43-23:12:47, from the state E save) and TEST8 run 2
+  (23:12:57-23:13:55, from TEST8 run 1's save); both booted and started Music Rally, so neither run-1
+  save is a boot killer. TEST7 run 2 stopped at `resource.h:494 MaxAniso: Unreachable code!`
+  (crashcatch 0x80000003, `Sampler::Sampler+0xa41` sampler.cpp:17 <- `GetSampler` <- `BindTextures`
+  vk_rasterizer.cpp:957; `crashcatch_test7\crashcatch_report_run2.txt` + `crash_80000003_tid24928.dmp`)
+  right after `Compiling fs shader 0x2a265dff (permutation)`. sampler.cpp:14-18 (identical in 738d4095
+  and a3eb4339, as is resource.h) call `MaxAniso()` only when the mag or min filter is AnisoPoint /
+  AnisoLinear. TEST8 run 2 stopped at MipFilter again; samplerdump `#0 dw bf3c1a20 3ee5c348 3f000000
+  3f800000` (-0.735, 0.449, 0.5, 1.0), same SingleLoad off 40-43, max_aniso 5 but mag 0 / min 0 (so
+  MaxAniso was skipped), mip 3. It never compiled 0x2a265dff (both permutations came from run 1's
+  cache) and still died: the permutation compile is not a precondition, it is what the first garbage
+  draw looks like on a cold cache. Logs `shad_log_test{7,8}_gt7_2_at_exit_{231258,231408}.txt`,
+  `game_log_...`, `shadps4log_...`; profile copies `shad_log_moved_after_test{7,8}_run2.txt`; both runs
+  wrote new saves (not backed up) and more cache files.
+  The peer's analysis (read-only, TEST7/TEST8 caches): the perm-0 meta's walker has ONE root s[0:1] = P
+  copying P[0..34] into flatbuf[16..50], so offsets 40-43 = P[24..27], a plain direct load; in the
+  cached 0x2a265dff_0/_1.spv both `OpImageSampleImplicitLod` on fs_samp0 sit inside `if (flatbuf[50]
+  != 0)` (P[34]); every snapshot has flatbuf[50] = 0, and P[8..27] is a union (V#, T#s, floats or zeros
+  by draw). shadPS4 builds a VkSampler for every declared S# at every draw, so the garbage reaches
+  `LiverpoolToVK::MipFilter` / `Sampler::MaxAniso` and their default UNREACHABLE. Checked here,
+  byte-exact: TEST8 `cache\CUSA24767\0x000002a32c9f9266.meta` (22:39:52) holds flatbuf[0..50] at byte
+  7441 with [40..43] = 3f540000 3c192437 3e5ca3b2 3acbd902 = the run-1 samplerdump, [48..49] = 0x780 /
+  0x438 (1920x1080) and [50] = 0; TEST7 `...9263.meta` (23:12:45, the MaxAniso draw's new permutation)
+  has [40..43] = 3eaaaaab 3eaaaaab 3eaaaaab 00000000 = (1/3, 1/3, 1/3, 0) -> max_aniso 5, mag 2, min 2,
+  mip 3, degamma 0 - and [50] = 0. Five stops, five different values at the same four dwords (TEST7 r1
+  MipFilter, TEST8 r1 MipFilter, TEST7 r2 MaxAniso, TEST8 r2 MipFilter). Degamma 0 in 9263 means that
+  permutation key was changed by some other field of the union, not by degamma as first thought.
+  Fix (peer, local, NOT pushed): `mip-filter-point-aniso-adj` 9c91a45c on origin/main 41c0fca5, one
+  title-only commit "video_core: Handle unknown sampler mip filter and aniso ratio values", +8/-1:
+  `MipFilter::PointAnisoAdj = 3` warns and falls through to Point; `MaxAniso()`'s default warns and
+  returns 16.0f. TEST9 = `test9-mipfilter` 531a5a70 = a3eb4339 + that commit, fresh state-A profile
+  `C:\shadps4-test9-gt7`, `GT_SAMPLERDUMP` unset (the draw survives now, so it would fire every draw).
 
 ---
 
