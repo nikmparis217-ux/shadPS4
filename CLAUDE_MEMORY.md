@@ -1070,6 +1070,27 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `backup_exe\shadps4_test7_738d4095_gt7.exe` SHA256 1a4ccfac...3615, PDB in
   `backup_exe\pdb_test7_738d4095`; same `GT_PASSTRACE=0xf10530e6` and the same crashcatch trigger as
   TEST6 run 4 (out `logs\crashcatch_test7`).
+  **TEST7 run 1 (22:10:54-22:12:25): the fix works.** The passtrace of fs 0xf10530e6 now goes on:
+  `EmitSPIRV returned, 28362 words` -> `CompileSPV returned` -> `CompileModule done` -> `GetProgram:
+  program registered`; pipeline 0xa7aab6555cdf326b built; Music Rally started (game log `start vehicle
+  ... ON START` at 22:11:58, then BuddyDummyRoot / BuddyWindowRoot). 26 s later a NEW, different
+  stop: `liverpool_to_vk.cpp:394 MipFilter: Unreachable code!` (crashcatch: first-chance 0x80000003 on
+  GpuCommandProcessor, `assert_fail_impl` <- `LiverpoolToVK::MipFilter` <- `Sampler::Sampler`
+  (sampler.cpp:46) <- `TextureCache::GetSampler` <- `Rasterizer::BindTextures` (vk_rasterizer.cpp:957)
+  <- `Draw`; exit code 0x80000003; dump `logs\crashcatch_test7\crash_80000003_tid29440.dmp`), right
+  after `Compiling fs shader 0x2a265dff (permutation)` and `Compiling graphics pipeline
+  0xce66d4cfbb5f7539`. `mip_filter` is `BitField<26, 2>` with only None/Point/Linear, and the fields
+  evaluated before it (two `Filter`, `BorderColor`) cover all their 2-bit values, so the S# had
+  mip_filter == 3 (GNM defines 0-2 only; MIP is the one S# field a random value can trip, 1 in 4).
+  Not new: the 13-14 Sep builds and the other lane's 21-22 Sep builds logged `[softclamp] invalid S#
+  mip filter 3 - defaulting to Linear` 55-93 times per run and ran on. Open: genuine S# data or a
+  wrongly fetched one. The sampler comes through `sharp_fetch.Fetch(flattened_ud_buf)`. #5129
+  (41c0fca5, the only commit between a099dce8 and main) stops `ConstructSharpFetch` turning an
+  Invalid sharp into SingleLoad, but this run logged `Sharp source was not flatenned` only for cs
+  0xad74a520 (x32) and cs 0x40d317f7 (x8), not for fs 0x2a265dff. Logs
+  `shad_log_test7_gt7_at_exit_221238.txt`, `game_log_test7_gt7_at_exit_221238.txt`, report
+  `crashcatch_test7\crashcatch_report_run1.txt` (6918 first-chance 0xc0000005 while attached, the
+  normal kind; TEST6 run 4 had 4120).
   **The boot deaths of TEST6 runs 1-3 were the save, not the build.** All three:
   `BootProject::TopRootWindow`, thread Updat, guest 0xc0000005 at the same eboot-relative address,
   each right after one ADHOC `nil object cannot be used in '(nil).np'` line
