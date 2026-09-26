@@ -1216,6 +1216,38 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   fix style follows #5058 (BrushXor, Stephen Miller, 20 Sep) and #1007 (clamp modes). Every S# with
   mip 0-2 and ratio 0-4 takes exactly the old code path, so nothing that worked can change. GitHub
   search found no upstream issue or PR about MipFilter / mip filter.
+- **26 Sep ~23:40 - TEST9: the mip/aniso fix holds, and every launch now dies at signature (a), the
+  custom border colour read with TA_BC_BASE = 0. PR branch pushed (user's decision).** The user
+  launched TEST9 three times (23:30:36-23:31:55, ~23:32:00-~23:32:55, 23:33:3x-23:34:06). All three:
+  host 0xC0000005 at `Sampler::Sampler+0x164` (sampler.cpp:27, the custom_color lambda) <- `GetSampler`
+  <- `BindTextures` (vk_rasterizer.cpp:1014), no assert. Launch 1 read 0x7d10: the draw that compiled
+  0x2a265dff permutation meta `...9263` (23:31:54) carried S# 43e5f818 42e77c4c c3a8e169 c14c77d1
+  (459.0, 115.7, -337.8, -12.8) = border_type 3, ptr 2001, and 2001*16 = 0x7d10 exactly. Launch 3 read
+  0x400 (ptr 64); the permutations came from the cache and its 4.3 MB log has 0 fix warnings (its first
+  garbage S# already had type 3). Launch 2's log was LOST: the user relaunched within the watcher's
+  exit check (`running()` = 4 misses 2 s apart, then 2 s, then the copy), so the new launch truncated
+  shad_log.txt first; its snapshots show both fixed paths ran without an assert: `...9262` (23:32:53,
+  S# 3f700000 bf700000 3f700000 3f800000, mip 3) with the process alive a second later, and `...9261`
+  (23:32:54, S# 437ebeb8 c0975c17 c327ddb8 c1202352: aniso 7 with mag AnisoPoint, border_type 3, ptr 850
+  -> 0x3520 expected, unmeasured). All 7 TEST9 snapshots (9261-9267) have flatbuf[50] = 0. Launch 1's
+  9263 has a valid aniso ratio (4) and mip (0), so this border read was reachable in TEST7/TEST8 too;
+  the fix did not create it. No direct "Unimplemented ..." warning line exists in any saved log (launch
+  2's is gone), so the evidence that the fixed paths ran is the snapshots plus the process surviving.
+  Artifacts: `crashcatch_test9\crashcatch_report_run1.txt` + `crash_c0000005_tid4752.dmp`,
+  `crashcatch_report_launch3.txt` + `crash_c0000005_tid28460.dmp`, `shad_log_test9_gt7_2_at_exit_233419.txt`
+  (= launch 3), `shad_log_test9_launch2_first80KB_copied_233207.txt` (the start of launch 2 only; the
+  watcher had named it launch 1's exit log), profile copy `shad_log_moved_after_test9_launch3.txt`;
+  watcher + crashcatch re-armed as RUN=test9_gt7_4.
+  User's decision: a PR for the mip/aniso fix if it is clean; the peer reviews and fixes the border
+  crash. Checks, then push: origin/main still 41c0fca5; MipFilter / MaxAniso have no other users than
+  liverpool_to_vk.cpp:385-397 and sampler.cpp:18/50 (shader_recompiler/resource.h:189/200 only assign
+  AnisoRatio::One); clang-format 22 clean with `src/.clang-format` (the CI uses 19); 0 whitespace
+  errors. `mip-filter-point-aniso-adj` 9c91a45c pushed to `mine` only (origin has no such branch).
+  Precedents checked on GitHub: #1007 "vulkan: Use closest available equivalent to missing clamp
+  modes." (merged 2024-09-22, +10/-0) and #5058 "Render.Vulkan: Stub logic op 0x5a" (merged
+  2026-09-20, +5/-0). The peer found that gt7-main already guards this read (mapped-entry check,
+  black otherwise) and is writing the clean version; its TEST10 bat archives shad_log.txt itself before
+  launching.
 
 ---
 
