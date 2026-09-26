@@ -406,6 +406,7 @@ enum class MipFilter : u64 {
     None = 0,
     Point = 1,
     Linear = 2,
+    PointAnisoAdj = 3,
 };
 
 enum class BorderColor : u64 {
@@ -491,7 +492,9 @@ struct Sampler {
         case AnisoRatio::Sixteen:
             return 16.0f;
         default:
-            UNREACHABLE();
+            LOG_WARNING(Render, "Unimplemented anisotropy ratio {}, using closest equivalent",
+                        static_cast<u32>(max_aniso.Value()));
+            return 16.0f;
         }
     }
 };

@@ -384,6 +384,10 @@ vk::SamplerReductionMode FilterMode(AmdGpu::FilterMode mode) {
 
 vk::SamplerMipmapMode MipFilter(AmdGpu::MipFilter filter) {
     switch (filter) {
+    case AmdGpu::MipFilter::PointAnisoAdj:
+        LOG_WARNING(Render_Vulkan, "Unimplemented mip filter {}, using closest equivalent",
+                    static_cast<u32>(filter));
+        [[fallthrough]];
     case AmdGpu::MipFilter::Point:
         return vk::SamplerMipmapMode::eNearest;
     case AmdGpu::MipFilter::Linear:
