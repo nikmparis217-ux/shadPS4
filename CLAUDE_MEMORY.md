@@ -246,6 +246,16 @@ Each line is an incident that cost a run, a build, or the user's time.
     lumped together crashes with different codes and addresses (TEST4 run 4's 0xc0000096 elsewhere).
     Diff the whole profile against the last known-good starting state, file by file, before
     believing any count.
+50. **Called a nonsense descriptor a wrong sharp location without asking whether the draw uses it**
+    (26 Sep, TEST8). fs 0x2a265dff's S# decoded as floats, so the note said "wrong flattened
+    offsets" and "handling value 3 would only hide it". The offsets were right: the shader samples
+    only inside `if (flatbuf[50] != 0)` and every draw had 0 there, so the slot held other data.
+    shadPS4 converts every declared descriptor on every draw, used or not. Before blaming tracking,
+    read the stage's cached SPIR-V (`spirv-dis` / `spirv-cross` from `C:\VulkanSDK` on
+    `cache/<serial>/0x<pgm hash>_<perm>.spv`) for the control flow around the sample, and the flat
+    buffer snapshot in its `.meta` (named `HashCombine(pgm_hash, perm_idx)`; tail = u64 count + the
+    dwords, then PersistentSrtInfo {walker ptr, size, bufsize} + the x86 walker, which decodes by
+    hand) for the value that decides it. Neither needs a run.
 
 ---
 
@@ -1105,7 +1115,8 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   runs with neo_mode false). Per the peer: gt7-main softclamped it to Linear as a "torn GPU-driven
   S#" (e5c2634f, never proven), and GitHub has 0 upstream issues/PRs for it.
 - **26 Sep ~22:40 - TEST8: the mip filter 3 S# is not a sampler; it is shader constants read at the
-  sampler's flattened offsets.** TEST8 = local `test8-main41c0` a3eb4339 = TEST7 merged with main
+  sampler's flattened offsets.** [WRONG CONCLUSION, see the 26 Sep ~23:20 entry and mistake 50: the
+  location is right; the draw never samples, so the slot holds unrelated data.] TEST8 = local `test8-main41c0` a3eb4339 = TEST7 merged with main
   41c0fca5 (3ffa23e7, so + #5129) + ONE log-only instrument commit (`GT_SAMPLERDUMP=1`: in
   `Rasterizer::BindTextures`, a stage whose fetched S# has mip_filter > 2 logs every sampler's dwords,
   decoded fields and SharpFetch, then flushes); exe `backup_exe\shadps4_test8_a3eb4339_gt7.exe` SHA256
@@ -1186,6 +1197,25 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   `MipFilter::PointAnisoAdj = 3` warns and falls through to Point; `MaxAniso()`'s default warns and
   returns 16.0f. TEST9 = `test9-mipfilter` 531a5a70 = a3eb4339 + that commit, fresh state-A profile
   `C:\shadps4-test9-gt7`, `GT_SAMPLERDUMP` unset (the draw survives now, so it would fire every draw).
+- **26 Sep ~23:30 - TEST9 built and set up (the peer, i.e. gtnikos-cc), waiting for the user's run.**
+  Forced-reconfigure build of 531a5a70: CMAKE_EXIT=0, NINJA_EXIT=0, scm_rev `test9-mipfilter` /
+  `v.0.18.0-172-g531a5a70`, both warning strings present in the binary. Exe
+  `backup_exe\shadps4_test9_531a5a70_gt7.exe` SHA256 99cb1259...50bf9, PDB
+  `backup_exe\pdb_test9_531a5a70` (167a6533...9f4d). Launcher
+  `GT7_upstream\TEST9_GT7_531a5a70_samplerfields.bat` (CRLF) = TEST8's with the exe and rundir swapped and
+  `GT_SAMPLERDUMP` removed (`GT_PASSTRACE=0xf10530e6` kept). Profile `C:\shadps4-test9-gt7\user` = fresh
+  copy of state A (diff -rq identical, 628 cache files, flush_level "", neo_mode false). What to read
+  after the run: "Unimplemented mip filter" / "Unimplemented anisotropy ratio" lines, one per NEW
+  garbage S# (the sampler cache is keyed by the raw S#), then whether Music Rally renders and runs.
+  Same class, still open and not observed: (a) the custom border colour read in sampler.cpp:27-43 when
+  dword3[31:30] == 3 and the device supports custom border colours (the 4070 SUPER does). It reads
+  `(ta_bc_base.base_addr << 8)[border_color_ptr]` with a garbage 12-bit index. If GT7 never writes
+  TA_BC_BASE, that is a host 0xC0000005 inside `Sampler::Sampler` with NO assert, so recognise that
+  signature. All five garbage S#s so far had type 0. (b) garbage min_lod > max_lod violates the
+  Vulkan rule maxLod >= minLod. (c) `LiverpoolToVK::FilterMode` has UNREACHABLE on 3 but no callers. The
+  fix style follows #5058 (BrushXor, Stephen Miller, 20 Sep) and #1007 (clamp modes). Every S# with
+  mip 0-2 and ratio 0-4 takes exactly the old code path, so nothing that worked can change. GitHub
+  search found no upstream issue or PR about MipFilter / mip filter.
 
 ---
 
