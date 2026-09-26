@@ -994,6 +994,41 @@ files belong to the offline lane (`C:\GT7_offline\REPORT_171.md`) - never modify
   0xa911a841, CUSA24769); 0 desyncs. The PR's code never runs in GoW/GoT: GoW's stop is
   `DS_ORDERED_COUNT` (known upstream gap), GoT's silent exit is unexplained and not this PR. The PR
   decision is the user's.
+- **26 Sep ~20:20 - TEST4 / TEST5: the image_info.cpp:184 assert is stale; the next stop is fs
+  0xf10530e6.** TEST4 = local `test-bcmacro-a099dce8` 8bc5639f (TEST3r tree + merge of a099dce8 +
+  ONE commit deleting `ASSERT(!props.is_block)` in `ImageInfo::UpdateSize`; exe SHA256
+  6ad1b223...10c0, PDB kept in `backup_exe\pdb_test4_8bc5639f`). Cold run 1: no Critical at all,
+  `Creating tiling pipeline ThinThinPrt_128 detiler` (the BC7 1024^2 texture of fs 0x74f5f10c goes
+  through the macro detiler), 7 more draws, then `Compiling fs shader 0xf10530e6` + its 16
+  `ComputeOffset ... Phi` / `VisitPointer: Failed to compute offset for SRT walker` (line 613, the
+  balanced `continue` path), and the process dies with **0xC0000409** (-1073740791) before the next
+  shader compile starts. It is not an assert: the recompiler has no `throw` at all, every failure
+  there is an ASSERT that logs and flushes. TEST5 (below) reproduced it twice at the same point, so
+  3 of 3 runs that reach this shader die there: all 16 Phi pairs are logged, no `:597` (the
+  unbalanced PushPtr failure path), and no other GpuCommandProcessor line follows before the end
+  (the second TEST5 console, pasted by the user, shows the same). The BC7 image itself was never on
+  screen (no frame).
+  **The log file loses up to 4 KB at a crash**: the logger is a synchronous spdlog logger with
+  `flush_on` unset (`"flush_level": ""`), so the file is written in 4096-byte blocks (942x4096 and
+  1042x4096 exactly). The console sink is unbuffered: `scratchpad/conread.exe <pid> <out>` (new,
+  read-only AttachConsole + ReadConsoleOutputCharacter) read the launcher's console after the exit
+  and showed the last lines (Job#7 font calls) and the exit code. No WER dump or event either:
+  `emulator.cpp:75` sets `SEM_NOGPFAULTERRORBOX`. The exe is not CETCOMPAT. The lab (runs 341-348)
+  handled this shader with a dynrc window for the 16 unresolved offsets and loop_wrap_guard; upstream
+  has neither, so a TDR may follow even once the host death is fixed.
+  Warm runs 2 and 3 of TEST4 and the TEST3r exe on its own warm profile all died at
+  `StartUpSettingProject::SDRSettingRoot` with "Device lost during waiting for a frame" and nvlddmkm
+  event 153: the old preload bug (clean171_04/04b/06), because our fix 2e767aab/0db8c566 was NOT in
+  the TEST3/TEST4 tree. **TEST5** = `test5-preload-bcmacro` f13bf337 = 8bc5639f + cherry-pick of
+  2e767aab (exe SHA256 d36f00d8...4a41, PDB in `backup_exe\pdb_test5_f13bf337`) on an exact copy of
+  the runs-2/3 warm profile: past SDRSettingRoot with 0 device lost and 0 GPU events, to
+  BuddyWindowRoot, then the same 0xC0000409 after fs 0xf10530e6. So the preload fix works on this
+  tree. Cold run 4 of TEST4 (flush_level "info") died earlier, at PlayGoProject::TopRootWindow:
+  `Unhandled Exception code 0xc0000096 at 0xdb4443d` (privileged instruction, Job#8, eboot+0x26e443d)
+  - the same phase as TEST3's 0xc0000005; 2 of the 5 cold runs of this tree died there, 0 of 6
+  earlier cold clean171 runs (not significant yet). Guest code is not looked at (rule 34).
+  Logs `shad_log_test4_gt7{,_2,_3,_4}_at_exit_*`, `shad_log_test3r_gt7_2_at_exit_195422.txt`,
+  `shad_log_test5_gt7_at_exit_201902.txt`, `console_test5_gt7_at_exit.txt`.
 
 ---
 
