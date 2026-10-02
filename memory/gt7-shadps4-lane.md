@@ -5,12 +5,23 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T13:43:27.352Z
+  modified: 2026-10-02T15:39:08.737Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+⚠⚠⚠ **2 Οκτ ~18:40 — νέος builder shadps4-lane-f9 (αντί του gtnikos-02, ξεκίνησε στο `C:\shadps4-lane`)· έλεγχος μόνο
+  ανάγνωσης, τίποτα δεν χτίστηκε / άλλαξε / ξεκίνησε.** origin/main = **bf794b3f** «started 0.19.1 WIP» (μόνο γραμμές
+  έκδοσης). **#5218 head 9a6e7de8** = merge του bf794b3f από τον χρήστη (17:39:44, μόνο οι ίδιες γραμμές), 5 commits,
+  mergeable clean, CI 4af30efb και 9a6e7de8 = 10 success + pre-release skipped· κανένα σχόλιο ή review μετά την απάντηση
+  του χρήστη (13:45:40Z). Ο κώδικας του PR (v2 + μετακίνηση) δεν έχει τρέξει ποτέ σε παιχνίδι. #5155 head 302facf1 (+2
+  GitHub merges), 1 αρχείο +1, 0 σχόλια, CI πράσινο. #5219 αμετάβλητο (be258106), τα 2 Linux builds ακόμα failure. Τοπικό
+  `resource-guards` = 18dc8618, δύο merges πίσω από το `mine`. Κανένα shadps4, κανένα run μετά τις 14:32. ListAgents:
+  gtnikos-e8 (busy), gtnikos-02 (idle), shadps4-lane-8f (νέο, όχι επιβεβαιωμένο ως auditor). Το main αγνοεί ακόμα το
+  CHAIN bit του INDIRECT_BUFFER (liverpool.cpp:794 / :928) = το αδοκίμαστο lead της 24 Σεπ για το #3. Προτάσεις
+  (περιμένουν τον χρήστη): HANDOFF.md, update ~18:40.
 
 ⚠⚠⚠ **2 Οκτ ~17:05 — ο raphaelthegreat άνοιξε δικό του PR #5219** «video_core: Renderer optimizations pt2 (texture cache edition)» (13:52 UTC, head be258106,
   11 commits, 27 αρχεία +871/−849, μόνο common + video_core). Read-only έλεγχος, ref `refs/pr/5219` στο clean (μόνο fetch). Για το #5196: ο βρόχος μας μεταφέρεται

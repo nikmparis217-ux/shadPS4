@@ -1,5 +1,35 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~18:40, builder shadps4-lane-f9 (replaces gtnikos-02; started in C:\shadps4-lane): state checked
+> read-only 18:20-18:37. Nothing built, changed, launched or pushed, except the md copies to `claude`.**
+> - origin/main = **bf794b3f** "started 0.19.1 WIP" (17:05; CMakeLists.txt + flake.nix version lines only). Cache
+>   versions on main: ShaderBinaryVersion 6, ShaderMetaVersion 6.
+> - **#5218**: head **9a6e7de8** = the user's GitHub merge of bf794b3f (17:39:44; its diff against 4af30efb = those
+>   version lines only), 5 commits, 14 files +1127 -53, mergeable clean. No comment, review comment or review after the
+>   user's reply of 13:45:40Z (the PR's only two comments are raphaelthegreat's 13:19:59Z and that reply). CI: 4af30efb
+>   (run 37015435275) 10 success + pre-release skipped, done 14:33Z; 9a6e7de8 the same, done 15:19Z. The PR's code (v2 +
+>   the move) has never run in a game: every test exe carries the version from before the move.
+> - **#5155**: head 302facf1 = two more GitHub merges (7393baea of c7e065d1 at 16:48, 302facf1 of bf794b3f at 17:39);
+>   net diff against main still 1 file +1; 0 comments, 0 reviews; CI 10 success + pre-release skipped.
+> - **#5219**: unchanged (head be258106, 11 commits, 0 comments, 0 reviews); linux-sdl and linux-sdl-gcc still
+>   failure, mergeable_state unstable. Side fact for CRASH_MAP #2: it removes TrackImageHead / TrackImageTail.
+> - Local `resource-guards` = 18dc8618, two GitHub merges behind `mine` (4af30efb, 9a6e7de8): fast-forward it before any
+>   change to the PR. Checkout `C:\shadps4-clean` = resource-guards 18dc8618, only ` M externals/mesa-kosmickrisp`.
+>   `mine/claude` was 7cbbd0f0 (the auditor's handoff for its successor, 18:30). The GoW branches still sit on 8151ee25
+>   (cache lines tg-size-sgpr B6/M6, ds-ordered-count B6/M7, tsharp-dw1-mask B5/M6).
+> - No shadps4 process. Newest files in the four `logs` folders: TEST40 r2 (14:32), the audits (15:03),
+>   `pr5218_guardpass_build.log` (16:41); every profile's `user\log\shad_log.txt` is older than 14:44: no run since.
+> - ListAgents: gtnikos-e8 (busy), gtnikos-02 (idle), shadps4-lane-8f (busy, started with this session; not confirmed
+>   as the auditor). No message sent.
+> - Main still ignores the CHAIN bit of INDIRECT_BUFFER (liverpool.cpp:794 GFX, :928 ASC): it processes the child, then
+>   goes on with the rest of the parent. That is the untested 24 Sep lead for CRASH_MAP #3 (CLAUDE_MEMORY.md section 5).
+> - Proposed to the user, waiting: (1) #5218 waits for its review; nothing to answer. (2) The GoW PR-readiness check,
+>   read-only: clang-format 19 `--dry-run --Werror` with `src\.clang-format` on each branch's src files, merge-tree onto
+>   bf794b3f, upstream search. (3) A run of the PR's own code: each game's stack replayed onto bf794b3f with the PR's
+>   current guard code, plus GtInsertGuardChecks ported into resource_guard_pass.cpp (builds need the user's go; the new
+>   file and the version lines make CMake re-run). (4) Then CRASH_MAP: none of the 4 runs with the fix (TEST39 r1-r2,
+>   TEST40 r1-r2) ended at #2, #4, #7 or #13; of the rest, #1 (17 runs) and #3 (15) each need their log lines first.
+
 > **Update 2 Oct ~17:05, builder gtnikos-02: raphaelthegreat opened his own PR #5219 "video_core: Renderer
 > optimizations pt2 (texture cache edition)"; checked read-only, nothing built, changed, pushed or launched.**
 > 13:52:33 UTC, head be258106, 11 commits, 27 files +871 -849, all in src/common and src/video_core (no
