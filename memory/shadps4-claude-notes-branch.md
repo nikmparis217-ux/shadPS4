@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-09-23T18:42:38.707Z
+  modified: 2026-10-02T11:59:19.675Z
 ---
 
 On 23 Sep 2026 the user created branch `claude` on `nikmparis217-ux/shadPS4` (remote `mine`) and
@@ -42,3 +42,11 @@ knowingly (same fork as the PR branches; upstream does not want AI - see
   the gt7-main working tree.
 - `git status` with a stale GIT_INDEX_FILE shows everything `D`/`??` - artifact, unset and recheck.
 - No Co-Authored-By trailer (user rule for this lane: none anywhere).
+- 2 Oct 2026 14:58, user to the auditor: «save any md you have there also» → commit bb90192 (on 1c63b31): 22 NEW
+  files, nothing existing changed: `GT7_upstream/` CRASH_MAP, IMAGE_PROBLEMS_MAP, HANDOFF, MERGE_upstream_19700eba,
+  REPORT_PR5165_PR5166, `logs/test37_plan_resource_guards.md`; `shadps4-gow|got|gtav/README.md` (disk folder names);
+  `memory/` = the auditor sessions' memory files. Left out on purpose: GT7_upstream/README.md and GT7_171_RUN348/350
+  (the offline-patch line, not emulator work), MEMORY.md (indexes every lane of the project). A second recipe that
+  writes into no existing repo: `git clone --single-branch --branch claude <fork url>` into a scratchpad,
+  `git config core.autocrlf false` there (the global `true` turns the checkout CRLF), add only the new paths, commit as
+  nikmparis217-ux <295578344+nikmparis217-ux@users.noreply.github.com>, `git ls-remote` the tip, push fast-forward.

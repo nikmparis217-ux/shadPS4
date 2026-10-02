@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-10-02T11:54:15.505Z
+  modified: 2026-10-02T11:59:14.974Z
 ---
 
 ## ΞΕΚΙΝΑ ΕΔΩ — 30 Σεπ 2026, 20:50 (αυτή η ενότητα = η κατάσταση· ό,τι είναι από κάτω = χρονολόγιο και ιστορικό)
@@ -382,8 +382,15 @@ s (8-12 s ανάμεσα), όλα 0xC0000005 = TEST1: nvoglv64.dll +0xee32d στ
 = όνομα exe, 4×2 s) τα ενώνει, ο catcher (PID) όχι· σύγκρινε πάντα τα δύο. GTA V TEST2: idle 14:46:45, 2 runs, f64census
 r2 908 / 0. Audits: `test40_gt7_runs_audit.txt`, CRASH_MAP (τίτλος, #3 = 15, #5 = 5, ενότητα TEST40, §3, §5),
 `gow_test2_runs_audit.txt`, `games_test2_runs_audit.txt`. **Εντολή χρήστη ~14:36: «there is a claude branch on our fork
-on github so save any md you have there also»** → τα md του auditor στο `mine` branch `claude` (από ξεχωριστό clone στο
-scratchpad, ΟΧΙ από το `C:\shadps4-clean`).
+on github so save any md you have there also»** → **ΕΓΙΝΕ 14:58: `claude` 1c63b31..bb90192** (fast-forward, 22 ΝΕΑ αρχεία,
+κανένα υπάρχον δεν άλλαξε): `GT7_upstream/` CRASH_MAP, IMAGE_PROBLEMS_MAP, HANDOFF (στιγμιότυπο του builder),
+MERGE_upstream_19700eba, REPORT_PR5165_PR5166, `logs/test37_plan_resource_guards.md`· `shadps4-gow|got|gtav/README.md`·
+`memory/` = τα 13 memory files των auditor συνεδριών (αυτό το handoff, crash status 30 Σεπ, τα feedback του ρόλου).
+ΕΚΤΟΣ σκόπιμα: README.md / GT7_171_RUN348 / RUN350 (περιέχουν τη γραμμή offline patch, άσχετη με τον emulator), το
+MEMORY.md (όλες οι γραμμές του project), τα drafts CLAUDE_MEMORY του 69673bdb. Μέθοδος: `git clone --single-branch
+--branch claude` στο scratchpad 93d56559 (`claude-branch\`), `core.autocrlf false` μόνο εκεί, add μόνο νέων paths,
+commit ως nikmparis217-ux noreply χωρίς trailer, push· κανένα write στο `C:\shadps4-clean` ή στο `C:\shadps4-gt7`.
+Επόμενη ενημέρωση: `git -C <clone> pull --ff-only`, cp, commit, push.
 
 **Κατάσταση 20:50 — ΤΙΠΟΤΑ ΟΠΛΙΣΜΕΝΟ.**
 - Τρέχον test = **TEST36** `test36-main-2338a06f` **04558db8** = TEST35 91ffbea6 + 1 commit (tiling.cpp: tile mode 18 →
