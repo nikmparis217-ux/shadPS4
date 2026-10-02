@@ -21,6 +21,9 @@
 >   for the user's go and the reset: 17 `case` lines (existing `V_CMP_U64` helper) + GPU tests in main's `tests/gcn`
 >   (GoogleTest; CI skips GcnTest, so they run locally), separate build folder with `-DENABLE_TESTS=ON`. PS4 Pro: the
 >   32 are the same there; Neo adds 20 16-bit compares, none translated on main, none in our logs.
+> - User: research only for now, no builds; the user plans the next fixes. The known candidates (GT7 crash classes,
+>   emulator-wide items, other games' first stops, open PRs) are kept as knowledge, NOT as the plan ("this is not the
+>   plan but we can save it as a future knowledge for planing"): memory `shadps4-fix-candidates.md`.
 
 > **Update 2 Oct ~21:45, builder shadps4-lane-f9: BUDGET HOLD (user): 10 % of the weekly limit is left; it resets
 > Sun 4 Oct 2026 12:00. Until then only changes the devs ask for on our open PRs (#5218, #5155): no new research,
