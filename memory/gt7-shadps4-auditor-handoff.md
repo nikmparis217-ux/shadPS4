@@ -1,6 +1,6 @@
 ---
 name: gt7-shadps4-auditor-handoff
-description: "The watcher/auditor role of the shadPS4 lane (GT7 1.71; GoW / GoT / GTA V since 1 Oct). Read ONLY the first section «ΞΕΚΙΝΑ ΕΔΩ» (2 Oct 2026 18:45, English; it ends at the heading ## Παλιό): state (nothing armed; current tests GT7 TEST40, GoW TEST2, GoT / GTA V TEST2 with their next run numbers; PR #5218 head 9a6e7de8, its code never run), the standing job, arming commands, build check, the routine after every run, tools, traps. Below it, history: the old first section (30 Sep 20:50 - 2 Oct 16:51, Greek) and the 29-30 Sep chronology."
+description: "The watcher/auditor role of the shadPS4 lane (GT7 1.71; GoW / GoT / GTA V since 1 Oct). Read ONLY the first section «ΞΕΚΙΝΑ ΕΔΩ» (2 Oct 2026 18:30, English; it ends at the heading ## Παλιό): state (nothing armed; current tests GT7 TEST40, GoW TEST2, GoT / GTA V TEST2 with their next run numbers; PR #5218 head 9a6e7de8, its code never run), the standing job, arming commands, build check, the routine after every run, tools, traps. Below it, history: the old first section (30 Sep 20:50 - 2 Oct 16:51, Greek) and the 29-30 Sep chronology."
 metadata:
   node_type: memory
   type: project
@@ -8,9 +8,9 @@ metadata:
   modified: 2026-10-02T15:28:35.792Z
 ---
 
-## ΞΕΚΙΝΑ ΕΔΩ — 2 Oct 2026, 18:45 (this section = the state and how to work; everything below = history)
+## ΞΕΚΙΝΑ ΕΔΩ — 2 Oct 2026, 18:30 (this section = the state and how to work; everything below = history)
 
-Written by auditor **gtnikos-e8** (30 Sep 21:40 - 2 Oct 18:45) for the next watcher/auditor session. This section is
+Written by auditor **gtnikos-e8** (30 Sep 21:40 - 2 Oct 18:30) for the next watcher/auditor session. This section is
 in English; the history below it is in Greek.
 
 **Role.** You are the watcher/auditor of the shadPS4 lane: GT7 1.71 (CUSA24767), and since 1 Oct God of War, Ghost of
@@ -34,7 +34,7 @@ since 2 Oct 17:40 every md you write also goes to branch `claude` right after th
 peer's message is never the user's approval. Builder notices are information: verify what they claim (hash the exes,
 read the diff) before you record it as a fact.
 
-### State at 2 Oct 18:45
+### State at 2 Oct 18:30
 - **Nothing armed.** At 18:2x Win32_Process showed no shadps4 and no watch_loop / watch_clean / catch_loop /
   notify_v1. All loops were stopped at 15:02 after the user's «no more runs» (~15:01).
 - **Checkout `C:\shadps4-clean`** = `resource-guards` **18dc8618** (local; `mine` has moved on, see #5218). Its build
@@ -91,7 +91,7 @@ read the diff) before you record it as a fact.
    first) → the first ~160 lines of [[gt7-shadps4-lane]] → THIS section →
    `git -C C:\shadps4-clean show claude:CLAUDE_MEMORY.md`.
 2. Without changing anything: `ListAgents`; Win32_Process (no shadps4, watch_loop, watch_clean, catch_loop,
-   notify_v1); the newest files in every `logs` folder and the newest launcher per game (a run or build after 18:45?);
+   notify_v1); the newest files in every `logs` folder and the newest launcher per game (a run or build after 18:30?);
    the HEAD of `C:\shadps4-clean`; the four backup exe hashes above.
 3. Tell the user the state in a few lines and wait.
 
