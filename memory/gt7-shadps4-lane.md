@@ -5,12 +5,23 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T17:54:07.410Z
+  modified: 2026-10-02T18:01:54.876Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+⚠⚠⚠ **2 Οκτ ~21:05 — έλεγχος των 3 GoW fixes για PR (μόνο ανάγνωση): κανένα έτοιμο, όχι λόγω format.**
+  clang-format 19.1.5 όπως το CI (ολόκληρα τα αλλαγμένα `src/*.cpp|h`, style `src/.clang-format`): 6 + 19 + 4 αρχεία
+  καθαρά (rc 0, κανένα diff/trailing ws, LF)· έλεγχοι: τα ίδια αρχεία του main καθαρά, χαλασμένο αντίγραφο → rc 1· το
+  «όλα flagged» της 1 Οκτ ήταν λάθος διαδρομή style. merge-tree στο bf794b3f: tg-size-sgpr ΧΩΡΙΣ conflict αλλά επειδή
+  το 5→6 του = οι τιμές του main τώρα → rebase χωρίς bump· tg+ds conflict μόνο στο ShaderMetaVersion, tsharp μόνο στις
+  γραμμές version → κάθε rebase θέλει main+1 με το χέρι. Το main έχει ακόμα όλα τα κενά (DS_ORDERED_COUNT χωρίς
+  translator, κανένα `tg_size`, assert resource_discover_pass.cpp:257). Upstream: τίποτα νέο (#496 ανοιχτό, #2899
+  κλειστό 2025)· τα named post-ops ήρθαν με το #4782 (5 Σεπ) = οι «other cases» του baggins183 στο #4999. Εμπόδια όπως
+  στο gow-fixes-for-pr.md. Αρχείο: `C:\shadps4-gow\logs\gow_fixes_pr_check_20261002.txt`· scripts στο
+  `C:\shadps4-gow\tools\`. Λεπτομέρειες: HANDOFF.md, update ~21:05.
 
 ⚠⚠⚠ **2 Οκτ ~20:55 — ο χρήστης: shadps4-lane-8f = ο νέος watcher/auditor.** Εξουσιοδοτημένο ζεύγος: builder
   shadps4-lane-f9 ↔ auditor shadps4-lane-8f, για τα δύο μηνύματα του builder (ειδοποίηση πριν από switch του checkout,

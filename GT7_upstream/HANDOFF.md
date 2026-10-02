@@ -1,5 +1,37 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~21:05, builder shadps4-lane-f9: GoW fixes PR-readiness check, read-only (next in the job order
+> after #5218). None of the three is ready for a PR, and formatting is not the reason.** Output and scripts:
+> `C:\shadps4-gow\logs\gow_fixes_pr_check_20261002.txt`; `C:\shadps4-gow\tools\gow_cf_check_v2.sh`,
+> `gow_merge_check_v1.sh`, `gow_upstream_search_v1.py`.
+> - clang-format 19.1.5 run the way upstream CI runs it (`.github/workflows/scripts/clang-format.sh`: every changed
+>   `src/*.cpp|h`, the whole file, style `src/.clang-format`): tg-size-sgpr b89a2772 6 files, ds-ordered-count a1af1159
+>   19, tsharp-dw1-mask dc08b752 4. All 29: `--dry-run --Werror` rc 0, no diff, no trailing whitespace, LF. Main's
+>   versions of the same files are clean too; a copy with an added badly formatted line is flagged (rc 1). The 1 Oct
+>   "every file flagged" result was the wrong style path, as gtnikos-02 said.
+> - Trial merges onto bf794b3f (`merge-tree --merge-base=8151ee25`): tg-size-sgpr has no conflict, but only because it
+>   changes the cache versions 5 -> 6, the values main has now, so a plain rebase would carry NO bump; tg +
+>   ds-ordered-count conflict only in ShaderMetaVersion (main 6, branch 7); tsharp-dw1-mask only in the version lines
+>   (main B6/M6, branch B5/M6). Each rebased commit needs main's value + 1 set by hand (tg B7/M7, then ds M8; tsharp M7,
+>   or M8 if it lands second). Main changed touched files since 8151ee25 (#5181, #5133, #5199, #5203, #5201, #5193,
+>   #5137, #5169, #5165, #5131, #5145); all merge cleanly, so a rebased commit still needs a compile and runs.
+> - Main still has every gap: no translator for DS_ORDERED_COUNT (only format.cpp / opcodes.h name it), no `tg_size`
+>   anywhere in src, and `ASSERT(IsSharpSource(source))` still at resource_discover_pass.cpp:257.
+> - Upstream: no new PR or issue for DS_ORDERED_COUNT (#496 aggregate open; #2899 closed 2025; #4247, raphaelthegreat's
+>   closed "reg type tracking", also matches) or for the TG_SIZE SGPR; none of the three branches was ever opened as a
+>   PR; #4999 closed 24 Sep. The named post-ops BitwiseOrDw1WithImm / ClearAnisoRatioAndThreshold came with #4782 (5
+>   Sep): those are the "other cases" of baggins183's #4999 comment. #5059 (merged 19 Sep) added a sharp-source pattern
+>   (V_READFIRSTLANE_B32) to the discover pass.
+> - What blocks each (memory gow-fixes-for-pr.md, unchanged): tg-size-sgpr fixes no failure on main by itself (no game
+>   known to read that SGPR without DS_ORDERED_COUNT: PR criterion 1); ds-ordered-count gets GoW past main's "Unknown
+>   opcode" stop, but every GoW run with it (GOW2, GOW3, TEST1, TEST2) then hangs the GPU (GOW2/GOW3: ~27 s after the
+>   ordered-count shader compiles), cause unknown, and the three wave-model hang cases (a)-(c) are open; tsharp-dw1-mask
+>   keeps the post-op design the maintainer asked to move into the SRT program. Criterion 2 is shown for none: only GoW's
+>   test line carries them.
+> - Proposed, waiting for the user: the one-variable GoW test the memory names (a [test] gate that skips the ordered
+>   wait and keeps the atomic: hang gone = the wait deadlocks, hang stays = it is elsewhere), or the next CRASH_MAP
+>   problem, or the run of #5218's own code.
+
 > **Update 2 Oct ~20:55, builder shadps4-lane-f9: the user confirmed shadps4-lane-8f as the new watcher/auditor.** The
 > authorized pair is now shadps4-lane-f9 (builder) and shadps4-lane-8f (auditor), for the two builder messages of
 > section 2: a notice before a checkout switch, the build details after a build. ListAgents 20:53: only

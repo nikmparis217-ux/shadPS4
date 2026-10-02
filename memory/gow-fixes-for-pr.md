@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 0bdb4255-1ac0-4abb-9dd3-ea05165bd11b
-  modified: 2026-10-01T13:15:41.785Z
+  modified: 2026-10-02T18:01:55.946Z
 ---
 
 User, 27 Sep 2026: "we finish this last gow fix since you implemented it but we continue to gt7. keep the fixes for
@@ -84,6 +84,25 @@ and was deleted before any run (user, 16:08: "that was my mistake"). GoW TEST1 i
 1c6cff84 = 7d09a8a8 + cherry-picks f6258522 (b89a2772), 0a8c27c2 (a1af1159), 1c6cff84 (dc08b752): same +/- lines as
 the sources; conflicts only in the cache versions (B8/M10) and the ImageResource order (post_op_dw1_mask, then
 guard). Built 16:13, exe B142D73C, not run yet. GoT and GTA V TEST1 stay 7d09a8a8 (no GoW fixes).**
+
+**2 Oct 2026 ~21:05, PR-readiness check (builder shadps4-lane-f9), read-only; output
+`C:\shadps4-gow\logs\gow_fixes_pr_check_20261002.txt`, scripts `C:\shadps4-gow\tools\gow_cf_check_v2.sh`,
+`gow_merge_check_v1.sh`, `gow_upstream_search_v1.py`:**
+- Formatting is clean: clang-format 19.1.5 the way upstream CI runs it (every changed `src/*.cpp|h`, the WHOLE file, style
+  from `src/.clang-format`), `--dry-run --Werror` rc 0 and no diff in all 6 + 19 + 4 files, no trailing whitespace, LF.
+  Controls: main's copies of the same files clean, a copy with a badly formatted line added flagged. The 1 Oct "every
+  file flagged" was a method error (style pointed at a root `.clang-format` that does not exist).
+- On origin/main bf794b3f (B6/M6), `merge-tree --merge-base=8151ee25`: ⚠ tg-size-sgpr merges WITHOUT a conflict only
+  because its 5 -> 6 equals main's current values, so a plain rebase silently carries no cache bump; tg + ds conflict
+  only in ShaderMetaVersion, tsharp only in the version lines. Set main + 1 by hand on every rebase.
+- Main still lacks all three (no DS_ORDERED_COUNT translator, no `tg_size` in src, the :257 assert). Upstream has
+  nothing new for any of them; none of the three branches was ever opened as a PR. Main's named post-ops
+  (BitwiseOrDw1WithImm, ClearAnisoRatioAndThreshold = a fixed-immediate AND on an S# dword) came with #4782 (5 Sep),
+  i.e. they are the "other cases" baggins183 meant on #4999; #5059 (merged 19 Sep) extended the discover pass with a
+  V_READFIRSTLANE_B32 sharp-source pattern.
+- Verdict: none is ready, for the content reasons above (tg: no standalone failure; ds: GoW still hangs the GPU after
+  it in every run, wave-model cases (a)-(c) open; tsharp: the maintainer's SRT-program request). PR criterion 2 (no
+  other game worse) is shown for none: only the GoW test line (TEST1 1c6cff84, TEST2 6b19950f) carries them.
 
 **Turning one into a PR (only when the user asks):**
 - rebase onto the current origin/main, keeping ONE commit, and re-check the cache version lines. Cache constants:
