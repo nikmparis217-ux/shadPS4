@@ -1,5 +1,28 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~21:35, builder shadps4-lane-f9: user: "i want a fix in its core", not a surface fix of the
+> "Clamped size" error. Root-cause research, read-only; nothing built.**
+> - History: the clamp is #2447 (da0ab005, Feb 2025): huge V#s that start in a valid mapping, "not reasonable to
+>   expect the game needing all of the memory", clamped to avoid the GPU-tracking assert. The ERROR line came with
+>   #4782 (1cf28cbc, 5 Sep 2026, new sharp tracking).
+> - How GT7 reads them (cached SPIR-V, `logs\vsharp_access_20261002.txt`, `builder_scripts\vsharp_access_v1.py` +
+>   `spv_trace_v1.py`): fs 0x74f5f10c dword index = X*16 + c + Y (64-byte records), 0x840464a6 X*32 + c + Y (128-byte);
+>   X is read from another buffer (ssbo_2 / ssbo_3) at an index made from an image fetch, i.e. decided on the GPU per
+>   pixel from texture data; Y = push_data buf_offsets = BindBuffers' own alignment adjust. GoW cs 0x7463e726 is
+>   different: index (x & 3) * 4 + (y & 3), stride 16, offset 656, at most ~904 bytes. So neither the recompiler nor
+>   the host can bound GT7's range before the draw: binding the rest of the mapping is the conservative, correct choice
+>   in shadPS4's bind-a-range model (the PS4 itself reads by address; reading unmapped memory faults there too).
+> - Main's address-based path: `directMemoryAccess` (default false) gives a shader a BDA page table + fault buffer,
+>   used only for dynamic ReadConst; missing pages are repaired after the submit (fault buffer), so a first read can
+>   be stale.
+> - Real defects found: the ERROR for a legal descriptor (per bind, GpuCommandProcessor thread); `GetSize()`
+>   multiplies stride * num_records in u32 (GoW's 4294967280 is already a wrap of 0xF_FFFF_FFF0; stride 16 x
+>   0x10000000 would wrap to 0 and bind a null buffer). Not measured: what the whole-range binds cost (sync, residency,
+>   barrier checks, log) per frame.
+> - Proposed (waiting): a log-only [test] cost counter for these binds first, then choose: the size model (64-bit
+>   extent, "unbounded" as an expected case) if the cost is small, or address-based reads for unbounded V#s (on the
+>   existing BDA page table) if it is large.
+
 > **Update 2 Oct ~21:25, builder shadps4-lane-f9: what the "Clamped size" error is (user's question), read-only.**
 > - Source: the shaders build the V# themselves from a 64-bit pointer in their user data, with num_records = the
 >   constant 0xFFFFFFFF ("no limit"; on the GPU num_records is only the bounds check) and dword3 0x2000C004. GoW cs

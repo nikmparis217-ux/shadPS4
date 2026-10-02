@@ -5,12 +5,22 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T18:24:34.775Z
+  modified: 2026-10-02T18:33:53.863Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+⚠⚠⚠ **2 Οκτ ~21:35 — χρήστης: «i want a fix in its core» για το «Clamped size», όχι επιφανειακό. Έρευνα (μόνο
+  ανάγνωση):** clamp = #2447 (Φεβ 2025, σκόπιμη λύση)· ERROR = #4782 (5 Σεπ 2026). GT7 (cached SPIR-V,
+  `logs\vsharp_access_20261002.txt`): fs 0x74f5f10c διαβάζει εγγραφή 64 bytes X (0x840464a6: 128 bytes) όπου το X
+  διαβάζεται από ΑΛΛΟ buffer με index από image fetch = αποφασίζεται στη GPU ανά pixel· Y = το δικό μας alignment
+  adjust (buf_offsets). GoW cs 0x7463e726: index (x&3)*4+(y&3) → ≤ ~904 bytes. Άρα για το GT7 ούτε compiler ούτε host
+  ξέρουν το εύρος πριν το draw: το bind ως το τέλος του mapping είναι η σωστή συντηρητική επιλογή του μοντέλου. DMA
+  (BDA page table) υπάρχει μόνο opt-in (default false) για dynamic ReadConst, με διόρθωση μετά το submit. Αληθινά
+  ελαττώματα: ERROR για νόμιμο V#· `GetSize()` u32 overflow (16×0x10000000 → 0 → null buffer). Κόστος ανά frame ΔΕΝ
+  μετρήθηκε → πρόταση: log-only [test] μετρητής κόστους πρώτα, μετά επιλογή (μοντέλο μεγέθους ή BDA για unbounded).
 
 ⚠⚠⚠ **2 Οκτ ~21:25 — τι είναι το «Clamped size» (ερώτηση χρήστη):** ο shader φτιάχνει ΜΟΝΟΣ του το V# από pointer
   64-bit των user data με num_records = σταθερά 0xFFFFFFFF («χωρίς όριο»· στη GPU το num_records είναι μόνο bounds
