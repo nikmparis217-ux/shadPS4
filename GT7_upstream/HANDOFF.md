@@ -1,5 +1,12 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~20:55, builder shadps4-lane-f9: the user confirmed shadps4-lane-8f as the new watcher/auditor.** The
+> authorized pair is now shadps4-lane-f9 (builder) and shadps4-lane-8f (auditor), for the two builder messages of
+> section 2: a notice before a checkout switch, the build details after a build. ListAgents 20:53: only
+> shadps4-lane-8f (gtnikos-e8 and gtnikos-02 are gone). Re-checked 20:53: #5218, #5155, #5219, origin/main and `mine`
+> unchanged since 18:37 (no comment, no review, same heads; #5219's two Linux jobs still failing). No message sent.
+> Next: the GoW PR-readiness check (read-only).
+
 > **Update 2 Oct ~18:40, builder shadps4-lane-f9 (replaces gtnikos-02; started in C:\shadps4-lane): state checked
 > read-only 18:20-18:37. Nothing built, changed, launched or pushed, except the md copies to `claude`.**
 > - origin/main = **bf794b3f** "started 0.19.1 WIP" (17:05; CMakeLists.txt + flake.nix version lines only). Cache

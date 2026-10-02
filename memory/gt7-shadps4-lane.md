@@ -5,12 +5,17 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T15:39:08.737Z
+  modified: 2026-10-02T17:54:07.410Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+⚠⚠⚠ **2 Οκτ ~20:55 — ο χρήστης: shadps4-lane-8f = ο νέος watcher/auditor.** Εξουσιοδοτημένο ζεύγος: builder
+  shadps4-lane-f9 ↔ auditor shadps4-lane-8f, για τα δύο μηνύματα του builder (ειδοποίηση πριν από switch του checkout,
+  details μετά από build). ListAgents 20:53: μόνο ο shadps4-lane-8f (οι gtnikos-e8 / gtnikos-02 έφυγαν). PRs και
+  remotes αμετάβλητα από τις 18:37. Επόμενο: ο έλεγχος των GoW fixes (μόνο ανάγνωση).
 
 ⚠⚠⚠ **2 Οκτ ~18:40 — νέος builder shadps4-lane-f9 (αντί του gtnikos-02, ξεκίνησε στο `C:\shadps4-lane`)· έλεγχος μόνο
   ανάγνωσης, τίποτα δεν χτίστηκε / άλλαξε / ξεκίνησε.** origin/main = **bf794b3f** «started 0.19.1 WIP» (μόνο γραμμές
