@@ -1,5 +1,20 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~21:25, builder shadps4-lane-f9: what the "Clamped size" error is (user's question), read-only.**
+> - Source: the shaders build the V# themselves from a 64-bit pointer in their user data, with num_records = the
+>   constant 0xFFFFFFFF ("no limit"; on the GPU num_records is only the bounds check) and dword3 0x2000C004. GoW cs
+>   0x7463e726 IR: `CompositeConstructU32x4 %7 (SGPR2), %146 (= SGPR3 | 0x100000, stride 16), #4294967295,
+>   #536920068` -> `LoadBufferU32x2`. Cache metas (`builder_scripts\vsharp_scan_v1.py`, output
+>   `logs\vsharp_unbounded_scan_20261002.txt`): GoW cs 0x7463e726 / 0x42ba6f62 = flat-buffer dwords 2-3 + post-op OR
+>   0x00100000; GT7 fs 0x74f5f10c, 0x840464a6, 0x5598df2e, 0x1416ac3d = flat-buffer dwords 0-1, stride 0, no post-op;
+>   all read-only (is_written 0). GetSize: GT7 = num_records = 4294967295; GoW = 16 x 0xFFFFFFFF in u32 = 4294967280.
+> - What main does: BindBuffers -> `ClampRangeSize` (size >= 1 GB: assert the address is mapped, cut to the end of the
+>   guest mapping holding it + contiguous mapped neighbours) -> LOG_ERROR whenever the size changed, at every bind of
+>   every draw (GpuCommandProcessor thread) -> `ObtainBuffer` with the clamped size (tens of MB, > the 16 KB stream
+>   threshold), so the arena blocks of the whole range are made resident and the whole range synchronized each bind.
+>   The clamp itself is right (a host buffer needs a finite range); the ERROR is noise for a legal descriptor.
+> - Not measured: what the log line or the whole-range synchronization costs per frame.
+
 > **Update 2 Oct ~21:15, builder shadps4-lane-f9: the user asked whether #5218's mechanism should also cover V#
 > (buffers). Answer from code and logs, read-only: it could, but no measurement says it is needed.**
 > - #5218's pass collects only image instructions (resource_guard_pass.cpp:614; storage-image writes stay live), so

@@ -5,12 +5,20 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T18:14:22.342Z
+  modified: 2026-10-02T18:24:34.775Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+⚠⚠⚠ **2 Οκτ ~21:25 — τι είναι το «Clamped size» (ερώτηση χρήστη):** ο shader φτιάχνει ΜΟΝΟΣ του το V# από pointer
+  64-bit των user data με num_records = σταθερά 0xFFFFFFFF («χωρίς όριο»· στη GPU το num_records είναι μόνο bounds
+  check), dword3 0x2000C004. Απόδειξη: IR του GoW cs 0x7463e726 + τα .meta (`builder_scripts\vsharp_scan_v1.py`,
+  `logs\vsharp_unbounded_scan_20261002.txt`): GT7 fs 0x74f5f10c / 0x840464a6 / 0x5598df2e / 0x1416ac3d = flatbuf
+  dwords 0-1, stride 0, read-only· GoW = dwords 2-3 + OR 0x100000 (stride 16 → 4294967280). Main: ClampRangeSize
+  (≥1 GB) κόβει ως το τέλος του guest mapping → LOG_ERROR σε ΚΑΘΕ bind → ObtainBuffer όλου του εύρους (δεκάδες MB:
+  resident + sync όλου). Το clamp σωστό, το ERROR θόρυβος· κόστος ανά frame ΔΕΝ μετρήθηκε.
 
 ⚠⚠⚠ **2 Οκτ ~21:15 — ερώτηση χρήστη: guards και για V#; Γίνεται, αλλά καμία μέτρηση δεν το ζητά.** Το pass του #5218
   μαζεύει ΜΟΝΟ image instructions (resource_guard_pass.cpp:614). Main ανά V#: address/size 0 → null ήδη· αλλιώς
