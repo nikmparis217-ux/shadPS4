@@ -1,5 +1,118 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~17:05, builder gtnikos-02: raphaelthegreat opened his own PR #5219 "video_core: Renderer
+> optimizations pt2 (texture cache edition)"; checked read-only, nothing built, changed, pushed or launched.**
+> 13:52:33 UTC, head be258106, 11 commits, 27 files +871 -849, all in src/common and src/video_core (no
+> shader_recompiler file), merge-base 4355d9eb. His text: CPU-overhead micro-optimizations of the texture cache, to be
+> reviewed commit by commit, and the locking change is what needs testing (ff0f4997: the global texture-cache mutex
+> leaves FindImage / InvalidateMemory / InvalidateMemoryFromGPU / UnmapMemory, each Image gets its own mutex). Fetched to
+> the local ref `refs/pr/5219` in C:\shadps4-clean (fetch only, the checkout did not change). Facts for our PRs:
+> - #5196 (merged): 56237fa8 moves our UpdateSize loop verbatim into the constexpr `ComputeImageSize` in tile.h
+>   (IsMacroTiledMip, micro_tiled_mips and the thickness rounding of num_slices unchanged); c5a80206 moves
+>   GetArrayMode / GetMicroTileMode / GetAltNumBanks verbatim into tiling.h (Thin3DThinPrt -> ArrayPrt3DTiledThin1
+>   kept); the micro_tiled_mips path of tiling.comp is unchanged. c5a80206 also makes MipInfo pitch/height u16 (and
+>   uint16_t in tiling.comp's uniform; a T# pitch/height is at most 16384), SubresourceBase/Extent u16, and adds a fast
+>   path for square pow2 64/128-bit BCn Thin1DThin images up to 1024 with a full mip chain, read from tables that the
+>   same ComputeImageSize builds from the same inputs.
+> - #5218 (open): no file in common; `git merge-tree --write-tree mine/resource-guards refs/pr/5219` = no conflict
+>   (tree a813f78e). 480dfba9 makes `image_bindings` a member std::array; its two null paths only set `image_id = {}`
+>   and keep that slot's previous `desc`, and the descriptor-write loop takes `desc.type` from it, so a null image is
+>   written with the type of whatever image was last bound at that index (eStorageImage after a storage image, e.g. of
+>   a compute dispatch); in main a null entry is a fresh ImageDesc (type Texture), always eSampledImage. The dead slots
+>   of #5218 take that null path, and the layout declares them sampled. 886eecce: SurfaceFormat moves into
+>   liverpool_to_vk.h as constexpr with the same ASSERT_MSG "Unknown data_format={} and num_format={}" (the #5218 text
+>   quotes only the message); NumComponents / NumBitsPerBlock / NumBitsPerElement lose their range ASSERT (42-entry
+>   tables, DataFormat goes to 63), but in ImageInfo(T#) SurfaceFormat still runs first and no format >= 42 has a
+>   surface entry, so the fix-off assert at data_format 46 stays the same assert; GetSampler (slot vector + intrusive
+>   LRU, same XXH3 hash) still maps a zero S# to one cached sampler; the IsMeta warning in BindTextures is removed;
+>   bank_swizzle is now set only with alt_tile_mode, which equals main because GetBankSwizzle returns 0 without it.
+> - #5218 now: head 4af30efb = the user's GitHub merge of main c7e065d1 ("tagged 0.19.0 release": CMakeLists.txt +
+>   flake.nix version lines only, same lines as 3912336f..c7e065d1) at 16:48, 4 commits, mergeable clean, no new
+>   comment since the user's reply at 16:45 (which asked raphaelthegreat to look at #5155), no check runs reported on
+>   4af30efb. The local `resource-guards` in C:\shadps4-clean is still 18dc8618, one merge behind `mine`.
+> - ~17:15, the user asked whether #5219 changes anything visually: by the code, no. Mip layouts and sizes, formats,
+>   swizzles (identity -> vk::ComponentMapping{} = the same mapping, the rest converted at view creation instead of
+>   at ImageViewInfo construction) and the GC rules (same configure / num_deletions / download conditions; TouchImage
+>   still called at the same 4 places, now inline) all give main's results; the PR gives no performance numbers.
+>   Only failure modes could show: the per-image locking; the null-slot descriptor type; and tiling.comp now reads
+>   uint16_t from its UNIFORM buffer (binding 2, eUniformBuffer) while vk_instance.cpp enables only
+>   storageBuffer16BitAccess, not uniformAndStorageBuffer16BitAccess (SSBO 16-bit BLOCK_TYPE was already used).
+> - ~17:20, the user: one of his checks failed. CI of #5219 head be258106 (run 37015950340, public API ~17:10):
+>   FAILED linux-sdl (clang-19, libstdc++, Release + IPO + mold) and linux-sdl-gcc (gcc-14, same), both in the
+>   build step, annotation only "Process completed with exit code 2"; passed: macos-sdl (AppleClang + libc++),
+>   the three "Run C++ Tests" jobs (ubuntu = clang + -stdlib=libc++ in Debug, ENABLE_TESTS=ON, cmake --build),
+>   clang-format, reuse; windows-sdl still in progress. The error line itself is not readable without a GitHub
+>   login (API job logs: 403 "Must have admin rights"; job page: "Sign in to view logs"); not found by reading
+>   the diff either. Our CI: db68308b success, 18dc8618 success (14:20 UTC), 4af30efb (run 37015435275) in
+>   progress at 14:20 UTC.
+> - ~17:40, the user: every md a session writes also goes to branch `claude` on `mine`, pushed right after the
+>   write (rule line in the CLAUDE.md block; recipe, paths and what stays out in memory
+>   shadps4-claude-notes-branch.md). First builder commit there: this HANDOFF.md, memory/gt7-shadps4-lane.md (new
+>   on the branch), the updated memory note and the shadPS4 section of C:\GTNikos\CLAUDE.md, on top of the
+>   auditor's f498fe6e.
+
+> **Update 2 Oct ~16:45, builder gtnikos-02: the reviewer's change is done and PUSHED - #5218 head 18dc8618, 3
+> commits** (user: "ok proceed as he asked"; a new commit on top, no force-push, as the user kept the history before).
+> 18dc8618 "shader_recompiler: Move the resource guards into a separate pass" (title only, author/committer
+> nikmparis217-ux noreply, no trailer), parent db68308b. Made by `scratchpad\move_guard_pass.py` from the 16369d61 blob,
+> which refuses to write unless every boundary line matches: new `src/shader_recompiler/ir/passes/resource_guard_pass.cpp`
+> (924 lines) = the analysis (16369d61 lines 940-1515, byte-identical) + `ResourceGuardPass(IR::Program&,
+> ResourceDiscoveryList&)` (= FindResourceGuards, writing `resources[i].guards` instead of returning a list) + the
+> per-draw evaluator (lines 1608-1879, byte-identical); `ResourceDiscovery` gains `std::array<u8, 2> guards{NO_GUARD,
+> NO_GUARD}`; SharpLocationFromSource / ConstructSharpFetch (with the `warn` flag) moved to resource_pass.h, which now
+> includes resource.h + common/logging/log.h instead of forward-declaring SharpFetchPostOp; recompiler.cpp calls
+> ResourceGuardPass right before ResourcePatchingPass(program.info, ...) (main's call again); ir_passes.h = main + one
+> declaration; CMakeLists.txt + 1 line. resource_patching_pass.cpp vs main 3912336f: only -44 (the two helpers) and +3
+> (`.guard = resource.guards[0|1]`). clang-format 19.1.5 `--dry-run --Werror` clean on all 5 files (controls: a main
+> file clean, a bad file flagged); `git diff --check` clean, 0 CR bytes, 0 GT_ lines. Build 16:35:24-16:41:31 in
+> C:\shadps4-clean (resource-guards checked out at db68308b first; notice to gtnikos-e8 before the switch): CMake
+> re-ran and rebuilt everything, 2383 steps, NINJA_EXIT=0, 0 warnings in src (the 2559 others are externals', incl. one
+> in fmt's own format.cc); log `logs\pr5218_guardpass_build.log`; no exe kept, the build output is now this PR build.
+> Push `db68308b..18dc8618` (fast-forward). PR after: 14 files, +1127 -53, mergeable, CI running. Build details sent to
+> gtnikos-e8 (+ a time correction). ⚠ The earlier GoW clang-format result ("every file flagged") was MY method error:
+> the style file is `src/.clang-format` and the command pointed at a root `.clang-format` that does not exist; redo the
+> GoW check with `--dry-run --Werror` on the real files. ⚠ Future GT_GUARDCHECK test lines must port GtInsertGuardChecks
+> to the new file layout.
+
+> **Update 2 Oct ~16:23, builder gtnikos-02: the user opened PR #5218 "shader_recompiler: Skip images and samplers
+> behind untaken branches"** (13:11:33 UTC, head db68308b = 16369d61 + GitHub's merge of main 3912336f, 2 commits by the
+> user's choice, description = the user's text). **First review comment** (raphaelthegreat, 5953280337, 13:19:59 UTC):
+> "Firstly can you move all the resource guard pass into a separate pass/different cpp at least so it doesnt clutter
+> resource patching". Facts gathered (read-only): in 16369d61 resource_patching_pass.cpp grows 955 -> 1879 lines; the
+> analysis (GuardBuilder / GuardCollector / GuardGroups / FindResourceGuards) is lines 940-1574 and the per-draw
+> evaluator (ResourceGuards::EvaluateDead + helpers, runtime code) lines 1608-1879; the rest are small edits (`.guard =`,
+> the `warn` flag of SharpLocationFromSource / ConstructSharpFetch, ResourcePatchingPass taking the Program). It sits
+> there only because the test builds avoided new source files (a new file = a CMake re-run); the 30 Sep plan had it as
+> its own pass between FlattenExtendedUserdataPass and ResourcePatchingPass. The move needs the user's go: a CMake
+> re-run, a checkout switch (notice to gtnikos-e8 first), a compile check, a push that changes #5218 at once. The GoW
+> PR check (user: "now for the GOW fixes") is paused for the PR; so far: none of the three is ready as it stands
+> (see memory gow-fixes-for-pr); each merges onto 3912336f with conflicts only in the cache version lines; a
+> clang-format check flagged every file of all three and is not trusted yet (to redo).
+
+> **Update 2 Oct ~15:22, builder gtnikos-02: `mine/resource-guards` is now db68308b, not 16369d61.** db68308b =
+> "Merge branch 'shadps4-emu:main' into resource-guards" (parents 16369d61 + main 3912336f, 15:19:58 from the user's
+> account = GitHub's update-branch button). Checked: its tree = `git merge-tree` of the two, and its diff against
+> 3912336f has the same patch-id as 7e778987..16369d61 (c92647a1...), 11 files +1083/-16: the merge adds nothing but
+> main. The user is on GitHub's open-PR page (no PR yet); because of the 2 commits GitHub proposes the branch name as
+> the title; title given: the commit's own, "shader_recompiler: Skip images and samplers behind untaken branches".
+> Offered, not done: rebase 16369d61 onto 3912336f + force-push, for one commit again (needs the user's go; before the
+> PR exists, or the PR changes at once). **User ~16:09: keeps the 2 commits as they are ("it is an experiment
+> anyway").** The PR description is the user's text (reviewed in chat for facts and typos only); no PR open yet
+> (public API, 16:09).
+
+> **Update 2 Oct ~15:05, builder gtnikos-02: the fix stays ONE commit and ONE PR (user: "ok so we keep it a whole");
+> a plain explanation of it given in chat for the user's own PR text. Nothing built, changed, pushed or launched.**
+> The split question was answered first, read-only: the mechanism (conditions found at compile time, the per-draw
+> evaluation, null at GetSharp, the dead set in the permutation key, the cache version) only works as a whole; a cut by
+> condition family (mechanism + integer ~790 lines, lane masks ~75, float ~220) would work part by part (unknown =
+> live, the logic is monotonic), but part 1 stays most of the code. The user will say in the review that the fix is
+> experimental. Run facts used, from gtnikos-e8's audits (`logs\test40_gt7_runs_audit.txt`,
+> `C:\shadps4-gow\logs\gow_test2_runs_audit.txt`, `games_test2_runs_audit.txt`): fs 0x2a265dff with the fix off
+> (TEST37 r1-r4) 24-39 compiles a run, `Rejecting invalid T#/S#` 18-65 / 74-283, 3 of 4 runs ended on the SurfaceFormat
+> / ComponentSwizzle assert at its image #0; with it on (TEST39 r1-r2, TEST40 r1-r2) 1 compile, 0 / 0, no such assert,
+> all 4 reached a race; GT_GUARDCHECK 0 HIT in GT7 r1-r2 (224 / 449 modules with a dead slot), GoW r1-r2 (up to 92),
+> GoT r1-r3 (1), GTA V nothing to check (no shader with guards); every run ended where earlier runs of that game did.
+
 > **Update 2 Oct ~14:05, builder gtnikos-02: all steps done (user: "ok do all steps") - 4 builds, 8 launchers, the
 > push. Nothing launched.** No shadps4 process during any build (the last run before them, GTA V r5, ended 13:17:22).
 > gtnikos-e8 got a notice before the first switch and build details after each build. Checkout now

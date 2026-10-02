@@ -1,11 +1,11 @@
 ---
 name: shadps4-claude-notes-branch
-description: "Branch `claude` on the PUBLIC fork (remote `mine`) is MY personal memory for the shadPS4/GT7 lane: read CLAUDE_MEMORY.md at session start, append lessons/fixes/refuted hypotheses, push with plumbing"
+description: "Branch `claude` on the PUBLIC fork (remote `mine`) is MY personal memory for the shadPS4/GT7 lane: read CLAUDE_MEMORY.md at session start, append lessons/fixes/refuted hypotheses, push with plumbing; since 2 Oct EVERY md a session writes goes there too, pushed right after the write"
 metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-10-02T11:59:19.675Z
+  modified: 2026-10-02T14:30:18.781Z
 ---
 
 On 23 Sep 2026 the user created branch `claude` on `nikmparis217-ux/shadPS4` (remote `mine`) and
@@ -50,3 +50,15 @@ knowingly (same fork as the PR branches; upstream does not want AI - see
   writes into no existing repo: `git clone --single-branch --branch claude <fork url>` into a scratchpad,
   `git config core.autocrlf false` there (the global `true` turns the checkout CRLF), add only the new paths, commit as
   nikmparis217-ux <295578344+nikmparis217-ux@users.noreply.github.com>, `git ls-remote` the tip, push fast-forward.
+- 2 Oct 2026 ~17:40, user to the builder (gtnikos-02): «everything you write in md goes also to your claude branch
+  to have a safe place saved your md» → standing, for every session (rule line in the CLAUDE.md block): every md
+  written (handoffs, memory files, audits, plans) is committed to `claude` at its disk path and pushed right after
+  the write. Paths: `GT7_upstream/` = C:\shadps4-gt7\GT7_upstream, `shadps4-<game>/` = C:\shadps4-<game>,
+  `memory/` = this memory folder, `GTNikos/CLAUDE_shadps4_section.md` = ONLY the shadPS4 section of
+  C:\GTNikos\CLAUDE.md (the rest is the game project). Stays out: MEMORY.md (indexes every lane). The branch is
+  public, so the one gmail address in gt7-shadps4-lane.md (~line 860, a commit author) is written as
+  `<gmail address>` in the branch copy only; scan for addresses, tokens and keys before every push.
+- The local `claude` ref lags the remote whenever a session pushes from a scratchpad clone (2 Oct 17:3x: local
+  1c63b313, remote f498fe6e). Build on FETCH_HEAD (`-p FETCH_HEAD`), then
+  `git update-ref refs/heads/claude <new> <old>`. All the shadPS4 worktrees (C:\shadps4-clean, C:\shadps4-gt7,
+  Documents\GitHub\shadPS4) are ONE repository, so the recipe runs from any of them.
