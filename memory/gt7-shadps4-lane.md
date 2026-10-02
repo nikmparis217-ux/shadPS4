@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T22:32:08.836Z
+  modified: 2026-10-02T22:39:07.761Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -19,7 +19,9 @@ metadata:
   0x98170c4bfeeeaffe, cs 0x14906b6a)· GoW ΠΟΤΕ (device lost: buffer_cache.cpp:443 στο TEST2). Βήματα 1-5: το GT7 #3
   «PM4 type 0» είναι στον packet reader· ύποπτο: το `chain` bit του INDIRECT_BUFFER δεν διαβάζεται ποτέ
   (pm4_cmds.h:896, liverpool.cpp:794 / :928)· πρώτο μετά το reset (με το ok του χρήστη): [test] log στο σημείο του
-  type 0. GoW: μόνο «SetQueueReg vqid 4 reg 0xb» (579), που το main προσπερνά.
+  type 0. GoW: μόνο «SetQueueReg vqid 4 reg 0xb» (579), που το main προσπερνά. Opcodes (ερώτηση «over 20»): σε 302
+  logs ΜΟΝΟ το DS_ORDERED_COUNT· 64-bit V_CMP: το main έχει 15 από 32, λείπουν 17, κανένα δεν το χτυπά παιχνίδι μας
+  (το 69ac5fa9 της 6 Σεπ τα έχει και τα 32).
 
 ⚠⚠⚠ **2 Οκτ ~21:45 — ΠΑΓΩΜΑ ΠΡΟΫΠΟΛΟΓΙΣΜΟΥ (χρήστης): μένει 10 % του εβδομαδιαίου ορίου, reset Κυρ 4 Οκτ 2026
   12:00. Ως τότε ΜΟΝΟ αλλαγές που ζητούν οι devs στα ανοιχτά PRs (#5218, #5155)· καμία νέα έρευνα, build ή test.** Τα

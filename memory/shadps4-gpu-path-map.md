@@ -1,11 +1,11 @@
 ---
 name: shadps4-gpu-path-map
-description: "The exact order one shader/draw takes in shadPS4 from the game's submit to the screen (22 steps, file:line on main bf794b3f), where each known ending sits on that path (signals.cpp:144, PM4 type 0, Unknown opcode, Clamped size, Device lost), and the 3 Oct read-only check of steps 1-5 (GT7 CRASH_MAP #3 = packet reader, chain-bit lead)"
+description: "The exact order one shader/draw takes in shadPS4 from the game's submit to the screen (22 steps, file:line on main bf794b3f), where each known ending sits on that path (signals.cpp:144, PM4 type 0, Unknown opcode, Clamped size, Device lost), the 3 Oct read-only check of steps 1-5 (GT7 CRASH_MAP #3 = packet reader, chain-bit lead) and the missing-opcode census (302 logs: only DS_ORDERED_COUNT; 64-bit V_CMP 15/32 on main)"
 metadata:
   node_type: memory
   type: reference
   originSessionId: 69aee205-f92c-44e7-8367-5be64450ea3e
-  modified: 2026-10-02T22:31:44.766Z
+  modified: 2026-10-02T22:39:15.620Z
 ---
 
 User, 3 Oct 2026: "save everything we learned ... so we always know the correct order without reading the whole code
@@ -123,6 +123,18 @@ Steps 9-15 run once per shader (or permutation); steps 1-8 and 16-22 run for eve
   `SubmitPendingArenaBinds` "Device lost during submit" (GT_DIAG: "setting up: dispatch 1x1x1 groups: cs 0xe75563c7");
   TEST1 r1 = vk_scheduler.cpp:245 `SubmitExecution`; TEST1 r3 = vk_presenter.cpp:1119 `GetRenderFrame` assert.
 - Unknown opcode = step 10. "Clamped size" = step 16 ([[shadps4-unbounded-vsharp-clamp]]). GT7 "PM4 type 0" = step 4.
+
+### Missing opcodes (census 3 Oct, user: "you once said there are over 20 missing opcodes")
+- All 302 archived shad_log files of the four games (GT7_upstream\logs 280, shadps4-gow 5, -got 5, -gtav 7,
+  shadps4-archive 5; prelaunch copies excluded) hold ONE missing opcode: DS_ORDERED_COUNT (GoW; translated on our local
+  branch `ds-ordered-count`). GT7: none. Script: `builder_scripts\unknown_opcodes_census_v1.sh`. A log only covers
+  shaders its run reached (GoT dies at step 15, GTA V early).
+- The "over 20" family = the 64-bit integer compares: 32 encodings (opcodes.h names 40: LG = NE and TRU = T are second
+  names of the same values). On 6 Sep the translator knew 3; our 69ac5fa9 (gt7-main line, never upstreamed) translates
+  all 32. main bf794b3f handles 15 (upstream added the rest of those, e.g. #4972); still missing 17:
+  V_CMP_{F,LE,GE,T}_U64, V_CMPX_{F,LT,LE,GT,NE,GE,T}_I64, V_CMPX_{F,LT,LE,GT,GE,T}_U64. No game we run hits them, so
+  no PR (a PR needs a build that fails without it).
+- On main a missing opcode stops the emulator at step 10 (recompiler.cpp:48); it never makes a frame look wrong.
 
 ### Steps 1-5, read-only check (3 Oct)
 - **GT7 CRASH_MAP #3 "PM4 type 0"** (15 runs; TEST39 r1 and TEST40 r2 = 2 of the last 4 GT7 runs; our builds print
