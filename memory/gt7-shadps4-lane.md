@@ -5,12 +5,21 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T19:01:36.291Z
+  modified: 2026-10-02T22:32:08.836Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+**3 Οκτ ~01:40 — η διαδρομή ενός shader (χρήστης: «save everything we learned ... so we always know the correct
+  order»):** ο χάρτης 22 βημάτων παιχνίδι → οθόνη με file:line στο main bf794b3f = memory `shadps4-gpu-path-map.md`
+  (ανανέωση γραμμών: `builder_scripts\gpu_path_lines_v1.sh`, v2-v4). «144» = `signals.cpp:144` (ο τελευταίος exception
+  handler): GT7 #5/#6/#11 = κώδικας του παιχνιδιού· GoT = nvoglv64.dll στο βήμα 15 (compute pipeline
+  0x98170c4bfeeeaffe, cs 0x14906b6a)· GoW ΠΟΤΕ (device lost: buffer_cache.cpp:443 στο TEST2). Βήματα 1-5: το GT7 #3
+  «PM4 type 0» είναι στον packet reader· ύποπτο: το `chain` bit του INDIRECT_BUFFER δεν διαβάζεται ποτέ
+  (pm4_cmds.h:896, liverpool.cpp:794 / :928)· πρώτο μετά το reset (με το ok του χρήστη): [test] log στο σημείο του
+  type 0. GoW: μόνο «SetQueueReg vqid 4 reg 0xb» (579), που το main προσπερνά.
 
 ⚠⚠⚠ **2 Οκτ ~21:45 — ΠΑΓΩΜΑ ΠΡΟΫΠΟΛΟΓΙΣΜΟΥ (χρήστης): μένει 10 % του εβδομαδιαίου ορίου, reset Κυρ 4 Οκτ 2026
   12:00. Ως τότε ΜΟΝΟ αλλαγές που ζητούν οι devs στα ανοιχτά PRs (#5218, #5155)· καμία νέα έρευνα, build ή test.** Τα

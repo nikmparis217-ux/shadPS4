@@ -1,5 +1,20 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~01:40, builder shadps4-lane-f9: the path of one shader from the game to the screen (user: "save
+> everything we learned ... so we always know the correct order"). Read-only (git grep on origin/main bf794b3f + grep
+> of the newest logs); nothing built. Saved as memory `shadps4-gpu-path-map.md`: 22 steps with file:line; re-pin the
+> lines with `builder_scripts\gpu_path_lines_v1.sh` (v2-v4 fill gaps).**
+> - "144" = `signals.cpp:144`, the last-resort exception handler ("Unhandled Exception code"): GT7 game-thread crashes
+>   #5/#6/#11 (the game's own code); GoT TEST1 + TEST2 = nvoglv64.dll while "Compiling compute pipeline
+>   0x98170c4bfeeeaffe" (cs 0x14906b6a) = step 15, the driver's SPIR-V compile; no GoW log ends there. GoW TEST2 r1/r2
+>   (and TEST1 r2) report the device loss from buffer_cache.cpp:443 SubmitPendingArenaBinds, TEST1 r1 from
+>   vk_scheduler.cpp:245, TEST1 r3 from vk_presenter.cpp:1119.
+> - Steps 1-5: GT7 CRASH_MAP #3 (PM4 type 0, 15 runs, 2 of the last 4) is the packet reader. Lead, untested: main never
+>   reads INDIRECT_BUFFER's `chain` bit (pm4_cmds.h:896; liverpool.cpp:794-805 GFX, :928-938 ASC). Proposed first after
+>   the reset (user's go): a [test] log at the type-0 stop (buffer, offset of the zero dword, last ~16 packets with raw
+>   headers). GoW's only step 1-5 message: "Encountered compute SetQueueReg: vqid = 4, reg_offset = 0xb" (579 in
+>   TEST2 r1 + r2), skipped by main.
+
 > **Update 2 Oct ~21:45, builder shadps4-lane-f9: BUDGET HOLD (user): 10 % of the weekly limit is left; it resets
 > Sun 4 Oct 2026 12:00. Until then only changes the devs ask for on our open PRs (#5218, #5155): no new research,
 > builds or tests. The "Clamped size" findings and their plan are in memory `shadps4-unbounded-vsharp-clamp.md`
