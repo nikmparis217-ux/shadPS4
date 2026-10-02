@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-10-02T14:30:18.781Z
+  modified: 2026-10-02T15:09:22.397Z
 ---
 
 On 23 Sep 2026 the user created branch `claude` on `nikmparis217-ux/shadPS4` (remote `mine`) and
@@ -54,7 +54,8 @@ knowingly (same fork as the PR branches; upstream does not want AI - see
   to have a safe place saved your md» → standing, for every session (rule line in the CLAUDE.md block): every md
   written (handoffs, memory files, audits, plans) is committed to `claude` at its disk path and pushed right after
   the write. Paths: `GT7_upstream/` = C:\shadps4-gt7\GT7_upstream, `shadps4-<game>/` = C:\shadps4-<game>,
-  `memory/` = this memory folder, `GTNikos/CLAUDE_shadps4_section.md` = ONLY the shadPS4 section of
+  `memory/` = this memory folder, `shadps4-lane/` = C:\shadps4-lane (the lane's own CLAUDE.md since 2 Oct,
+  [[shadps4-lane-folder]]), `GTNikos/CLAUDE_shadps4_section.md` = ONLY the shadPS4 section of
   C:\GTNikos\CLAUDE.md (the rest is the game project). Stays out: MEMORY.md (indexes every lane). The branch is
   public, so the one gmail address in gt7-shadps4-lane.md (~line 860, a commit author) is written as
   `<gmail address>` in the branch copy only; scan for addresses, tokens and keys before every push.

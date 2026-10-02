@@ -1,11 +1,11 @@
 ---
 name: feedback-lane-rules-in-claude-md
-description: "shadPS4/GT7 lane rules live in the RULES block at the end of C:\\GTNikos\\CLAUDE.md, the one file every new session loads automatically. A newly agreed rule goes there too, not only into memory files."
+description: "shadPS4/GT7 lane rules live in the RULES block of C:\\shadps4-lane\\CLAUDE.md (where lane sessions start since 2 Oct) and in its copy at the end of C:\\GTNikos\\CLAUDE.md; each is loaded automatically by sessions started in its folder. A newly agreed rule goes into both, not only into memory files."
 metadata:
   node_type: memory
   type: feedback
   originSessionId: 0bdb4255-1ac0-4abb-9dd3-ea05165bd11b
-  modified: 2026-09-27T19:27:39.482Z
+  modified: 2026-10-02T15:09:20.500Z
 ---
 
 27 Sep 2026, the user: "we need every chat to read the rules every time it begins a new session".
@@ -28,5 +28,8 @@ sessions and lose tokens.
   loaded into every session, so nothing flag-prone may go in it, not even as a prohibition.
 - It only reaches sessions started in `C:\GTNikos` (CLAUDE.md is per working directory). A session already running
   when the block changes does not see the change unless pointed at it.
+- Since 2 Oct 2026 the lane's sessions start in `C:\shadps4-lane`, whose CLAUDE.md carries the same block
+  ([[shadps4-lane-folder]]). Two copies now: a new rule = one line in BOTH, same turn (the block's own first rule says
+  so). `C:\GTNikos\CLAUDE.md` gets only that one line per rule; it is still never shortened.
 
 Related: [[gt7-shadps4-auditor-handoff]], [[gt7-shadps4-lane]], [[gt-nikos-startup-cost]].

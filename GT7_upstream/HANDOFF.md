@@ -50,6 +50,11 @@
 >   shadps4-claude-notes-branch.md). First builder commit there: this HANDOFF.md, memory/gt7-shadps4-lane.md (new
 >   on the branch), the updated memory note and the shadPS4 section of C:\GTNikos\CLAUDE.md, on top of the
 >   auditor's f498fe6e.
+> - ~18:10, the user agreed: lane sessions now start in C:\shadps4-lane, whose own CLAUDE.md (7 KB, against 509 KB
+>   for C:\GTNikos\CLAUDE.md) is a short brief + the RULES block, kept in step with the copy in C:\GTNikos\CLAUDE.md;
+>   that folder's Claude memory folder is a junction to the c--GTNikos one, so both see the same memory files.
+>   C:\GTNikos\CLAUDE.md was not shortened. NEXT_AUDITOR_PROMPT.txt points the next auditor there. Details:
+>   memory shadps4-lane-folder.md.
 
 > **Update 2 Oct ~16:45, builder gtnikos-02: the reviewer's change is done and PUSHED - #5218 head 18dc8618, 3
 > commits** (user: "ok proceed as he asked"; a new commit on top, no force-push, as the user kept the history before).

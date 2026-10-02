@@ -26,6 +26,8 @@ metadata:
   ~17:40 ο χρήστης: κάθε md που γράφεται → και στο branch `claude` του `mine`, push αμέσως (γραμμή στο block
   του CLAUDE.md)· HANDOFF.md, αυτό το αρχείο (νέο εκεί), η σημείωση του branch και το shadPS4 τμήμα του
   CLAUDE.md, πάνω στο f498fe6e του auditor.
+  ~18:10 ο χρήστης συμφώνησε: οι συνεδρίες του lane ξεκινούν στο `C:\shadps4-lane` (δικό του CLAUDE.md 7 KB αντί
+  509 KB· memory = junction στο c--GTNikos, ίδια αρχεία)· λεπτομέρειες: shadps4-lane-folder.md.
 
 ⚠⚠⚠ **2 Οκτ ~16:45 — η αλλαγή του reviewer ΕΓΙΝΕ και ΣΠΡΩΧΤΗΚΕ: #5218 head 18dc8618, 3 commits** (χρήστης: «ok proceed
   as he asked»· νέο commit από πάνω, χωρίς force-push). 18dc8618 «shader_recompiler: Move the resource guards into a

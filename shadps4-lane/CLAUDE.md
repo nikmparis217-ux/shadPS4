@@ -1,17 +1,24 @@
-## Άλλη γραμμή στον ίδιο φάκελο εργασίας: shadPS4 / GT7 emulator (ΔΕΝ είναι μέρος του GT Nikos)
+# shadPS4 lane: session brief
 
-Από το `C:\GTNikos` τρέχει και η γραμμή του shadPS4 fork (test builds στο `C:\shadps4-clean`· launchers, logs
-και exes ανά παιχνίδι: GT7 στο `C:\shadps4-gt7\GT7_upstream`, GoW / GoT / GTA V στα `C:\shadps4-gow`,
-`C:\shadps4-got`, `C:\shadps4-gtav` από 1 Οκτ, το καθένα με README.md· τα παλιά σκόρπια στο `C:\shadps4-archive`). Ό,τι χρειάζεται ένα νέο chat γι' αυτήν είναι στο
-`C:\shadps4-gt7\GT7_upstream\HANDOFF.md` (κατάσταση 30 Σεπ 2026) και στα memory files που ονομάζει· η ενότητα
-«STATE ON 22 SEP 2026» του README.md εκεί είναι πλέον ιστορία. Σύντομα: ενεργό παιχνίδι το GT7 1.71 (CUSA24767),
-το God of War παγωμένο· δύο συνεδρίες (builder + watcher/auditor)· κανόνες: ποτέ εκκίνηση παιχνιδιού από το
-Claude, αρχειοθέτηση του log πριν από κάθε launch, ένα general fix ανά PR, χωρίς σχόλια, `GT_*` gates ή trailers
-στον κώδικα του PR, push μόνο στο `mine` και μόνο όταν το ζητήσει ο χρήστης, απαντήσεις στη γλώσσα που γράφει ο
-χρήστης και repo content στα αγγλικά.
+The shadPS4 emulator lane starts its sessions, builder and watcher/auditor, in this folder, so that Claude Code
+loads this file instead of `C:\GTNikos\CLAUDE.md`, the game project's (~500 KB). This folder holds nothing else;
+the work is reached by absolute path:
+
+- `C:\shadps4-clean`: the only build tree (build from the 8.3 path `C:\Users\3E30~1\...`).
+- `C:\shadps4-gt7\GT7_upstream`: GT7 launchers, logs, exes, and `HANDOFF.md` (the builder's handoff: the lane's
+  state).
+- `C:\shadps4-gow`, `C:\shadps4-got`, `C:\shadps4-gtav`: the other games, each with a README.md.
+- `C:\shadps4-archive`: retired folders.
+- Branch `claude` of the fork (remote `mine`): a copy of every md the lane writes (rule below).
+- Memory: this folder's Claude memory folder, `C:\Users\3E30~1\.claude\projects\c--shadps4-lane\memory`, is a
+  directory junction to `C:\Users\3E30~1\.claude\projects\c--GTNikos\memory`, so every session reads and writes
+  one set of memory files whichever of the two folders it started in. Remove the junction only with
+  `cmd /c rmdir "<link path>"`: a recursive delete (Windows PowerShell `Remove-Item -Recurse`) can go through it and
+  erase the memory files of every lane.
+- `.claude\settings.local.json` here repeats the permission list of `C:\GTNikos\.claude\settings.local.json`,
+  without its Unreal MCP server.
 
 ### RULES — every new session in the shadPS4 / GT7 lane reads these before doing anything
-(This lane only; the GT Nikos rules above do not change.)
 
 **At the start of every session**
 - Sessions start in `C:\shadps4-lane` (since 2 Oct): its CLAUDE.md carries this block, and the same block stays at
