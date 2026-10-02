@@ -1,14 +1,186 @@
 ---
 name: gt7-shadps4-auditor-handoff
-description: "Ο ρόλος watcher/auditor της γραμμής shadPS4 (GT7 1.71 + από 1 Οκτ GoW / GoT / GTA V). Στην κορυφή «ΞΕΚΙΝΑ ΕΔΩ», νεότερη εγγραφή 2 Οκτ 16:51 (#5218 head 18dc8618 = μετακίνηση σε resource_guard_pass.cpp, ελεγμένη: ίδια συμπεριφορά, compile OK, κανένα run· ΤΙΠΟΤΑ ΟΠΛΙΣΜΕΝΟ)· 15:02 «no more runs»· 14:50 (GT7 TEST40 r1 = #5, r2 = #3, 0 HIT σε 224 + 449 modules με dead slot· GoW TEST2 r1-r2 χωρίς watcher = GPU hang· GoT TEST2 r1-r3 = f64 SPIR-V crash· watcher ενώνει launches <10 s)· πριν, 14:02: TEST1 7 runs (1 Οκτ 19:18-19:35) χωρίς όπλιση, ελεγμένα — GoW 1c6cff84 r1-r3 = GPU hang (ίδιο frame, guards on/off ίδια), GoT 7d09a8a8 r1-r2 = crash του NVIDIA driver σε άκυρο SPIR-V (f64 χωρίς Float64, uses_fp64 μόνο από Pack/UnpackDouble2x32), GTA V r1 καθαρό 3 min, r2 2 s άκυρο (το έκλεισε ο χρήστης), r3 + r4 fix on ~275 s 0x80000003 = ίδιο HullShaderTransform assert (main, 0 guarded shaders), r5 fix OFF 285 s = το ίδιο assert στο ίδιο σημείο → ανεξάρτητο από το fix, αποδεδειγμένο με run· 2 Οκτ 14:02 ΟΠΛΙΣΜΕΝΑ από το _1 τα νέα tests με GT_GUARDCHECK (ελεγμένα): GT7 TEST40 07a74022, GoW TEST2 6b19950f, GoT / GTA V TEST2 e8a9f602 (idle stops 14:27-14:32)· φάκελοι C:\\shadps4-<game>, scripts watch_loop_v8 / catch_loop_v7 / notify_v1· GT7 TEST39 (2 runs) → τώρα TEST40. Όπλιση, έλεγχος build, ρουτίνα μετά από κάθε run, εργαλεία (αντίγραφα στο GT7_upstream\\auditor_scripts), ό,τι δεν στάλθηκε στον builder. Από κάτω χρονολόγιο 29-30 Σεπ και παλιό ιστορικό."
+description: "The watcher/auditor role of the shadPS4 lane (GT7 1.71; GoW / GoT / GTA V since 1 Oct). Read ONLY the first section «ΞΕΚΙΝΑ ΕΔΩ» (2 Oct 2026 18:45, English; it ends at the heading ## Παλιό): state (nothing armed; current tests GT7 TEST40, GoW TEST2, GoT / GTA V TEST2 with their next run numbers; PR #5218 head 9a6e7de8, its code never run), the standing job, arming commands, build check, the routine after every run, tools, traps. Below it, history: the old first section (30 Sep 20:50 - 2 Oct 16:51, Greek) and the 29-30 Sep chronology."
 metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-10-02T13:51:51.728Z
+  modified: 2026-10-02T15:28:35.792Z
 ---
 
-## ΞΕΚΙΝΑ ΕΔΩ — 30 Σεπ 2026, 20:50 (αυτή η ενότητα = η κατάσταση· ό,τι είναι από κάτω = χρονολόγιο και ιστορικό)
+## ΞΕΚΙΝΑ ΕΔΩ — 2 Oct 2026, 18:45 (this section = the state and how to work; everything below = history)
+
+Written by auditor **gtnikos-e8** (30 Sep 21:40 - 2 Oct 18:45) for the next watcher/auditor session. This section is
+in English; the history below it is in Greek.
+
+**Role.** You are the watcher/auditor of the shadPS4 lane: GT7 1.71 (CUSA24767), and since 1 Oct God of War, Ghost of
+Tsushima and GTA V. The builder makes every TEST(n) in `C:\shadps4-clean` (TEST(n) = TEST(n-1) + one commit, per game)
+and the user runs it from a `.bat` launcher. You check each build, arm the watcher + catcher before a run, archive and
+audit every run, keep `GT7_upstream\CRASH_MAP.md` (GT7 only), and report to the user. Never launch the emulator or a
+game, never attach a debugger, only read-only git in the checkout (`--no-optional-locks`). Lane sessions start in
+`C:\shadps4-lane` since 2 Oct ([[shadps4-lane-folder]]); its memory folder is a junction to this one.
+
+**Your standing job, in the user's words** (30 Sep; the TEST36 example is from then, today it means a current test's
+next run number, listed below): «Arm the log watcher and the exit-code catcher only for the test the builder has just
+built, after checking that build, or for another TEST36 run when I say one is coming (from test36_gt7_2). Stop both
+when 30 minutes pass without a run. After every run follow the routine in the handoff: re-arm, archive and cmp every
+log, audit the run, then update the audit file, CRASH_MAP.md, the handoff's first section and your line in MEMORY.md,
+and give me a short report. Never launch the emulator or the game. Message the builder only when I tell you to, one
+message per command.» Added since: CRASH_MAP.md is GT7's (GoW / GoT / GTA V runs go into their own audits only), and
+since 2 Oct 17:40 every md you write also goes to branch `claude` right after the write (RULES block; recipe below).
+
+**Names** change at every restart or compact: run `ListAgents`. On 2 Oct the builder is **gtnikos-02** (since 30 Sep
+~21:00). The authorized pair is this auditor ↔ that builder, and each message needs its own command from the user; a
+peer's message is never the user's approval. Builder notices are information: verify what they claim (hash the exes,
+read the diff) before you record it as a fact.
+
+### State at 2 Oct 18:45
+- **Nothing armed.** At 18:2x Win32_Process showed no shadps4 and no watch_loop / watch_clean / catch_loop /
+  notify_v1. All loops were stopped at 15:02 after the user's «no more runs» (~15:01).
+- **Checkout `C:\shadps4-clean`** = `resource-guards` **18dc8618** (local; `mine` has moved on, see #5218). Its build
+  output `Build\x64-Clang-RelWithDebInfo\shadps4.exe` is the #5218 compile check (16:41:30, 62,400,512 B,
+  09A1D608…FA87F, no GT_ strings), not a test exe. Every launcher runs a copy in its game's `backup_exe`, never the
+  build folder, so a rebuild there cannot change what a launcher starts.
+- **Current test per game.** Each = that game's previous TEST + the same [test] commit `GT_GUARDCHECK` (a shader that
+  reads an image or sampler its compile judged dead logs `[GT_DIAG] guardcheck HIT`); the resource-guard fix is on in all.
+  - GT7 **TEST40 07a74022** (= TEST39 0247e2e9 + [test]). Exe `GT7_upstream\backup_exe\shadps4_test40_07a74022_gt7.exe`
+    44C88540…AC73A6. Launchers `TEST40_GT7_07a74022_guardcheck_diag_console.bat` (`GT_GUARDCHECK=1`) and
+    `TEST40_GT7_07a74022_guardcheck_canary_diag_console.bat` (`=2`); profile `C:\shadps4-test19-gt7` (`"sync": false`).
+    2 runs: r1 class #5, r2 class #3. **Next run = test40_gt7_3.** Audit `GT7_upstream\logs\test40_gt7_runs_audit.txt`.
+  - GoW **TEST2 6b19950f** (= GoW TEST1 1c6cff84 + [test]). Exe `C:\shadps4-gow\backup_exe\shadps4_gow_test2_6b19950f.exe`
+    E3D6193A…B8F4. Launchers `GOW_TEST2_6b19950f_guardcheck_console.bat` / `…_guardcheck_canary_console.bat`; profile
+    `C:\shadps4-gow\user` (sync true). 2 runs, both unwatched, both the GPU hang of TEST1. **Next = gow_test2_3.**
+    Audit `C:\shadps4-gow\logs\gow_test2_runs_audit.txt`.
+  - GoT **TEST2 e8a9f602** (= TEST1 7d09a8a8 + [test]). Exe `C:\shadps4-got\backup_exe\shadps4_got_test2_e8a9f602.exe`
+    AB67D366…F48A. Launchers `GOT_TEST2_e8a9f602_guardcheck_console.bat` / `…_guardcheck_canary_console.bat`; profile
+    `C:\shadps4-got\user`. 3 runs, all the NVIDIA driver crash on the invalid f64 SPIR-V of cs 0x14906b6a (also on
+    main). **Next = got_test2_4.**
+  - GTA V **TEST2 e8a9f602**: the same exe as GoT, in `C:\shadps4-gtav\backup_exe\shadps4_gtav_test2_e8a9f602.exe`.
+    Launchers `GTAV_TEST2_e8a9f602_guardcheck_console.bat` / `…_guardcheck_canary_console.bat`; profile
+    `C:\shadps4-gtav\user`. 2 runs, both the main-code assert `hull_shader_transform.cpp:395`. **Next = gtav_test2_3.**
+    The GoT + GTA V audit: `C:\shadps4-gow\logs\games_test2_runs_audit.txt`.
+  - Older tests stay runnable and are not armed: GT7 TEST39 0247e2e9 and TEST36 04558db8, GoW TEST1 1c6cff84, GoT /
+    GTA V TEST1 7d09a8a8. Arm one only when the user says a run of it is coming.
+- **PRs** (public API, 18:3x). **#5218** "shader_recompiler: Skip images and samplers behind untaken branches": open,
+  head **9a6e7de8**, 5 commits: 16369d61 the fix; 18dc8618 the guard code moved into
+  `ir/passes/resource_guard_pass.cpp`, as raphaelthegreat asked at 16:19; db68308b, 4af30efb and 9a6e7de8 are the
+  user's GitHub merges of main (3912336f, c7e065d1, bf794b3f). 14 files +1127/−53, mergeable clean, CI 10 success + 1
+  skipped, 0 reviews. I checked 18dc8618 at 16:51 (entry in the history): the moved code is byte-identical and in the
+  same order, the new pass runs exactly where the analysis ran, behaviour unchanged, compile OK, 0 warnings in src.
+  **#5155** open and waiting (the user asked the reviewer to look at it). **#5196** merged 2 Oct 01:16 (7e778987).
+  #5219 is raphaelthegreat's own PR (texture cache); the builder has read it. Upstream main = bf794b3f.
+- **What the runs showed** (reported to the user ~15:05). GT_GUARDCHECK found 0 HIT in every run: GT7 224 / 449
+  modules with a dead image or sampler, GoW 92 / 3, GoT 1 per run, GTA V has no guarded shader; the canaries (GT7 4,
+  GoW 3, GoT 3 + 3) prove the check works. GT7 #13 (menus, image #0 of fs 0x2a265dff): 3 of 4 TEST37 runs (fix not
+  running) against 0 of 4 TEST39 / TEST40 runs (fix running), all 4 of which reached a race. Every ending is
+  pre-existing: GT7 #3 #5 #6; GoW the TEST1 GPU hang; GoT the f64 SPIR-V driver crash; GTA V the hull assert, also
+  with the fix off. Not covered: the PR's own code (v2 + the move) has never run; #4 / #7 are too rare to judge;
+  GoW / GoT / GTA V die early; a submit that a crash stops is never read back; FPS is not comparable under the check.
+- **Not sent to the builder** (each needs a user command): (1) from c9, 30 Sep: TEST35 r1-r7, the class-2 lead and
+  CRASH_MAP §2 "Needed in the log" (the user was asked and did not answer); (2) the TEST1 / TEST2 results of GoW, GoT
+  and GTA V and the GT7 TEST40 runs (the audits hold them; the builder has read them); (3) a nit on its 16:4x build
+  notice: the 2559 warning lines are 1691 externals + 867 clang-cl "argument unused" notes + 1 in fmt, not all externals.
+- **What may come next.** (a) The user wants a run of the PR's code: the builder makes a runnable exe from
+  `mine/resource-guards` plus launchers (its note: a future GT_GUARDCHECK commit must port GtInsertGuardChecks to the
+  new file, so it will not match 07a74022 line for line); check it, arm only it. (b) A new GoW test from the builder's
+  paused "GoW fixes" work: check it, arm only GoW. (c) The user announces a run of a current test: arm that game from
+  its next number.
+
+### Session start
+1. Read: the RULES block (`C:\shadps4-lane\CLAUDE.md`) → `GT7_upstream\HANDOFF.md` (dated updates at the top, newest
+   first) → the first ~160 lines of [[gt7-shadps4-lane]] → THIS section →
+   `git -C C:\shadps4-clean show claude:CLAUDE_MEMORY.md`.
+2. Without changing anything: `ListAgents`; Win32_Process (no shadps4, watch_loop, watch_clean, catch_loop,
+   notify_v1); the newest files in every `logs` folder and the newest launcher per game (a run or build after 18:45?);
+   the HEAD of `C:\shadps4-clean`; the four backup exe hashes above.
+3. Tell the user the state in a few lines and wait.
+
+### Arming (before a launch)
+Each command from Bash with `run_in_background: true` and `timeout: 7200000` (the tool's 2 h limit: still waiting after
+2 h → check Win32_Process and arm again from the next n). Both loops re-arm themselves for the next n and stop on their
+own 30 min after the last launch.
+```
+SPM=/c/Users/3E30~1/AppData/Local/Temp/claude/c--GTNikos/93d56559-da04-4f23-82f0-dd25eada7a18/scratchpad
+# GT7 (ARCH and GL unset = GT7's logs folder and game log)
+BASE=test40_gt7 FIRST=3 LAST=40 PROFILE=/c/shadps4-test19-gt7/user EXE='C:\shadps4-gt7\GT7_upstream\backup_exe\shadps4_test40_07a74022_gt7.exe' bash "$SPM/watch_loop_v8.sh"
+powershell -NoProfile -ExecutionPolicy Bypass -File 'C:\Users\3E30~1\AppData\Local\Temp\claude\c--GTNikos\93d56559-da04-4f23-82f0-dd25eada7a18\scratchpad\catch_loop_v7.ps1' -Exe 'C:\shadps4-gt7\GT7_upstream\backup_exe\shadps4_test40_07a74022_gt7.exe' -Base test40_gt7 -First 3 -Last 40 -OutDir 'C:\shadps4-gt7\GT7_upstream\logs'
+# another game: BASE=<game>_test2 FIRST=<next> LAST=40 PROFILE=/c/shadps4-<game>/user ARCH=/c/shadps4-<game>/logs GL=
+# (empty) EXE=<that game's backup exe>; catcher -Exe <same> -Base <game>_test2 -First <next> -Last 40 -OutDir 'C:\shadps4-<game>\logs'
+# notifier, one per run n (it ends, and so wakes you, when run n has exited and the loops have re-armed or stopped):
+bash "$SPM/notify_v1.sh" <base> <tasks dir>/<catcher task>.output <tasks dir>/<watcher task>.output <n>
+```
+- The watcher writes into the `logs` folder (ARCH): `shad_log_<RUN>_at_exit_<HHMMSS>.txt`, `shadps4_log_<RUN>_…`,
+  `play_time_<RUN>_…`, GT7's `game_log_…`, `shots_<RUN>\`; scenes and the first of every Critical / Error go to its
+  task output. The catcher writes `exitcode_<BASE>_<n>.txt`: PID, exit code, and the parent / grandparent command lines
+  (= which launcher, `=1` or canary). Tell the user "armed" and from which run number.
+- ⚠ Two launches less than ~10 s apart: the watcher (`running()` = exe name, 4×2 s) merges them, the catcher (PID) does
+  not. Always compare the two and fix the names by hand (GoT TEST2 r2 / r3, 2 Oct 14:43).
+- ⚠ After a restart or compact the tasks show "stopped" while the processes live, and TaskStop leaves bash children
+  behind. Check Win32_Process; MSYS bash shows a dead Windows parent even when alive, so tell your own orphans by
+  creation time and by the task you stopped. Kill only verified own orphans.
+
+### Build check (on a builder notice)
+Read-only git: parent = that game's previous TEST, one commit, title only, author nikmparis217-ux noreply, no trailer,
+diff stat; a [test] commit replayed onto several games: compare its `-U0` lines and patch-ids with the other games'.
+SHA256: exe = build output = the `backup_exe` copy = the pdb folder's copy; the pdb. Build log: NINJA_EXIT=0, steps, 0
+errors; only warnings in `src/` count (externals and clang-cl "argument unused during compilation" notes are not
+ours); a CMake re-run only when a file was added. Launchers: CRLF, ASCII, against the previous launcher only the
+expected lines (REM, EXE, prelaunch / console names, title, echo, the new GT_ lines), `launcher_diff.sh`; profile
+unchanged; no shadps4 running. Write "Commit", "Build" and "Armed" into the test's audit. For a PR compile check (no
+run), `pr5218_move_v1.sh` is a template for proving a moved block unchanged.
+
+### After every run (in this order)
+1. Re-arm first: the loops' task output shows "arming …_<n+1>"; start a notifier for n+1.
+2. Archive + `cmp` every copy, before any analysis: the at_exit log against the live `user\log\shad_log.txt` (no new
+   launch yet) or against the next launch's prelaunch copy (`shad_log_<test>_prelaunch_<TS>.txt` = the previous run's
+   log); shadps4.log (written at EXIT, one "Run:" line per launch); play_time (also written periodically: valid only if
+   its time = the exit); the console capture `console_<test>_…_<TS>.txt` (it ends with the exit code). A run the
+   watcher missed: archive it by hand from the prelaunch copy + `user\log`, named `…_lastwrite_<HHMMSS>.txt`.
+3. Pad: `Gamepad registered for slot 0` in the first ~120 lines, or the run is void.
+4. GT7: `bash <SP1>/after40.sh test40_gt7_<n> > <your scratchpad>/r40_<n>.txt` (`D8=YYYYMMDD` for a run started before
+   midnight): Criticals, the ending (a signals.cpp:144 fault as eboot+offset, the clock from the last TopRootWindow /
+   FailureRoot), last draws, scenes, counts, dumps vs TEST34 r1, the bind log, new signatures without line numbers,
+   the GT_GUARDCHECK lines. Other games: the `[GT_DIAG] tools:` line, `awk -f C:\shadps4-<game>\tools\runsummary.awk
+   <log>`, Criticals (sync true there), `bash <SPM>/guardcheck_v1.sh <log>`, new signatures (`gawk -f msgsig.awk`, line
+   numbers stripped) against that game's earlier runs (GoW: `sig_gow_*` in SPM; GoT / GTA V: run it on the earlier
+   logs), GoT / GTA V `f64census_v1.sh <label> <dumps dir>` (the dumps are in `user\shader`, or in
+   `shader_before_launch_<TS>` once the next launch has moved them), and for a host fault in a driver DLL
+   `findmod2.ps1 -Hex <address>` (valid only in the boot the crash happened in).
+5. GPU events only: System log, nvlddmkm (13 with ESR, 153) and Display 4101, around the exit time.
+6. Write: the test's audit (Runs + one section per run); CRASH_MAP.md (GT7 only: title line, class rows, the test's
+   table, § per class); this section; your line in MEMORY.md (re-read it first: the builder edits it too); push every md
+   you changed to `claude`. Report to the user: emulator facts only, no raw fault addresses, no unfiltered log tails.
+
+### Tools
+In use, by absolute path (your own scratchpad will be under `…\Temp\claude\c--shadps4-lane\…`):
+- SPM = `C:\Users\3E30~1\AppData\Local\Temp\claude\c--GTNikos\93d56559-da04-4f23-82f0-dd25eada7a18\scratchpad`:
+  watch_loop_v8.sh, watch_clean_v8.sh (its state files are there), catch_loop_v7.ps1, notify_v1.sh, guardcheck_v1.sh,
+  f64census_v1.sh, findmod2.ps1, pr5218_move_v1.sh, the GoW signature files, r40_<n>.txt, and `claude-branch\` = a
+  clone of branch `claude` (`core.autocrlf false` there; `git pull --ff-only` before every use).
+- SP1 = `…\c--GTNikos\f85ea0bf-4ae7-4642-b2cb-738a85563915\scratchpad`: after36..after40.sh, msgsig.awk,
+  msgsig_info.awk, bindsum.awk, udrun.sh, udsource.sh, pmscan2.sh, endings.sh, launcher_check.sh, launcher_diff.sh,
+  pausetime.sh, pausebuckets.sh, the sig* files.
+- `…\c--GTNikos\69673bdb-6869-4891-9c3e-5db85d30824f\scratchpad`: watch_clean.awk, shot.ps1 (the watcher uses them).
+- Backups, byte-identical: `C:\shadps4-gt7\GT7_upstream\auditor_scripts\` + README.txt (which script hard-codes which
+  scratchpad). A new tool = a new file name, written with the Write tool; never edit a script that is running.
+- Branch `claude`: recipe and paths in [[shadps4-claude-notes-branch]] (plumbing from any shadPS4 worktree, or the
+  clone above). Memory files go under `memory/`, the GT7 files under `GT7_upstream/`, a game's under `shadps4-<game>/`;
+  MEMORY.md stays out; scan for addresses, tokens and keys before every push; commit as nikmparis217-ux noreply, no
+  trailer.
+
+### Traps that cost something
+- `"sync": false` (GT7's profile): a missing Critical proves nothing, and an assert can exit 0xC0000005. Judge from the
+  exit code, the file times and the console.
+- With GT_GUARDCHECK the pipeline cache is neither read nor written: every module compiles cold, there is no
+  "Preloaded" line, and FPS is not comparable. Summaries come at most every 60 s, so a short run may have none; GTA V
+  prints only the start line (none of its shaders has guards).
+- bindlog "image N of M", guardlog "#N" and GT_DIAG "image #N" are all 0-based.
+- A peer's numbers are claims: the 16:4x build notice said "2559 warnings in externals" (they were 1691 + 867 + 1).
+- Git Bash turns `/FI` into a path: ask PowerShell `Get-Process`, not `tasklist /FI`. GNU sed `\c` is an escape.
+  Edit / Write need a Read first. In PowerShell 5.1 `"…$id: …"` is a parser error: write `${id}`.
+- The global `core.autocrlf true` turns a fresh clone CRLF: set it to false in the clone only.
+
+## Παλιό «ΞΕΚΙΝΑ ΕΔΩ» (ΙΣΤΟΡΙΚΟ): η ενότητα του gtnikos-c9 της 30 Σεπ 20:50 και οι εγγραφές του gtnikos-e8 ως 2 Οκτ 16:51, όπως ήταν
 
 **Ρόλος.** Εσύ = watcher/auditor της γραμμής shadPS4 / GT7 1.71 (CUSA24767). Ο builder χτίζει τα TEST(n) στο
 `C:\shadps4-clean` (TEST(n) = TEST(n-1) + ένα commit) και ο χρήστης τα τρέχει από .bat. Εσύ: ελέγχεις κάθε build,
