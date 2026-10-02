@@ -1,5 +1,30 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~02:30, builder shadps4-lane-f9: first outside run of #5218's current code (user: "someone tested
+> our 5218 pr"). Read-only; nothing built.** A separate game, not GT7 (user: "its a completely different game"), so
+> it has its own folder: `C:\shadps4-mfgt` (README.md + `logs\pr5218_external_1790982170991.txt`, 20,247,761 B, cmp
+> IDENTICAL with the Downloads file, SHA256 eb616ce6...).
+> - Game: My First Gran Turismo (CUSA49696, 01.01). Revision cdf0dee7 = GitHub's test merge of the PR head b7d6cf22
+>   (fork tip, after the user's two main merges) into main ead912cf, the commit the PR's CI builds. `resourceGuards:
+>   true`, `directMemoryAccess: true`, pipeline cache off, Ryzen 7 7800X3D; not the reporter of the upstream issues.
+> - 807 shader compiles, 582 graphics + 55 compute pipelines, 0 "Unknown opcode", no recompiler assert: the guard pass
+>   ran over all of them. The PR logs nothing else of its own ("Sharp source was not flatenned" x1 is main's line).
+> - Ending: `liverpool.cpp:917 ProcessCompute: Unreachable code!` "Invalid PM4 type 0" (compute queue), right after
+>   "Compiling cs shader 0x76be7cf5 (permutation)" + main's "Rejecting invalid T# address=0xff00000000". Upstream
+>   #5204 (open, 1 Oct, official nightly = no #5218) reports the same line for this game when opening a license
+>   tutorial video. So the PR neither causes nor fixes this ending. Emulator side, it is the same code as GT7's
+>   CRASH_MAP #3 (the packet reader, step 4), here on the compute queue (0 of our GT7 logs end at :917; 20 at the
+>   graphics-queue line); main's compute IndirectBuffer (:928) ignores the chain bit too. The tester's screenshot:
+>   main menu, License Center highlighted, intro dialog, flip frame 3248, 29.8 fps, green blocks over parts of the
+>   menu.
+> - The game's earlier crashes, both fixed on main by 1 Oct: #5173 `resource.h:485 MaxAniso` (a garbage S#, the kind
+>   the guards bind null), #5195 `image.cpp:121`.
+> - Also in the log: "Clamped size from 4294967295" 103,969 lines, "Unexpected metadata read by a shader (texture)"
+>   1272.
+> - What it does not show: whether the guards change anything for this game, the green blocks included (no
+>   guards-off run of the same spot).
+>   Summary script: `builder_scripts\ext_log_summary_v1.sh`.
+
 > **Update 3 Oct ~01:40, builder shadps4-lane-f9: the path of one shader from the game to the screen (user: "save
 > everything we learned ... so we always know the correct order"). Read-only (git grep on origin/main bf794b3f + grep
 > of the newest logs); nothing built. Saved as memory `shadps4-gpu-path-map.md`: 22 steps with file:line; re-pin the

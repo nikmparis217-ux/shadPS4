@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T23:04:16.833Z
+  modified: 2026-10-02T23:27:53.258Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -29,6 +29,15 @@ metadata:
   Πληκτρολόγιο οθόνης (όνομα παίκτη στο GT7): το main το έχει ήδη από το PR #3973 (Μάιος 2026: gamepad, layouts, PC
   πληκτρολόγιο, το pad δεσμεύεται όσο είναι ανοιχτό)· κανένα log μας δεν φτάνει σε IME dialog· επόμενο = ένα run ως την
   ερώτηση του ονόματος (φρέσκο save σε ΑΝΤΙΓΡΑΦΟ του user folder).
+
+**3 Οκτ ~02:30 — ΠΡΩΤΟ ΕΞΩΤΕΡΙΚΟ RUN του #5218 (χρήστης: «someone tested our 5218 pr»):** My First Gran Turismo
+  (CUSA49696) = ΑΛΛΟ παιχνίδι, όχι GT7 (χρήστης: «its a completely different game») → δικός του φάκελος
+  `C:\shadps4-mfgt` (README + log). Revision cdf0dee7 = το test merge του GitHub (PR head b7d6cf22 + main ead912cf),
+  resourceGuards true. 807 shader compiles, 0 Unknown opcode, κανένα assert του recompiler. Τέλος:
+  `liverpool.cpp:917 ProcessCompute` «Invalid PM4 type 0» = ΙΔΙΟ με το upstream #5204 (nightly ΧΩΡΙΣ #5218, video
+  οδηγού διπλώματος) → το PR ούτε το προκαλεί ούτε το διορθώνει. Κοινό με το GT7 #3 μόνο ο κώδικας του emulator (packet
+  reader, εδώ compute queue, chain bit και στο :928). Screenshot: μενού, πράσινα μπλοκ πάνω στο UI. Δεν δείχνει αν οι
+  guards αλλάζουν κάτι (κανένα run χωρίς guards).
 
 ⚠⚠⚠ **2 Οκτ ~21:45 — ΠΑΓΩΜΑ ΠΡΟΫΠΟΛΟΓΙΣΜΟΥ (χρήστης): μένει 10 % του εβδομαδιαίου ορίου, reset Κυρ 4 Οκτ 2026
   12:00. Ως τότε ΜΟΝΟ αλλαγές που ζητούν οι devs στα ανοιχτά PRs (#5218, #5155)· καμία νέα έρευνα, build ή test.** Τα

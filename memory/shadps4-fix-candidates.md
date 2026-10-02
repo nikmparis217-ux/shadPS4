@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69aee205-f92c-44e7-8367-5be64450ea3e
-  modified: 2026-10-02T23:04:14.721Z
+  modified: 2026-10-02T23:27:54.321Z
 ---
 
 User, 3 Oct 2026: "this is not the plan but we can save it as a future knowledge for planing". The user decides the
@@ -23,7 +23,10 @@ plan; this only lists what is known, so planning starts from facts instead of a 
   zero-size track and what it does to that memory.
 - **#3 PM4 type 0** (15; step 4): a zero dword read as a packet header. Lead: main never reads INDIRECT_BUFFER's
   `chain` bit (pm4_cmds.h:896; liverpool.cpp:794-805 GFX, :928-938 ASC). Next needs a build: a [test] log at the stop
-  (buffer, offset of the zero dword, last ~16 packets with raw headers).
+  (buffer, offset of the zero dword, last ~16 packets with raw headers). A different game hits the same emulator
+  code, 3 Oct: My First Gran Turismo (CUSA49696, not GT7) stops at the compute-queue line `liverpool.cpp:917`
+  "Invalid PM4 type 0" on main (upstream #5204, open, license tutorial video) and with #5218 (outside log in
+  `C:\shadps4-mfgt`). If the packet reader is at fault in both, one fix covers both; it is a second test case.
 - **#4 Protect address 0 (9), #7 Unknown tile mode (4), #13 SurfaceFormat / ComponentSwizzle (3, +7 before TEST22)**:
   all on the unused image slots of fs 0x2a265dff; TEST39 (dead-slot pass running) bound images #0 and #1 null at every
   bind, 0 of #13 in 2 runs. That is PR #5218's subject: waits for its review.
