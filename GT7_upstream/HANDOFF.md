@@ -1,5 +1,10 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~21:45, builder shadps4-lane-f9: BUDGET HOLD (user): 10 % of the weekly limit is left; it resets
+> Sun 4 Oct 2026 12:00. Until then only changes the devs ask for on our open PRs (#5218, #5155): no new research,
+> builds or tests. The "Clamped size" findings and their plan are in memory `shadps4-unbounded-vsharp-clamp.md`
+> (resume after the reset, after any PR review work).**
+
 > **Update 2 Oct ~21:35, builder shadps4-lane-f9: user: "i want a fix in its core", not a surface fix of the
 > "Clamped size" error. Root-cause research, read-only; nothing built.**
 > - History: the clamp is #2447 (da0ab005, Feb 2025): huge V#s that start in a valid mapping, "not reasonable to

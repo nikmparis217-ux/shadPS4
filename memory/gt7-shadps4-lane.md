@@ -5,12 +5,16 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T18:33:53.863Z
+  modified: 2026-10-02T19:01:36.291Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+⚠⚠⚠ **2 Οκτ ~21:45 — ΠΑΓΩΜΑ ΠΡΟΫΠΟΛΟΓΙΣΜΟΥ (χρήστης): μένει 10 % του εβδομαδιαίου ορίου, reset Κυρ 4 Οκτ 2026
+  12:00. Ως τότε ΜΟΝΟ αλλαγές που ζητούν οι devs στα ανοιχτά PRs (#5218, #5155)· καμία νέα έρευνα, build ή test.** Τα
+  ευρήματα του «Clamped size» + το σχέδιο: memory `shadps4-unbounded-vsharp-clamp.md` (συνέχεια μετά το reset).
 
 ⚠⚠⚠ **2 Οκτ ~21:35 — χρήστης: «i want a fix in its core» για το «Clamped size», όχι επιφανειακό. Έρευνα (μόνο
   ανάγνωση):** clamp = #2447 (Φεβ 2025, σκόπιμη λύση)· ERROR = #4782 (5 Σεπ 2026). GT7 (cached SPIR-V,
