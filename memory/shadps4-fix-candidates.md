@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69aee205-f92c-44e7-8367-5be64450ea3e
-  modified: 2026-10-02T22:54:45.729Z
+  modified: 2026-10-02T22:57:40.022Z
 ---
 
 User, 3 Oct 2026: "this is not the plan but we can save it as a future knowledge for planing". The user decides the
@@ -50,6 +50,10 @@ plan; this only lists what is known, so planning starts from facts instead of a 
   two runs), skipped by main; unlikely to matter.
 - **Open PRs come first whenever a dev asks**: #5218 (resource guards; its code has never run, port
   `GtInsertGuardChecks` before any GT_GUARDCHECK build) and #5155 (device lost at SDRSettingRoot with a warm cache).
+
+**Order the user set (3 Oct):** "after we find why every crash would happen and fix the problem from the root, we
+should focus on visual fixes since no game should fall under any error crash": every crash to its root cause and a
+root fix first (all games, the emulator in general), visual fixes after; see [[gt7-image-problems-map]].
 
 Builder's suggestion on 3 Oct (not a decision): research #1 and #2 first (the two biggest GT7 killers, each with a
 precursor seen in every log), then GTA V's assert and GoT's fp64 shader (each stops a whole game early).

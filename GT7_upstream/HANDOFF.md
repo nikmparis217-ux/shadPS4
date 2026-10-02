@@ -24,6 +24,9 @@
 > - User: research only for now, no builds; the user plans the next fixes. The known candidates (GT7 crash classes,
 >   emulator-wide items, other games' first stops, open PRs) are kept as knowledge, NOT as the plan ("this is not the
 >   plan but we can save it as a future knowledge for planing"): memory `shadps4-fix-candidates.md`.
+> - Order (user): "after we find why every crash would happen and fix the problem from the root, we should focus on
+>   visual fixes since no game should fall under any error crash" = crashes to their root first, in every game and
+>   the emulator in general, then visual fixes (memory `gt7-image-problems-map.md`, extended from GT7 to all).
 
 > **Update 2 Oct ~21:45, builder shadps4-lane-f9: BUDGET HOLD (user): 10 % of the weekly limit is left; it resets
 > Sun 4 Oct 2026 12:00. Until then only changes the devs ask for on our open PRs (#5218, #5155): no new research,
