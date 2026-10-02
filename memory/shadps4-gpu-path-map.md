@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: 69aee205-f92c-44e7-8367-5be64450ea3e
-  modified: 2026-10-02T22:39:15.620Z
+  modified: 2026-10-02T22:46:47.740Z
 ---
 
 User, 3 Oct 2026: "save everything we learned ... so we always know the correct order without reading the whole code
@@ -135,6 +135,21 @@ Steps 9-15 run once per shader (or permutation); steps 1-8 and 16-22 run for eve
   V_CMP_{F,LE,GE,T}_U64, V_CMPX_{F,LT,LE,GT,NE,GE,T}_I64, V_CMPX_{F,LT,LE,GT,GE,T}_U64. No game we run hits them, so
   no PR (a PR needs a build that fails without it).
 - On main a missing opcode stops the emulator at step 10 (recompiler.cpp:48); it never makes a frame look wrong.
+- Adding the 17 = 17 `case` lines calling the existing `Translator::V_CMP_U64(ConditionOp, is_signed, set_exec, inst)`
+  (vector_alu.cpp:1290; cases :377-412). User 3 Oct: "since we cant test this with a game we will make a regression
+  test for this specifically". Plan (waits for the user's go and the Sun 4 Oct 12:00 reset): main has `tests/gcn`
+  (GoogleTest, 58 GPU tests that translate a few encoded GCN instructions and run them on the local GPU, e.g.
+  `add_i32_carry_feeds_addc_u32`; upstream CI runs ctest with `-E 'GcnTest'`, so they run only locally; no V_CMP test and
+  no VOPC encoder in `tests/gcn/instructions.hpp` yet). Add a VOPC encoder + tests: inputs equal / differing only in the
+  high dword / differing in sign (0xFFFFFFFFFFFFFFFF vs 1), result read from VCC (V_CNDMASK_B32 / V_ADDC_U32), CMPX
+  through its EXEC effect on a following write. They fail on main without the 17 cases and pass with them. Build in a
+  separate folder with `-DENABLE_TESTS=ON` (CMake fetches googletest), so the emulator build folder is not reconfigured.
+  #5114 lesson ([[feedback-isa-fix-needs-a-game-that-uses-it]]): reviewers ask "which game"; here no running game can
+  change (a game reaching a missing case crashes today).
+- PS4 Pro (Neo mode): the 32 are the same encodings in both modes (one table, CI numbering 160-247). What Neo adds:
+  one more VOP3 opcode bit (opcodes.h:719 `OP_RANGE_VOP3 = 1024`), the VOP3P packed format, V_PK_* / V_MAD_MIX_F32 /
+  V_ADD3_U32 / V_OR3_B32 / V_AND_OR_B32 / 16-bit shifts (in the table, several with GPU tests), and 20 16-bit compares
+  (V_CMP_{F,LT,EQ,LE,GT,LG,GE,O}_F16, V_CMP_{LT,EQ,LE,GT,NE,GE}_{I16,U16}) of which main translates 0; none in our logs.
 
 ### Steps 1-5, read-only check (3 Oct)
 - **GT7 CRASH_MAP #3 "PM4 type 0"** (15 runs; TEST39 r1 and TEST40 r2 = 2 of the last 4 GT7 runs; our builds print

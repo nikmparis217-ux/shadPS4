@@ -17,6 +17,10 @@
 > - Missing opcodes (user: "over 20"): the 302 archived run logs of the four games hold only DS_ORDERED_COUNT. The
 >   "over 20" family is the 64-bit integer compares: main handles 15 of 32 encodings, 17 still missing, none hit by
 >   our games; our 69ac5fa9 (6 Sep, gt7-main line) translates all 32. Details in `shadps4-gpu-path-map.md`.
+> - User: "since we cant test this with a game we will make a regression test for this specifically". Plan, waiting
+>   for the user's go and the reset: 17 `case` lines (existing `V_CMP_U64` helper) + GPU tests in main's `tests/gcn`
+>   (GoogleTest; CI skips GcnTest, so they run locally), separate build folder with `-DENABLE_TESTS=ON`. PS4 Pro: the
+>   32 are the same there; Neo adds 20 16-bit compares, none translated on main, none in our logs.
 
 > **Update 2 Oct ~21:45, builder shadps4-lane-f9: BUDGET HOLD (user): 10 % of the weekly limit is left; it resets
 > Sun 4 Oct 2026 12:00. Until then only changes the devs ask for on our open PRs (#5218, #5155): no new research,
