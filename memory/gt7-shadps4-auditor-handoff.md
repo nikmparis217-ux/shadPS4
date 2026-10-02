@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-10-02T11:59:14.974Z
+  modified: 2026-10-02T12:03:38.447Z
 ---
 
 ## ΞΕΚΙΝΑ ΕΔΩ — 30 Σεπ 2026, 20:50 (αυτή η ενότητα = η κατάσταση· ό,τι είναι από κάτω = χρονολόγιο και ιστορικό)
@@ -391,6 +391,13 @@ MEMORY.md (όλες οι γραμμές του project), τα drafts CLAUDE_MEMO
 --branch claude` στο scratchpad 93d56559 (`claude-branch\`), `core.autocrlf false` μόνο εκεί, add μόνο νέων paths,
 commit ως nikmparis217-ux noreply χωρίς trailer, push· κανένα write στο `C:\shadps4-clean` ή στο `C:\shadps4-gt7`.
 Επόμενη ενημέρωση: `git -C <clone> pull --ff-only`, cp, commit, push.
+**15:02 — ΤΙΠΟΤΑ ΟΠΛΙΣΜΕΝΟ (χρήστης ~15:01: «no more runs. tell me what the tests told us»).** TaskStop GT7 (bo6fx3020,
+bpl26f7qj, bwthuzygd) + GoT (bb6c71i13, bi05bl0h8, bqdufgg91), 6 ορφανά killed (28824, 10364, 27268, 22748, 2548,
+28020), 15:02:37 Win32_Process = 0 loops, 0 shadps4· άδεια shots_test40_gt7_3 / shots_got_test2_4 σβήστηκαν. Σύνολο
+GT_GUARDCHECK: GT7 2 runs, GoW 2 (χωρίς watcher), GoT 3, GTA V 2 → **0 HIT παντού**· τα runs έλεγξαν την έκδοση του fix
+της στοίβας TEST39 (v1)· το PR commit v2 16369d61 (FAbs, setting `resource_guards_enabled`, shader_collect, meta
+`skip_resource_guards`) ΜΟΝΟ compile. Η απάντηση στον χρήστη = σύνοψη (0 HIT + canaries, #13 TEST37 3/4 → TEST39/40 0/4,
+endings ίδια με fix off, τι ΔΕΝ λένε). Επόμενο: νέο build του builder → έλεγχος + όπλιση· run μόνο με λόγο του χρήστη.
 
 **Κατάσταση 20:50 — ΤΙΠΟΤΑ ΟΠΛΙΣΜΕΝΟ.**
 - Τρέχον test = **TEST36** `test36-main-2338a06f` **04558db8** = TEST35 91ffbea6 + 1 commit (tiling.cpp: tile mode 18 →
