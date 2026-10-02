@@ -5,12 +5,21 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T18:01:54.876Z
+  modified: 2026-10-02T18:14:22.342Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
 `C:\Users\Νίκος\Documents\GitHub\shadps4` (remote `mine`; `origin` = upstream shadps4-emu).
 Στόχος: να τρέχει το GT7 (ταβάνι = Arcade Mode, το always-online δεν πατσάρεται).
+
+⚠⚠⚠ **2 Οκτ ~21:15 — ερώτηση χρήστη: guards και για V#; Γίνεται, αλλά καμία μέτρηση δεν το ζητά.** Το pass του #5218
+  μαζεύει ΜΟΝΟ image instructions (resource_guard_pass.cpp:614). Main ανά V#: address/size 0 → null ήδη· αλλιώς
+  ClampRangeSize (≥1 GB: ASSERT «Attempted to access invalid address»), ObtainBuffer, invalidate αν γράφεται· stride /
+  format / swizzle στο permutation key. Logs: το assert σε 0 από 343 logs (GT7 312, GoW 9, GoT 9, GTA V 13)· GT7 TEST40 r2
+  1.605.678 «Clamped size» (+2.065.140 skipped) σε 786 shaders, ΟΛΑ «from 4294967295» (num_records 0xFFFFFFFF = σκόπιμο
+  unbounded buffer, όχι σκουπίδι), ίδιο και με fix off (TEST37 r1)· GoW μόνο 4294967280 / 4294967216 (stride 16 × σχεδόν
+  max, overflow u32) σε 6 shaders· permutations TEST40 r2 max 9 ανά shader (όχι έκρηξη). Άρα όχι στο #5218· αν ποτέ:
+  πρώτα log-only [test] που μετρά V# πίσω από false συνθήκες, μετά ξεχωριστό PR. HANDOFF.md, update ~21:15.
 
 ⚠⚠⚠ **2 Οκτ ~21:05 — έλεγχος των 3 GoW fixes για PR (μόνο ανάγνωση): κανένα έτοιμο, όχι λόγω format.**
   clang-format 19.1.5 όπως το CI (ολόκληρα τα αλλαγμένα `src/*.cpp|h`, style `src/.clang-format`): 6 + 19 + 4 αρχεία

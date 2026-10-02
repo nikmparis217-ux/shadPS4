@@ -1,5 +1,26 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 2 Oct ~21:15, builder shadps4-lane-f9: the user asked whether #5218's mechanism should also cover V#
+> (buffers). Answer from code and logs, read-only: it could, but no measurement says it is needed.**
+> - #5218's pass collects only image instructions (resource_guard_pass.cpp:614; storage-image writes stay live), so
+>   every V# is still read and bound on every draw.
+> - Main, per V# (vk_rasterizer.cpp BindBuffers): address 0 or size 0 -> null descriptor already; else
+>   `ClampRangeSize` (memory.cpp:102: sizes >= 1 GB only, `ASSERT_MSG(IsValidMapping)` "Attempted to access invalid
+>   address" first) with `LOG_ERROR "Clamped size from {} to {} for stage {:#x}"`, then `ObtainBuffer`, and
+>   `InvalidateMemoryFromGPU` when the shader writes it. stride / is_formatted / swizzle (+ formats) are in the
+>   permutation key (BufferSpecialization), so a dead V# with garbage could cost compiles, as the dead T#s did.
+> - Logs: the invalid-address assert is in 0 of 343 archived logs (GT7 312, GoW 9, GoT 9, GTA V 13). GT7 TEST40 r2
+>   (553 s, fix on): 1,605,678 "Clamped size" lines + 2,065,140 suppressed repeats over 786 stages, every one "from
+>   4294967295" (num_records 0xFFFFFFFF), the same in TEST37 r1 (fix off, 25,934); GoW TEST2 r1/r2 only 4294967280 /
+>   4294967216 (stride 16 x a near-max record count, u32 product overflow) in 6 stages. One fixed value across
+>   hundreds of shaders = a deliberate unbounded buffer, not garbage (the dead T#/S#s gave a different value at every
+>   stop). Permutations in TEST40 r2: 414 against 1796 first compiles, the most for one shader 9 (vs 0x3863962b);
+>   nothing like fs 0x2a265dff's 24-39 per run before the fix. "not fully GPU mapped": 0 in TEST40 r2 (1 in TEST37 r1).
+> - So: not for #5218 (one fix per PR; the reviewer asked to keep the guard code apart). The way to know: a log-only
+>   [test] line running the same analysis over buffer uses and counting bound V#s behind false conditions; only a find
+>   there would make a V# follow-up PR. Side fact: the clamp line (num_records 0xFFFFFFFF, a live descriptor) is GT7's
+>   biggest log volume; a guard would not remove it.
+
 > **Update 2 Oct ~21:05, builder shadps4-lane-f9: GoW fixes PR-readiness check, read-only (next in the job order
 > after #5218). None of the three is ready for a PR, and formatting is not the reason.** Output and scripts:
 > `C:\shadps4-gow\logs\gow_fixes_pr_check_20261002.txt`; `C:\shadps4-gow\tools\gow_cf_check_v2.sh`,
