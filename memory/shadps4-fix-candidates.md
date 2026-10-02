@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69aee205-f92c-44e7-8367-5be64450ea3e
-  modified: 2026-10-02T22:57:40.022Z
+  modified: 2026-10-02T23:04:14.721Z
 ---
 
 User, 3 Oct 2026: "this is not the plan but we can save it as a future knowledge for planing". The user decides the
@@ -48,6 +48,15 @@ plan; this only lists what is known, so planning starts from facts instead of a 
 - **GoW hangs the GPU ~27 s after DS_ORDERED_COUNT compiles** (our local branch translates it): next test (build) =
   skip the ordered wait, keep the atomic ([[gow-fixes-for-pr]]). GoW also sends "SetQueueReg vqid 4 reg 0xb" (579 in
   two runs), skipped by main; unlikely to matter.
+- **Text input / on-screen keyboard** (user 3 Oct: GT7 1.71 asked for the player's name in the lab era and no keyboard
+  appeared; the user's approach 1 = a PS4-style on-screen keyboard, approach 2 = PC keyboard): main already has both
+  since PR #3973 (2026-05-09, "Add IME keyboard layout and panel metrics support"): `src/core/libraries/ime/`
+  ime_dialog_ui.cpp (keyboard UI, ImGui InputText = PC typing), ime_kb_layout.cpp (layouts), ime_ui_shared.cpp
+  (gamepad sticks/buttons via ImGuiKey_Gamepad*), and `AcquireGamepadInputCapture()` while the dialog is open (the game
+  does not get the pad meanwhile). Our 258 GT7 logs hold no IME dialog call (only `sceImeKeyboardOpen` at boot, the USB
+  keyboard check that main answers "none connected"); the lab-era log of the name prompt is not archived. Next (a run,
+  no build): reach the name prompt on a current exe (e.g. a fresh save in a COPY of the user folder) and read which
+  IME calls the log shows; fix only what fails, in main's existing IME code.
 - **Open PRs come first whenever a dev asks**: #5218 (resource guards; its code has never run, port
   `GtInsertGuardChecks` before any GT_GUARDCHECK build) and #5155 (device lost at SDRSettingRoot with a warm cache).
 

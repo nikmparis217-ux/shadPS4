@@ -27,6 +27,10 @@
 > - Order (user): "after we find why every crash would happen and fix the problem from the root, we should focus on
 >   visual fixes since no game should fall under any error crash" = crashes to their root first, in every game and
 >   the emulator in general, then visual fixes (memory `gt7-image-problems-map.md`, extended from GT7 to all).
+> - Text input (user: GT7 asked for a name in the lab era, no keyboard appeared; proposed a PS4-style on-screen
+>   keyboard): main has one since PR #3973 (May 2026; gamepad navigation, layouts, PC typing, pad captured while open).
+>   No archived log reaches an IME dialog; next = a run that reaches the name prompt on a current exe (fresh save in a
+>   copy of the user folder). Details in `shadps4-fix-candidates.md`.
 
 > **Update 2 Oct ~21:45, builder shadps4-lane-f9: BUDGET HOLD (user): 10 % of the weekly limit is left; it resets
 > Sun 4 Oct 2026 12:00. Until then only changes the devs ask for on our open PRs (#5218, #5155): no new research,
