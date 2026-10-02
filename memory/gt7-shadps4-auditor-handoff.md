@@ -1,11 +1,11 @@
 ---
 name: gt7-shadps4-auditor-handoff
-description: "Ο ρόλος watcher/auditor της γραμμής shadPS4 (GT7 1.71 + από 1 Οκτ GoW / GoT / GTA V). Στην κορυφή «ΞΕΚΙΝΑ ΕΔΩ», νεότερη εγγραφή 2 Οκτ 14:50 (GT7 TEST40 r1 = #5, r2 = #3, 0 HIT σε 224 + 449 modules με dead slot· GoW TEST2 r1-r2 χωρίς watcher = GPU hang· GoT TEST2 r1-r3 = f64 SPIR-V crash· watcher ενώνει launches <10 s)· πριν, 14:02: TEST1 7 runs (1 Οκτ 19:18-19:35) χωρίς όπλιση, ελεγμένα — GoW 1c6cff84 r1-r3 = GPU hang (ίδιο frame, guards on/off ίδια), GoT 7d09a8a8 r1-r2 = crash του NVIDIA driver σε άκυρο SPIR-V (f64 χωρίς Float64, uses_fp64 μόνο από Pack/UnpackDouble2x32), GTA V r1 καθαρό 3 min, r2 2 s άκυρο (το έκλεισε ο χρήστης), r3 + r4 fix on ~275 s 0x80000003 = ίδιο HullShaderTransform assert (main, 0 guarded shaders), r5 fix OFF 285 s = το ίδιο assert στο ίδιο σημείο → ανεξάρτητο από το fix, αποδεδειγμένο με run· 2 Οκτ 14:02 ΟΠΛΙΣΜΕΝΑ από το _1 τα νέα tests με GT_GUARDCHECK (ελεγμένα): GT7 TEST40 07a74022, GoW TEST2 6b19950f, GoT / GTA V TEST2 e8a9f602 (idle stops 14:27-14:32)· φάκελοι C:\\shadps4-<game>, scripts watch_loop_v8 / catch_loop_v7 / notify_v1· GT7 TEST39 (2 runs) → τώρα TEST40. Όπλιση, έλεγχος build, ρουτίνα μετά από κάθε run, εργαλεία (αντίγραφα στο GT7_upstream\\auditor_scripts), ό,τι δεν στάλθηκε στον builder. Από κάτω χρονολόγιο 29-30 Σεπ και παλιό ιστορικό."
+description: "Ο ρόλος watcher/auditor της γραμμής shadPS4 (GT7 1.71 + από 1 Οκτ GoW / GoT / GTA V). Στην κορυφή «ΞΕΚΙΝΑ ΕΔΩ», νεότερη εγγραφή 2 Οκτ 16:51 (#5218 head 18dc8618 = μετακίνηση σε resource_guard_pass.cpp, ελεγμένη: ίδια συμπεριφορά, compile OK, κανένα run· ΤΙΠΟΤΑ ΟΠΛΙΣΜΕΝΟ)· 15:02 «no more runs»· 14:50 (GT7 TEST40 r1 = #5, r2 = #3, 0 HIT σε 224 + 449 modules με dead slot· GoW TEST2 r1-r2 χωρίς watcher = GPU hang· GoT TEST2 r1-r3 = f64 SPIR-V crash· watcher ενώνει launches <10 s)· πριν, 14:02: TEST1 7 runs (1 Οκτ 19:18-19:35) χωρίς όπλιση, ελεγμένα — GoW 1c6cff84 r1-r3 = GPU hang (ίδιο frame, guards on/off ίδια), GoT 7d09a8a8 r1-r2 = crash του NVIDIA driver σε άκυρο SPIR-V (f64 χωρίς Float64, uses_fp64 μόνο από Pack/UnpackDouble2x32), GTA V r1 καθαρό 3 min, r2 2 s άκυρο (το έκλεισε ο χρήστης), r3 + r4 fix on ~275 s 0x80000003 = ίδιο HullShaderTransform assert (main, 0 guarded shaders), r5 fix OFF 285 s = το ίδιο assert στο ίδιο σημείο → ανεξάρτητο από το fix, αποδεδειγμένο με run· 2 Οκτ 14:02 ΟΠΛΙΣΜΕΝΑ από το _1 τα νέα tests με GT_GUARDCHECK (ελεγμένα): GT7 TEST40 07a74022, GoW TEST2 6b19950f, GoT / GTA V TEST2 e8a9f602 (idle stops 14:27-14:32)· φάκελοι C:\\shadps4-<game>, scripts watch_loop_v8 / catch_loop_v7 / notify_v1· GT7 TEST39 (2 runs) → τώρα TEST40. Όπλιση, έλεγχος build, ρουτίνα μετά από κάθε run, εργαλεία (αντίγραφα στο GT7_upstream\\auditor_scripts), ό,τι δεν στάλθηκε στον builder. Από κάτω χρονολόγιο 29-30 Σεπ και παλιό ιστορικό."
 metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-10-02T12:03:38.447Z
+  modified: 2026-10-02T13:51:51.728Z
 ---
 
 ## ΞΕΚΙΝΑ ΕΔΩ — 30 Σεπ 2026, 20:50 (αυτή η ενότητα = η κατάσταση· ό,τι είναι από κάτω = χρονολόγιο και ιστορικό)
@@ -398,6 +398,29 @@ GT_GUARDCHECK: GT7 2 runs, GoW 2 (χωρίς watcher), GoT 3, GTA V 2 → **0 HI
 της στοίβας TEST39 (v1)· το PR commit v2 16369d61 (FAbs, setting `resource_guards_enabled`, shader_collect, meta
 `skip_resource_guards`) ΜΟΝΟ compile. Η απάντηση στον χρήστη = σύνοψη (0 HIT + canaries, #13 TEST37 3/4 → TEST39/40 0/4,
 endings ίδια με fix off, τι ΔΕΝ λένε). Επόμενο: νέο build του builder → έλεγχος + όπλιση· run μόνο με λόγο του χρήστη.
+
+**16:51 — #5218 head 18dc8618 «shader_recompiler: Move the resource guards into a separate pass» ΕΛΕΓΜΕΝΟ (compile check,
+κανένα run)· ΤΙΠΟΤΑ ΟΠΛΙΣΜΕΝΟ.** Notice του builder ~16:31 (checkout → `resource-guards` db68308b), μετά τα details και μία
+διόρθωση ωρών. `C:\shadps4-clean` = `resource-guards` **18dc8618**, parent db68308b (το προηγούμενο head του #5218), title
+μόνο, κανένα trailer, nikmparis217-ux noreply· `mine/resource-guards` = 18dc8618 (ls-remote). 6 αρχεία: νέο
+`ir/passes/resource_guard_pass.cpp` (924 γραμμές), CMakeLists +1, ir_passes.h, resource_pass.h, recompiler.cpp και
+resource_patching_pass.cpp (−973/+8). **Ίδια συμπεριφορά, ελεγμένο** (`pr5218_move_v1.sh`, scratchpad 93d56559):
+(α) ό,τι έφυγε από το resource_patching_pass.cpp ξαναβγαίνει αυτούσιο και με την ίδια σειρά στο νέο αρχείο (diff ως
+ακολουθίες: μόνο SPDX, includes, namespace, υπογραφές, `guards[i]` → `resources[i].guards`), μαζί και το
+`ResourceGuards::EvaluateDead`· (β) οι 2 sharp helpers στο resource_pass.h αυτούσιοι, + `inline`· (γ) στο παλιό
+ResourcePatchingPass το FindResourceGuards ήταν η πρώτη εντολή (πριν, μόνο `info = program.info`)· το ResourceGuardPass
+καλείται αμέσως πριν από το ResourcePatchingPass, τίποτα ενδιάμεσα, ένας caller· (δ) το default
+`guards{NO_GUARD, NO_GUARD}` = το παλιό init, ίδια πύλη `skip_resource_guards`, ίδιο key_info. Έναντι main 3912336f:
+resource_patching_pass.cpp = −2 helpers + 3 γραμμές `.guard`, recompiler.cpp +1, ir_passes.h +1· PR 14 αρχεία
++1127/−53. 0 νέα σχόλια (μόνο `} // namespace Shader::Optimization`), 0 GT_. Build 16:35:24-16:41:31
+(`GT7_upstream\logs\pr5218_guardpass_build.log`): CMake re-run, 2383 βήματα, NINJA_EXIT=0, 0 error, **0 warnings από τον
+κώδικα του src** (2559 γραμμές = 1691 externals + 867 clang-cl «argument unused during compilation» (/MP 310, -MP 489,
+/Zc:preprocessor 68) + 1 στο fmt των `_deps`)· τα 6 αρχεία γράφτηκαν 16:34:07, πριν από το build = χτίστηκε ό,τι μπήκε
+στο commit. **Το build output `Build\x64-Clang-RelWithDebInfo\shadps4.exe` = το PR build** (16:41:30, 62.400.512 B,
+09A1D608…FA87F, 0 strings GT_ / guardcheck), όχι TEST, χωρίς backup. Τα 4 TEST40/TEST2 backup exes SAME μετά το build,
+και τα 8 launchers τρέχουν αυτά. API ~16:48: #5218 open, head 18dc8618, 3 commits, CI 3 success + 7 σε εξέλιξη·
+raphaelthegreat 16:19 «move all the resource guard pass into a separate pass/different cpp» → απάντηση χρήστη 16:45.
+Κανένα run με τον κώδικα του PR (τα GT_GUARDCHECK runs = v1). Τίποτα δεν στάλθηκε στον builder.
 
 **Κατάσταση 20:50 — ΤΙΠΟΤΑ ΟΠΛΙΣΜΕΝΟ.**
 - Τρέχον test = **TEST36** `test36-main-2338a06f` **04558db8** = TEST35 91ffbea6 + 1 commit (tiling.cpp: tile mode 18 →
