@@ -1,5 +1,13 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~11:05, builder shadps4-lane-f9: code review of upstream PR #5192 (mavethee, kernel I/O event queue;
+> not ours), at mavethee's request via the user; read-only, nothing posted upstream. Saved for a future fix as memory
+> `shadps4-pr5192-review.md`:** 10 problems at commit e366b1bc (kept as `refs/review/pr5192` in C:\shadps4-clean):
+> lost events + a waiter hang in the new 10 ms wait loops, closed descriptors firing EV_ERROR forever, vnode events
+> firing at once with a lost watch mask, sticky EOF/error flags, EOF on regular files, ignored low-water size, Windows
+> socket readiness, P2P sockets never firing, unlocked size/position reads. NIDs 8/8 correct. Fix estimate ~170 lines
+> (~80 without real vnode events). PR is blocked upstream until the socket rewrite (georgemoralis, 3 Oct).
+
 > **Update 3 Oct ~10:30, builder shadps4-lane-f9: PR CI check (user: "PR 5155 failed a clang"). Read-only (public
 > GitHub API); nothing built or pushed.**
 > - #5155 head 7dba76ce (the user's main merge, 06:40 UTC; 17 commits = the fix + 16 main merges, 1 file):

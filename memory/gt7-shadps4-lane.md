@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-03T07:26:57.143Z
+  modified: 2026-10-03T08:04:32.783Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -29,6 +29,10 @@ metadata:
   Πληκτρολόγιο οθόνης (όνομα παίκτη στο GT7): το main το έχει ήδη από το PR #3973 (Μάιος 2026: gamepad, layouts, PC
   πληκτρολόγιο, το pad δεσμεύεται όσο είναι ανοιχτό)· κανένα log μας δεν φτάνει σε IME dialog· επόμενο = ένα run ως την
   ερώτηση του ονόματος (φρέσκο save σε ΑΝΤΙΓΡΑΦΟ του user folder).
+
+**3 Οκτ ~11:05 — review του upstream PR #5192 (mavethee, I/O event queue· ΟΧΙ δικό μας)** κατά παράκληση του
+  mavethee μέσω του χρήστη: 10 προβλήματα + σχέδιο fix (~170 γραμμές, ~80 χωρίς πραγματικά vnode events), κρατημένο
+  για μελλοντικό fix → `shadps4-pr5192-review.md`· τίποτα upstream.
 
 **3 Οκτ ~10:30 — CI των PRs (χρήστης: «PR 5155 failed a clang»):** #5155 head 7dba76ce: clang-format ΠΕΡΑΣΕ· έπεσε
   το job `linux-sdl` (clang build) στο βήμα «Add LLVM repository» (wget από apt.llvm.org), ΠΡΙΝ από κάθε compile· το
