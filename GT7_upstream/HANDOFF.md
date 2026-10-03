@@ -1,5 +1,16 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~11:20, builder shadps4-lane-f9: DMA test run armed (user: "ok make it happen but dont wake the
+> other chat"; the builder does the watcher's part, the auditor is not messaged).**
+> - ⚠ `C:\shadps4-test19-gt7\user\config.json` line 20 is TEMPORARILY `"direct_memory_access_enabled": true`
+>   (backup, cmp IDENTICAL before the edit: `logs\config_test19gt7_before_dma_test_20261003.json`). Set it back to
+>   false after the run (or restore the backup) - every GT7 launcher shares this profile.
+> - Run = `TEST40_GT7_07a74022_guardcheck_diag_console.bat` (GT_GUARDCHECK=1: no pipeline cache read or write, so the
+>   DMA setting reaches every compile; = TEST40 r2's launcher, one variable). Named `test40dma_gt7_<n>`.
+> - Armed 11:18:42 from n=1: watcher `watch_loop_v8.sh` (task byz8gm4ff), catcher `catch_loop_v7.ps1` -OutDir GT7
+>   logs (beol0zxl7), notifier n=1 (b2ofyiw2e); idle stop 11:48:42. Check after: "GPU directMemoryAccess: true" in the
+>   log head, the pad line, "Enabling DMA for shader" count, renderer errors vs r2, the ending.
+
 > **Update 3 Oct ~11:15, builder shadps4-lane-f9: GT7 renderer errors (user: "when playing gt7 i get renderer errors.
 > what is the problem for that?"). Read-only; nothing built. Saved as memory `shadps4-srt-walker-dword0.md`.**
 > - TEST40 r2: 98.4% of renderer error lines = "Clamped size" (known, plan parked). Second group: 13,070 "Failed to
