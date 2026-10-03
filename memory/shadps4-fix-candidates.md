@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69aee205-f92c-44e7-8367-5be64450ea3e
-  modified: 2026-10-02T23:27:54.321Z
+  modified: 2026-10-03T08:11:40.148Z
 ---
 
 User, 3 Oct 2026: "this is not the plan but we can save it as a future knowledge for planing". The user decides the
@@ -60,6 +60,11 @@ plan; this only lists what is known, so planning starts from facts instead of a 
   keyboard check that main answers "none connected"); the lab-era log of the name prompt is not archived. Next (a run,
   no build): reach the name prompt on a current exe (e.g. a fresh save in a COPY of the user folder) and read which
   IME calls the log shows; fix only what fails, in main's existing IME code.
+- **Visual phase, emulator-general: SRT-walker reads replaced by user-data dword 0** (3 Oct): with
+  `directMemoryAccess` off (default; GT7's profile) every constant read the flatten pass cannot place (offset from a
+  Phi or a vertex attribute) reads flat-buffer dword 0 = SGPR0. GT7 TEST40 r2: 818 of 2,210 compiles (792 shaders);
+  fs 0x74f5f10c reads dword 0 twelve times into multiply-adds. Not in upstream. Cheapest test: one GT7 run with
+  `directMemoryAccess: true` (no build). Details and fix directions: [[shadps4-srt-walker-dword0]].
 - **Open PRs come first whenever a dev asks**: #5218 (resource guards; its code has never run, port
   `GtInsertGuardChecks` before any GT_GUARDCHECK build) and #5155 (device lost at SDRSettingRoot with a warm cache).
 

@@ -1,5 +1,17 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~11:15, builder shadps4-lane-f9: GT7 renderer errors (user: "when playing gt7 i get renderer errors.
+> what is the problem for that?"). Read-only; nothing built. Saved as memory `shadps4-srt-walker-dword0.md`.**
+> - TEST40 r2: 98.4% of renderer error lines = "Clamped size" (known, plan parked). Second group: 13,070 "Failed to
+>   compute offset for SRT walker" (+ the Phi / GetAttributeU32 detail lines) in 818 of 2,210 compiles (792 shaders).
+> - Effect on main 8e23388a: the flatten pass skips a constant read whose offset comes from a Phi or an attribute
+>   (flatten_extended_userdata_pass.cpp:612-614); with `directMemoryAccess` off (GT7's profile) `EmitReadConst`
+>   (emit_spirv_context_get_set.cpp:57-58) then reads flat-buffer dword 0 = user-data SGPR0 in its place, silently.
+>   Cached fs 0x74f5f10c: 12 reads of `srt_flatbuf[0]`, each into FMul -> FAdd; every real flat-buffer read is a
+>   distinct index >= 16. Not in upstream (no issue/PR). Likely cause of wrong rendering in those shaders.
+> - Cheapest next test (no build, user's call): a GT7 run with `directMemoryAccess: true` as the only change.
+>   Scripts: `builder_scripts\render_msgs_v1.sh`, `spv_flatbuf0_v1.py`.
+
 > **Update 3 Oct ~11:05, builder shadps4-lane-f9: code review of upstream PR #5192 (mavethee, kernel I/O event queue;
 > not ours), at mavethee's request via the user; read-only, nothing posted upstream. Saved for a future fix as memory
 > `shadps4-pr5192-review.md`:** 10 problems at commit e366b1bc (kept as `refs/review/pr5192` in C:\shadps4-clean):

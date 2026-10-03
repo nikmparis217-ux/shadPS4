@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-03T08:04:32.783Z
+  modified: 2026-10-03T08:11:42.263Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -29,6 +29,12 @@ metadata:
   Πληκτρολόγιο οθόνης (όνομα παίκτη στο GT7): το main το έχει ήδη από το PR #3973 (Μάιος 2026: gamepad, layouts, PC
   πληκτρολόγιο, το pad δεσμεύεται όσο είναι ανοιχτό)· κανένα log μας δεν φτάνει σε IME dialog· επόμενο = ένα run ως την
   ερώτηση του ονόματος (φρέσκο save σε ΑΝΤΙΓΡΑΦΟ του user folder).
+
+**3 Οκτ ~11:15 — renderer errors του GT7 (χρήστης):** 98,4 % = «Clamped size» (γνωστό). Δεύτερη ομάδα: «Failed to
+  compute offset for SRT walker» σε 818 από 2.210 compiles (792 shaders) του TEST40 r2 → με `directMemoryAccess` off
+  (το profile του GT7) ο shader διαβάζει το dword 0 του flat buffer (SGPR0) ΑΝΤΙ για τη σταθερά, σιωπηλά (fs
+  0x74f5f10c: 12 φορές, σε FMul→FAdd). Πιθανή αιτία λάθος εικόνας· όχι στο upstream → `shadps4-srt-walker-dword0.md`.
+  Φθηνότερο test: ένα run με `directMemoryAccess: true` (χωρίς build, απόφαση χρήστη).
 
 **3 Οκτ ~11:05 — review του upstream PR #5192 (mavethee, I/O event queue· ΟΧΙ δικό μας)** κατά παράκληση του
   mavethee μέσω του χρήστη: 10 προβλήματα + σχέδιο fix (~170 γραμμές, ~80 χωρίς πραγματικά vnode events), κρατημένο
