@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-02T23:27:53.258Z
+  modified: 2026-10-03T07:26:57.143Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -29,6 +29,11 @@ metadata:
   Πληκτρολόγιο οθόνης (όνομα παίκτη στο GT7): το main το έχει ήδη από το PR #3973 (Μάιος 2026: gamepad, layouts, PC
   πληκτρολόγιο, το pad δεσμεύεται όσο είναι ανοιχτό)· κανένα log μας δεν φτάνει σε IME dialog· επόμενο = ένα run ως την
   ερώτηση του ονόματος (φρέσκο save σε ΑΝΤΙΓΡΑΦΟ του user folder).
+
+**3 Οκτ ~10:30 — CI των PRs (χρήστης: «PR 5155 failed a clang»):** #5155 head 7dba76ce: clang-format ΠΕΡΑΣΕ· έπεσε
+  το job `linux-sdl` (clang build) στο βήμα «Add LLVM repository» (wget από apt.llvm.org), ΠΡΙΝ από κάθε compile· το
+  ίδιο βήμα πέρασε στο #5218 12 s νωρίτερα, σε 7 άλλα PR runs και στο main 8e23388a → μία αποτυχία δικτύου, όχι το PR·
+  καθαρίζει μόνο με re-run ή νέο push. #5218 head 91a806e5: όλα πράσινα, clean. main 8e23388a = μαζί το #5219.
 
 **3 Οκτ ~02:30 — ΠΡΩΤΟ ΕΞΩΤΕΡΙΚΟ RUN του #5218 (χρήστης: «someone tested our 5218 pr»):** My First Gran Turismo
   (CUSA49696) = ΑΛΛΟ παιχνίδι, όχι GT7 (χρήστης: «its a completely different game») → δικός του φάκελος

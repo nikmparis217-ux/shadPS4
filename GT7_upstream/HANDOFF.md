@@ -1,5 +1,18 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~10:30, builder shadps4-lane-f9: PR CI check (user: "PR 5155 failed a clang"). Read-only (public
+> GitHub API); nothing built or pushed.**
+> - #5155 head 7dba76ce (the user's main merge, 06:40 UTC; 17 commits = the fix + 16 main merges, 1 file):
+>   clang-format SUCCESS. The failed job is `linux-sdl` (the Linux clang build), at step 3 "Add LLVM repository"
+>   (`wget https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -` + `add-apt-repository`, build.yml:257 on
+>   main 8e23388a), exit code 2, before any code is built. The same step passed in #5218's run 12 s earlier, in 7
+>   other PR runs at 06:39-06:40 and in main's own 8e23388a run: a one-off network failure on that runner, not the
+>   PR. Every other check is green (linux-sdl-gcc, windows-sdl, macos-sdl, tests, reuse). The job log needs a login.
+>   Only a re-run or a new push to the branch clears it; nothing in the code to change.
+> - #5218 head 91a806e5 (main merge 06:40 UTC, 8 commits, 14 files): every check green, mergeable clean, no new
+>   comments (2 in all, the last the user's 2 Oct reply).
+> - main = 8e23388a: #5219 (raphaelthegreat, texture cache) merged 06:08 UTC; both PR branches contain it.
+
 > **Update 3 Oct ~02:30, builder shadps4-lane-f9: first outside run of #5218's current code (user: "someone tested
 > our 5218 pr"). Read-only; nothing built.** A separate game, not GT7 (user: "its a completely different game"), so
 > it has its own folder: `C:\shadps4-mfgt` (README.md + `logs\pr5218_external_1790982170991.txt`, 20,247,761 B, cmp
