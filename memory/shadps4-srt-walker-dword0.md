@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: b5cd4610-ed8e-4e80-b4f1-9139bfdb73d5
-  modified: 2026-10-03T08:11:21.282Z
+  modified: 2026-10-03T08:15:35.852Z
 ---
 
 User, 3 Oct 2026: "when playing gt7 i get renderer errors. what is the problem for that?" Read-only research by
@@ -49,7 +49,11 @@ missing AMD extensions and formats (information, not errors).
 3. The pass's own TODO (:607): keep a dynamically indexed subtree sparse in the flat buffer, which needs a bound.
 Cheapest first test (no build, the user's call): one GT7 run with `directMemoryAccess: true` as the only change,
 compared with a run without it (DMA's own caveat: a non-resident page is fixed after the submit, so a first read can
-be stale). Classifying the Phis (if/else merge vs loop) needs a run with shader dumps on.
+be stale). **Test validity:** the pipeline cache's compatibility check compares only `Shader::Profile` (GPU features,
+vk_pipeline_serialization.cpp:311-338), while the DMA setting is read at compile time, so a cached run reuses SPIR-V
+built for the other setting (a small bug of its own). Run it with the TEST40 `GT_GUARDCHECK=1` launcher (no cache
+read or write; = TEST40 r2's launcher, so a one-variable comparison with r2) or with the cache off. The switch: line 20
+of `C:\shadps4-test19-gt7\user\config.json`, `"direct_memory_access_enabled": false` -> true, set back after. Classifying the Phis (if/else merge vs loop) needs a run with shader dumps on.
 
 **Why:** the user wants every crash fixed at its root first, then visuals; this is an emulator-general visual
 candidate with a measured footprint.
