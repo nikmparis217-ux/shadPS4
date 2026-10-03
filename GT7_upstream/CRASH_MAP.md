@@ -1,4 +1,4 @@
-# GT7 1.71 on shadPS4: every way a run crashes (29 Sep 2026, 20:40; TEST32 runs 1-5 added 22:40, runs 6-9 and two TEST30 comparison runs 23:15; TEST33 runs 1-4 30 Sep 07:25; TEST34 runs 1-4 17:10, run 5 17:45; TEST35 runs 1-3 18:25, runs 4-7 19:00; TEST36 run 1 19:15; TEST37 runs 1-4 1 Oct 00:20; TEST39 runs 1-2 00:58; TEST40 run 1 2 Oct 14:35, run 2 14:55)
+# GT7 1.71 on shadPS4: every way a run crashes (29 Sep 2026, 20:40; TEST32 runs 1-5 added 22:40, runs 6-9 and two TEST30 comparison runs 23:15; TEST33 runs 1-4 30 Sep 07:25; TEST34 runs 1-4 17:10, run 5 17:45; TEST35 runs 1-3 18:25, runs 4-7 19:00; TEST36 run 1 19:15; TEST37 runs 1-4 1 Oct 00:20; TEST39 runs 1-2 00:58; TEST40 run 1 2 Oct 14:35, run 2 14:55, dma run 1 3 Oct 11:30)
 
 Written by the auditor from the archived logs in `logs\` (126 at-exit logs, 54 prelaunch copies) and the audit files
 of TEST13-TEST30. Run names are `testNN_gt7_R` (TEST NN, run R). The logs of TEST21, TEST21M, TEST26, TEST27 and
@@ -329,8 +329,10 @@ FPS is not comparable (every module compiled cold: 6 FPS in the race). Details: 
   after TopRootWindow on the way back from a failed race.
 
 ### 6. Game thread crash B: eboot+0x18eaf37
-- **Runs (6):** test17_6, test30_7, test32_5, test34_5 (eboot at 0xbd90000, fault at 0xd67af37), test35_7 (eboot at
-  0xbac0000, fault at 0xd3aaf37), test39_2 (eboot at 0xbb40000, fault at 0xd42af37). Thread WorkT, in the race.
+- **Runs (7):** test17_6, test30_7, test32_5, test34_5 (eboot at 0xbd90000, fault at 0xd67af37), test35_7 (eboot at
+  0xbac0000, fault at 0xd3aaf37), test39_2 (eboot at 0xbb40000, fault at 0xd42af37), test40dma_gt7_1 (3 Oct, `directMemoryAccess: true`; eboot at
+  0xbb20000, fault at 0xd40af37; 16 s after the InRaceRoot of a race restarted from the PlayGo menu). Thread WorkT,
+  in the race.
 - **test39_2 and the pause:** it came after a restart (FailureRoot, then InRaceRoot) with two short pauses in the next
   10 s, so its last InRaceRoot was a resume 2.45 s (150 ticks) before the crash. From the restart's InRaceRoot it is
   722 ticks = 11.8 s, of which 99 in the two pauses: 623 ticks = 10.18 s of racing, 206 frames. So the clock looks like
@@ -429,7 +431,7 @@ FPS is not comparable (every module compiled cold: 6 FPS in the race). Details: 
 | device lost at SDRSettingRoot (`vk_presenter.cpp:1113` "Device lost during waiting for a frame") | test4_2, test4_3, clean171_07; test20b_6, _7 (built with the preload fix reverted) | #5155 preload fix (open PR, in the test build) |
 | `liverpool_to_vk.cpp:394` MipFilter unreachable (garbage S#) | test8, test8_2 | #5137 (MERGED 29 Sep 20:36:44Z, 1a0f5be8; the same patch as TEST32's 901d6daa) |
 | `liverpool_to_vk.cpp:788/792` SurfaceFormat 19/9 and 44/0; `:428` ComponentSwizzle | test10, test18_5 (`:428`), test19b_1, test21_1, _3, _4, test21m_3 | the T# check (TEST22-TEST36, 175fa0c4 in TEST31); TEST37 reverts it (22105b66) and the assert is back as #13 (test37_1) |
-| `image_info.cpp:184` BC in macro-tiled modes | test20a_8 and older | "texture_cache: Allow block-compressed images in macro-tiled modes" (in the test build; the full per-mip fix is still to do, HANDOFF section 5.3) |
+| `image_info.cpp:184` BC in macro-tiled modes | test20a_8 and older | #5196 (MERGED 2 Oct 01:16, squash 7e778987: the block-compressed assert + the mip detiling); before it, "texture_cache: Allow block-compressed images in macro-tiled modes" in the test builds |
 | GPU thread silent at BuddyDummyRoot | test27b pr5165 1, 2, pr5166 1 (first builds) | our own instrument (hash through the guest address); the rebuild reads through `BackingPages()` |
 
 ## Older builds only (not seen on the current line)
@@ -451,7 +453,7 @@ FPS is not comparable (every module compiled cold: 6 FPS in the race). Details: 
    names the image; that is the next log ask.
 2. **#4 Protect address 0.** Nine runs (two of the four TEST34 runs), the whole chain is in the log, one known draw, one
    binding. The fix direction can be tested with a single commit.
-3. **#1 address-0 GPU fault.** Sixteen runs, and the 8-to-48 layer copy comes one or two frames before it in all 10 logs
+3. **#1 address-0 GPU fault.** Seventeen runs, and the 8-to-48 layer copy comes one or two frames before it in all 11 logs
    with a report and in no other ending. First the log lines for that copy, then a test.
 4. **#7 tile mode.** The log now names the resource: a descriptor slot of fs 0x2a265dff that holds floats, and a T#
    check that does not test the tiling index. It shares its draw with #4.

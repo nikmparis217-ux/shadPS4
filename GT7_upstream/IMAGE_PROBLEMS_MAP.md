@@ -32,8 +32,8 @@ Every current run logs `GPU readbacksMode: 0`, `GPU readbackLinearImages: false`
 |---|---|---|---|---|
 | 1 | road, terrain, buildings missing | readbacks 0 | `GT_READBACKS_ONRACE`, temporary | run (a) |
 | 2 | distant road and terrain; near-road detail | not found | none | after row 1 draws |
-| 3 | red minimap | not found (two lab theories) | LUT hash and identity LUT, not fixed | runs (a) and (b) |
-| 4 | wrong material values | DMA off | `GT_DYNRC_WINDOW`, temporary | run (b) |
+| 3 | red minimap | not found (two lab theories) | LUT hash and identity LUT, not fixed | run (a); run (b) done 3 Oct: still red |
+| 4 | wrong material values | DMA off | `GT_DYNRC_WINDOW`, temporary | run (b) done 3 Oct: no visible change, lower FPS |
 | 5 | whitewash | NaN from one compute shader | `GT_RT_SCRUB`, temporary | does it happen on 1.71 |
 | 6 | corrupted far mips | mip-slot count | 16 fixed slots, a real defect | nothing: fixed in our builds |
 | 7 | wrong letters | two texture-cache paths miss CPU writes | none | the fix, then count the reports (the report's TEST28) |
@@ -94,7 +94,7 @@ section).
   - With readbacks 0 guest RAM never holds GPU-produced texels, so any refresh of a GPU-produced image uploads stale
     bytes over it.
 - **Fix direction:** a refresh must not replace GPU-produced texels with guest bytes the CPU did not write.
-- **Chase next:** look at the minimap in runs (a) and (b).
+- **Chase next:** look at the minimap in run (a). Run (b) (DMA on, 3 Oct, section 4): still red.
 
 ## 4. Wrong material values with DMA off (D)
 
@@ -108,6 +108,12 @@ section).
 - **The general mechanism** is upstream DMA (BDA page table and fault buffer). It has the first-read-zero behaviour
   of row 3's second theory.
 - **Chase next:** run (b). The log then names every shader with such a read ("Enabling DMA for shader ...").
+- **Run (b), done 3 Oct (`test40dma_gt7_1`, builder):** the TEST40 `GT_GUARDCHECK=1` launcher (no pipeline cache,
+  so every shader was built with the setting) with `directMemoryAccess: true` as the only change; 491 of 1,490
+  compiles logged "Enabling DMA for shader". The user saw no change in the music rally (green shapes over the trees,
+  black ground, a mirror-like road, the red minimap) and a lower frame rate (13 FPS at the screenshot). So these
+  reads are not behind the faults in the photos; the defect stays (memory `shadps4-srt-walker-dword0`). The run
+  ended at crash #6 (CRASH_MAP).
 
 ## 5. Whitewash (E)
 

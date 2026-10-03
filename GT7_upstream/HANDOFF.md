@@ -1,5 +1,23 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~12:30, builder shadps4-lane-f9: crash list + remaining issues (user's request).**
+> - The crash list the user asked the auditor gtnikos-e8 for on 30 Sep is memory `gt7-crash-status-20260930.md`
+>   (draft: `C:\Users\Νίκος\.claude\plans\gather-every-single-error-jaunty-hamster.md`). Rewritten in place: every
+>   crash reached so far (GT7 classes 1-13 with runs and state, the 11 fixed in main incl. #5196, one-offs, the old 1.00
+>   line, where GoW / GoT / GTA V / My First Gran Turismo stop) and the remaining issues in the user's order (PRs,
+>   crashes, visuals, emulator-wide).
+> - Live at ~12:15 (API): #5218 open, head 91a806e5, CI 10 green + 1 skipped, no review since raphaelthegreat's 2 Oct
+>   comment; #5155 open, head 7dba76ce, 1 failure (linux-sdl "Add LLVM repository", network), no review; main 8e23388a.
+> - CRASH_MAP: consistency fixes (#6 run list = 7 with test40dma_gt7_1; the image_info.cpp:184 row = #5196 MERGED;
+>   suggested order #1 = 17 runs / 11 logs). IMAGE_PROBLEMS_MAP rows 3 and 4: run (b) = the DMA test (no visible
+>   change; the minimap still red).
+> - Mistake: a claude push (~12:35) included `memory/MEMORY.md`, which stays off the public branch (it indexes every
+>   lane; memory `shadps4-claude-notes-branch.md`). User: "remove it" -> the branch was rewritten with a lease
+>   (~12:55): a46666fd + one commit with the same notes and no MEMORY.md; the three commits after a46666fd left the
+>   branch. GitHub can still show an unreachable commit by its exact link until it cleans up; only GitHub Support can
+>   force that.
+> - Nothing armed or running; no build.
+
 > **Update 3 Oct ~11:35, builder shadps4-lane-f9: DMA test done; config restored.**
 > - `test40dma_gt7_1` (11:20:29-11:26:21, 352 s; `TEST40_GT7_07a74022_guardcheck_diag_console.bat`, parent cmd line
 >   confirmed by the catcher): log head "GPU directMemoryAccess: true", pad at line 119; 1,490 compiles, 491 with

@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-03T08:29:14.458Z
+  modified: 2026-10-03T09:16:15.148Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -29,6 +29,15 @@ metadata:
   Πληκτρολόγιο οθόνης (όνομα παίκτη στο GT7): το main το έχει ήδη από το PR #3973 (Μάιος 2026: gamepad, layouts, PC
   πληκτρολόγιο, το pad δεσμεύεται όσο είναι ανοιχτό)· κανένα log μας δεν φτάνει σε IME dialog· επόμενο = ένα run ως την
   ερώτηση του ονόματος (φρέσκο save σε ΑΝΤΙΓΡΑΦΟ του user folder).
+
+**3 Οκτ ~12:30 — λίστα crashes + ό,τι μένει (χρήστης: «update the list and make the list of the remaining isues»):**
+  η λίστα του auditor gtnikos-e8 (30 Σεπ) ήταν το memory `gt7-crash-status-20260930.md` (πρόχειρο:
+  `.claude\plans\gather-every-single-error-jaunty-hamster.md`)· ξαναγράφτηκε στο ΙΔΙΟ αρχείο: όλα τα crashes ως τώρα
+  (GT7 κλάσεις 1-13 με runs και κατάσταση, 11 fixed στο main μαζί με το #5196, μεμονωμένα, παλιά γραμμή 1.00, GoW /
+  GoT / GTA V / MFGT) + τα ανοιχτά με τη σειρά του χρήστη (PRs → crashes → εικόνα → γενικά). API ~12:15: #5218 head
+  91a806e5 CI πράσινο, κανένα review μετά τις 2 Οκτ· #5155 head 7dba76ce, 1 failure = linux-sdl δίκτυο· main 8e23388a.
+  CRASH_MAP: διορθώσεις συνέπειας (#6 = 7 runs στη λίστα, #5196 MERGED, #1 = 17 runs / 11 logs)· IMAGE_PROBLEMS_MAP
+  γραμμές 3 / 4: run (b) = το DMA test (καμία αλλαγή, minimap κόκκινο).
 
 **3 Οκτ ~11:35 — DMA test ΤΕΛΟΣ (`test40dma_gt7_1`, 352 s):** καμία αλλαγή εικόνας στο music rally, χαμηλότερα FPS
   (χρήστης) → τα dword-0 reads ΔΕΝ φταίνε για τα ορατά λάθη· DMA όχι λύση. Τέλος = CRASH_MAP #6 (eboot+0x18eaf37,
