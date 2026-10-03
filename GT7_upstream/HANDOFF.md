@@ -1,5 +1,21 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~11:35, builder shadps4-lane-f9: DMA test done; config restored.**
+> - `test40dma_gt7_1` (11:20:29-11:26:21, 352 s; `TEST40_GT7_07a74022_guardcheck_diag_console.bat`, parent cmd line
+>   confirmed by the catcher): log head "GPU directMemoryAccess: true", pad at line 119; 1,490 compiles, 491 with
+>   "Enabling DMA for shader"; 7,806 SRT-walker failures (their reads now via DMA). Archived by the watcher:
+>   `shad_log_test40dma_gt7_1_at_exit_112631.txt` (checked against the bytes read live), game log, shadps4.log and
+>   play_time (cmp IDENTICAL), 87 shots in `logs\shots_test40dma_gt7_1`; exit code file `exitcode_test40dma_gt7_1.txt`.
+> - Result (user): no visual change in the music rally (green shapes over the trees, black ground, mirror-like road,
+>   red minimap all remain), lower FPS (13 FPS at the user's screenshot). So the dword-0 reads are not behind those
+>   faults, and DMA is no fix to recommend; memory `shadps4-srt-walker-dword0.md` updated.
+> - Ending: 0xC0000005, signals.cpp:144 at 0xd40af37 = eboot (base 0xbb20000) + 0x18eaf37, WorkT = CRASH_MAP #6, its
+>   seventh run (CRASH_MAP updated). GT_GUARDCHECK: 0 HIT (1490 modules, 523 guarded, 189 with a dead image/sampler).
+> - `config.json` line 20 back to false: cmp IDENTICAL with `logs\config_test19gt7_before_dma_test_20261003.json`.
+>   Loops stopped 11:3x (TaskStop byz8gm4ff, beol0zxl7; notifier ended); two orphan bash of mine killed after a
+>   command-line + creation-time check (watch_loop_v8 13052 from 11:18:41, watch_clean_v8 2584 from 11:26:32);
+>   Win32_Process: 0 loop processes left. `exitcode_test40dma_gt7_2.txt` holds only its waiting line.
+
 > **Update 3 Oct ~11:20, builder shadps4-lane-f9: DMA test run armed (user: "ok make it happen but dont wake the
 > other chat"; the builder does the watcher's part, the auditor is not messaged).**
 > - ⚠ `C:\shadps4-test19-gt7\user\config.json` line 20 is TEMPORARILY `"direct_memory_access_enabled": true`

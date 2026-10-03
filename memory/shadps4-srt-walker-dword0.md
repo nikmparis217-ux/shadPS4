@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: b5cd4610-ed8e-4e80-b4f1-9139bfdb73d5
-  modified: 2026-10-03T08:15:35.852Z
+  modified: 2026-10-03T08:29:12.356Z
 ---
 
 User, 3 Oct 2026: "when playing gt7 i get renderer errors. what is the problem for that?" Read-only research by
@@ -54,6 +54,13 @@ vk_pipeline_serialization.cpp:311-338), while the DMA setting is read at compile
 built for the other setting (a small bug of its own). Run it with the TEST40 `GT_GUARDCHECK=1` launcher (no cache
 read or write; = TEST40 r2's launcher, so a one-variable comparison with r2) or with the cache off. The switch: line 20
 of `C:\shadps4-test19-gt7\user\config.json`, `"direct_memory_access_enabled": false` -> true, set back after. Classifying the Phis (if/else merge vs loop) needs a run with shader dumps on.
+
+**Test done, 3 Oct 11:20-11:26 (`test40dma_gt7_1`, DMA on, otherwise = TEST40 r2):** log head confirmed the
+setting; 491 of 1,490 compiles enabled DMA. User: no visual change in the music rally (green shapes over the trees,
+black ground, mirror-like road, red minimap remain) and lower FPS (13 FPS at the screenshot). So the dword-0 reads are
+NOT behind the visible GT7 faults, and turning DMA on is no fix to recommend (slower). The defect stays real (silently
+wrong constants) but drops in priority; a later fix should flatten the reads (direction 2), not lean on DMA. The run
+ended at CRASH_MAP #6 (eboot+0x18eaf37, WorkT), as six DMA-off runs did before.
 
 **Why:** the user wants every crash fixed at its root first, then visuals; this is an emulator-general visual
 candidate with a measured footprint.

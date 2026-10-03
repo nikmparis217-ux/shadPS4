@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69aee205-f92c-44e7-8367-5be64450ea3e
-  modified: 2026-10-03T08:11:40.148Z
+  modified: 2026-10-03T08:29:13.399Z
 ---
 
 User, 3 Oct 2026: "this is not the plan but we can save it as a future knowledge for planing". The user decides the
@@ -63,8 +63,9 @@ plan; this only lists what is known, so planning starts from facts instead of a 
 - **Visual phase, emulator-general: SRT-walker reads replaced by user-data dword 0** (3 Oct): with
   `directMemoryAccess` off (default; GT7's profile) every constant read the flatten pass cannot place (offset from a
   Phi or a vertex attribute) reads flat-buffer dword 0 = SGPR0. GT7 TEST40 r2: 818 of 2,210 compiles (792 shaders);
-  fs 0x74f5f10c reads dword 0 twelve times into multiply-adds. Not in upstream. Cheapest test: one GT7 run with
-  `directMemoryAccess: true` (no build). Details and fix directions: [[shadps4-srt-walker-dword0]].
+  fs 0x74f5f10c reads dword 0 twelve times into multiply-adds. Not in upstream. Tested 3 Oct (`test40dma_gt7_1`,
+  DMA on): no visual change, lower FPS → not behind the visible faults; low priority. Details and fix directions:
+  [[shadps4-srt-walker-dword0]].
 - **Open PRs come first whenever a dev asks**: #5218 (resource guards; its code has never run, port
   `GtInsertGuardChecks` before any GT_GUARDCHECK build) and #5155 (device lost at SDRSettingRoot with a warm cache).
 

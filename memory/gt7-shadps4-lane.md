@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-03T08:19:24.226Z
+  modified: 2026-10-03T08:29:14.458Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -30,9 +30,10 @@ metadata:
   πληκτρολόγιο, το pad δεσμεύεται όσο είναι ανοιχτό)· κανένα log μας δεν φτάνει σε IME dialog· επόμενο = ένα run ως την
   ερώτηση του ονόματος (φρέσκο save σε ΑΝΤΙΓΡΑΦΟ του user folder).
 
-**3 Οκτ ~11:20 — DMA test οπλισμένο (`test40dma_gt7_<n>`, launcher του TEST40 =1):** ⚠ το
-  `C:\shadps4-test19-gt7\user\config.json` γρ. 20 είναι ΠΡΟΣΩΡΙΝΑ `direct_memory_access_enabled: true` (backup στο
-  `GT7_upstream\logs\config_test19gt7_before_dma_test_20261003.json`) → ΕΠΑΝΑΦΟΡΑ σε false μετά το run.
+**3 Οκτ ~11:35 — DMA test ΤΕΛΟΣ (`test40dma_gt7_1`, 352 s):** καμία αλλαγή εικόνας στο music rally, χαμηλότερα FPS
+  (χρήστης) → τα dword-0 reads ΔΕΝ φταίνε για τα ορατά λάθη· DMA όχι λύση. Τέλος = CRASH_MAP #6 (eboot+0x18eaf37,
+  WorkT, 7ο run). GT_GUARDCHECK 0 HIT. Το `config.json` γρ. 20 ΞΑΝΑ false (cmp IDENTICAL με το backup)· loops σταματημένα,
+  2 δικά μου ορφανά bash σκοτωμένα, 0 διεργασίες.
 
 **3 Οκτ ~11:15 — renderer errors του GT7 (χρήστης):** 98,4 % = «Clamped size» (γνωστό). Δεύτερη ομάδα: «Failed to
   compute offset for SRT walker» σε 818 από 2.210 compiles (792 shaders) του TEST40 r2 → με `directMemoryAccess` off
