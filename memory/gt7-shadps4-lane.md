@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: reference
   originSessionId: fea3dcca-edb7-4564-9821-abd29ed72fa8
-  modified: 2026-10-03T09:16:15.148Z
+  modified: 2026-10-03T20:27:15.836Z
 ---
 
 Ξεχωριστό lane από το GT Nikos ΚΑΙ από το GT7→Blender (F:): ο **emulator shadPS4** στο
@@ -29,6 +29,15 @@ metadata:
   Πληκτρολόγιο οθόνης (όνομα παίκτη στο GT7): το main το έχει ήδη από το PR #3973 (Μάιος 2026: gamepad, layouts, PC
   πληκτρολόγιο, το pad δεσμεύεται όσο είναι ανοιχτό)· κανένα log μας δεν φτάνει σε IME dialog· επόμενο = ένα run ως την
   ερώτηση του ονόματος (φρέσκο save σε ΑΝΤΙΓΡΑΦΟ του user folder).
+
+**3 Οκτ ~23:30 — ΝΕΟ σχόλιο στο #5218 (raphaelthegreat, 20:16Z):** «a lot of code», «a new interpreter on every
+  sharp fetch» σε hot path → περιμένει μεγάλο κόστος· ζητά να περιγράψουμε τις συνθήκες των dead sharps και πολύ πιο
+  στοχευμένη αρχή. Γεγονότα (91a806e5): +1127/-53, `resource_guard_pass.cpp` 924 γραμμές· το `EvaluateDead` τρέχει
+  από το `RefreshFlatBuf` = ανά stage ανά draw (`vk_pipeline_cache.cpp:679`)· χωρίς guards βγαίνει αμέσως, αλλιώς
+  μηδενισμός 128 θέσεων + `fegetround()` + τα nodes· ΠΟΤΕ μετρημένο. Δεδομένα: fs 0x2a265dff = μία συνθήκη (7 nodes)
+  στο flatbuf dword 50 (=0) → images #0/#1 + sampler #0 dead· 35-40 % των modules με guards, 13-20 % με dead, 0 HIT·
+  τα σχήματα των άλλων συνθηκών ΔΕΝ υπάρχουν σε κανένα log. Επόμενο = του χρήστη (απάντηση· census + timer πριν
+  κοπεί το PR).
 
 **3 Οκτ ~12:30 — λίστα crashes + ό,τι μένει (χρήστης: «update the list and make the list of the remaining isues»):**
   η λίστα του auditor gtnikos-e8 (30 Σεπ) ήταν το memory `gt7-crash-status-20260930.md` (πρόχειρο:

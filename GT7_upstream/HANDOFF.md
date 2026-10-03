@@ -1,5 +1,24 @@
 # shadPS4 lane - builder handoff (30 Sep 2026, ~20:50)
 
+> **Update 3 Oct ~23:30, builder shadps4-lane-f9: new review comment on #5218 (a live PR comes first).**
+> - raphaelthegreat, 3 Oct 20:16:57Z: "This is a lot of code for solving this issue, and it also seems to add a new
+>   interpreter on every sharp fetch which is extremely hot code path, so i expect this to have a large performance
+>   impact. Firstly can you describe what kind of conditions you are seeing for the dead sharps? I feel this should
+>   start out a lot more targetted and then expand it as it goes." No review state, no inline comments.
+> - Checked on the PR head 91a806e5 (merge-base 8e23388a): +1127/-53 in 14 files, `resource_guard_pass.cpp` 924
+>   lines. `ResourceGuards::EvaluateDead` (37 GuardOps, up to 128 nodes / 16 conds / 32 groups) runs from
+>   `Info::RefreshFlatBuf`, i.e. per stage per draw at `vk_pipeline_cache.cpp:679`; it returns at once when a shader
+>   has no guard group, otherwise it zeroes a 128-entry array, calls `std::fegetround()` and walks the nodes. GetSharp
+>   adds one bit test; the dead mask is part of the StageSpecialization. Never timed; no FPS comparison of guards on
+>   and off exists (the check runs compile cold).
+> - Condition data we have: fs 0x2a265dff = one condition (7 nodes) reading flat-buffer dword 50 (0 at every bind)
+>   kills images #0, #1 and sampler #0 (the #4 / #7 / #13 slots). TEST40 check runs: 35-40 % of modules guarded,
+>   13-20 % with a dead image or sampler, 0 HIT. The condition shapes of all other shaders are not in any log (only
+>   the two GT_BINDLOG shaders print theirs).
+> - Next is the user's call: the reply (the user writes it); a [test] census of condition shapes + a timer on
+>   EvaluateDead would answer both questions with numbers before the PR is cut down. Upstream main is now 43e4c470;
+>   the PR is still mergeable.
+
 > **Update 3 Oct ~12:30, builder shadps4-lane-f9: crash list + remaining issues (user's request).**
 > - The crash list the user asked the auditor gtnikos-e8 for on 30 Sep is memory `gt7-crash-status-20260930.md`
 >   (draft: `C:\Users\Νίκος\.claude\plans\gather-every-single-error-jaunty-hamster.md`). Rewritten in place: every
