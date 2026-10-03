@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: project
   originSessionId: 69673bdb-6869-4891-9c3e-5db85d30824f
-  modified: 2026-10-03T10:20:42.461Z
+  modified: 2026-10-03T10:22:17.054Z
 ---
 
 On 23 Sep 2026 the user created branch `claude` on `nikmparis217-ux/shadPS4` (remote `mine`) and
@@ -60,10 +60,10 @@ knowingly (same fork as the PR branches; upstream does not want AI - see
   public, so the one gmail address in gt7-shadps4-lane.md (~line 860, a commit author) is written as
   `<gmail address>` in the branch copy only; scan for addresses, tokens and keys before every push.
 - 3 Oct 2026 ~12:35, builder shadps4-lane-f9: passed `MEMORY.md` to the prep script with the other memory names and
-  pushed it. User, once told the index also names the non-emulator lanes: "no that is not fine. remove it" -> ~12:55
+  pushed it. User, once told the index also names the non-emulator lanes: "no that is not fine. remove it" -> ~13:15
   the branch was rewritten with `--force-with-lease`: a46666fd + one commit holding the same notes without
-  MEMORY.md; the three commits after a46666fd left the branch. GitHub can still serve an unreachable commit by its
-  exact link until it cleans up (only GitHub Support can force that), so never write a removed commit's id anywhere
+  MEMORY.md; the three commits after a46666fd left the branch. GitHub still served the old commit by its exact id
+  right after (API HTTP 200; only GitHub Support can purge it, the user's step), so never write a removed commit's id anywhere
   public. The "every md" rule does NOT cover MEMORY.md: check every path against "Stays out" above before each push.
 - The local `claude` ref lags the remote whenever a session pushes from a scratchpad clone (2 Oct 17:3x: local
   1c63b313, remote f498fe6e). Build on FETCH_HEAD (`-p FETCH_HEAD`), then

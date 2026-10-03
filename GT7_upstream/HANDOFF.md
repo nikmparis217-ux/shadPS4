@@ -13,9 +13,9 @@
 >   change; the minimap still red).
 > - Mistake: a claude push (~12:35) included `memory/MEMORY.md`, which stays off the public branch (it indexes every
 >   lane; memory `shadps4-claude-notes-branch.md`). User: "remove it" -> the branch was rewritten with a lease
->   (~12:55): a46666fd + one commit with the same notes and no MEMORY.md; the three commits after a46666fd left the
->   branch. GitHub can still show an unreachable commit by its exact link until it cleans up; only GitHub Support can
->   force that.
+>   (~13:15): a46666fd + one commit with the same notes and no MEMORY.md (0 of 74 commits hold it); the three commits
+>   after a46666fd left the branch. GitHub still served the old commit by its exact id right after (API HTTP 200);
+>   only GitHub Support can purge it, and asking them is the user's step.
 > - Nothing armed or running; no build.
 
 > **Update 3 Oct ~11:35, builder shadps4-lane-f9: DMA test done; config restored.**
