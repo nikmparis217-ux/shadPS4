@@ -141,6 +141,10 @@ void Visit(Info& info, const IR::Inst& inst) {
         break;
     case IR::Opcode::DataAppend:
     case IR::Opcode::DataConsume:
+    case IR::Opcode::GdsOrderedCount:
+    case IR::Opcode::GdsOrderedSignal:
+    case IR::Opcode::BufferOrderedCount:
+    case IR::Opcode::BufferOrderedSignal:
     case IR::Opcode::Ballot:
     case IR::Opcode::InverseBallot:
     case IR::Opcode::BallotFindLsb:

@@ -154,6 +154,8 @@ OPCODE(BufferAtomicXor32,                                   U32,            Opaq
 OPCODE(BufferAtomicSwap32,                                  U32,            Opaque,         Opaque,         U32,                                            )
 OPCODE(BufferAtomicCmpSwap32,                               U32,            Opaque,         Opaque,         U32,            U32,                            )
 OPCODE(BufferAtomicFCmpSwap32,                              F32,            Opaque,         Opaque,         F32,            F32,                            )
+OPCODE(BufferOrderedCount,                                  U32,            Opaque,         Opaque,         U32,            U32,                            )
+OPCODE(BufferOrderedSignal,                                 Void,           Opaque,         U32,                                                            )
 
 // Vector utility
 OPCODE(CompositeConstructU32x2,                             U32x2,          U32,            U32,                                                            )
@@ -468,6 +470,8 @@ OPCODE(BallotFindLsb,                                       U32,            U64,
 OPCODE(InverseBallot,                                       U1,             U64,                                                                            )
 OPCODE(DataAppend,                                          U32,            U32,            U1                                                              )
 OPCODE(DataConsume,                                         U32,            U32,            U1                                                              )
+OPCODE(GdsOrderedCount,                                     U32,            U32,            U32,            U32,                                            )
+OPCODE(GdsOrderedSignal,                                    Void,           U32,                                                                            )
 OPCODE(GroupAny,                                            U1,             U1,                                                                             )
 
 // Time operations
