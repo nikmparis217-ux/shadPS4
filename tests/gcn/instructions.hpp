@@ -13,6 +13,7 @@ using OpcodeSOPP = Shader::Gcn::OpcodeSOPP;
 using OpcodeDS = Shader::Gcn::OpcodeDS;
 using OpcodeVOP1 = Shader::Gcn::OpcodeVOP1;
 using OpcodeVOP2 = Shader::Gcn::OpcodeVOP2;
+using OpcodeVOPC = Shader::Gcn::OpcodeVOPC;
 using OpcodeVOP3 = Shader::Gcn::OpcodeVOP3;
 using OpcodeVOP3P = Shader::Gcn::OpcodeVOP3P;
 
@@ -1280,6 +1281,30 @@ private:
     } i;
 
     static_assert(sizeof(VOP2Internal) == sizeof(u32));
+};
+
+class VOPC {
+public:
+    explicit constexpr VOPC(OpcodeVOPC op, SOperand9 src0, VOperand8 vsrc1) {
+        i.src0 = std::to_underlying(src0);
+        i.vsrc1 = std::to_underlying(vsrc1);
+        i.op = std::to_underlying(op);
+        i.encoding = 0b0111110;
+    }
+
+    u32 Get() {
+        return std::bit_cast<u32>(i);
+    }
+
+private:
+    struct VOPCInternal {
+        u32 src0 : 9;
+        u32 vsrc1 : 8;
+        u32 op : 8;
+        u32 encoding : 7;
+    } i;
+
+    static_assert(sizeof(VOPCInternal) == sizeof(u32));
 };
 
 enum class Omod : u8 {

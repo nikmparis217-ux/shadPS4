@@ -1096,3 +1096,76 @@ TEST_F(GcnTest, ds_ordered_count_adds_first_active_lane_value) {
     EXPECT_EQ(gds[0], NumGroups);
     EXPECT_EQ(gds[GdsTicketDword], NumGroups);
 }
+
+// v_cmpx leaves exec set for lanes 5-20 (lane - 5 < 16, unsigned). v_readfirstlane then reads the
+// first of them, lane 5, whose v1 is 6, and every lane gets that value.
+TEST_F(GcnTest, readfirstlane_reads_first_lane_with_exec_bit) {
+    auto runner = gcn_test::Runner::instance().value();
+    const std::array<u64, 5> instructions{
+        VOP2(OpcodeVOP2::V_ADD_I32, VOperand8::V1, SOperand9::Const1, VOperand8::V4).Get(),
+        VOP2(OpcodeVOP2::V_ADD_I32, VOperand8::V2, SOperand9::ConstNeg5, VOperand8::V4).Get(),
+        VOPC(OpcodeVOPC::V_CMPX_GT_U32, SOperand9::Const16, VOperand8::V2).Get(),
+        VOP1(OpcodeVOP1::V_READFIRSTLANE_B32, VOperand8::V12, SOperand9::V1).Get(),
+        VOP1(OpcodeVOP1::V_MOV_B32, VOperand8::V0, SOperand9::S12).Get(),
+    };
+    const ComputeTestConfig config{
+        .workgroup_size = {32, 1, 1},
+        .store_per_invocation = true,
+        .local_index_in_v4 = true,
+    };
+    const auto result = runner->run<std::array<u32, 32>>(TranslateToSpirv(instructions, config),
+                                                         std::array{0U, 0U, 0U, 0U});
+    ASSERT_TRUE(result.has_value());
+    for (u32 lane = 0; lane < 32; ++lane) {
+        EXPECT_EQ((*result)[lane], 6U) << "lane " << lane;
+    }
+}
+
+// With no exec bit set v_readfirstlane reads lane 0.
+TEST_F(GcnTest, readfirstlane_reads_lane_0_without_exec_bits) {
+    auto runner = gcn_test::Runner::instance().value();
+    const std::array<u64, 4> instructions{
+        VOP2(OpcodeVOP2::V_ADD_I32, VOperand8::V1, SOperand9::Const1, VOperand8::V4).Get(),
+        VOPC(OpcodeVOPC::V_CMPX_GT_U32, SOperand9::Const0, VOperand8::V4).Get(),
+        VOP1(OpcodeVOP1::V_READFIRSTLANE_B32, VOperand8::V12, SOperand9::V1).Get(),
+        VOP1(OpcodeVOP1::V_MOV_B32, VOperand8::V0, SOperand9::S12).Get(),
+    };
+    const ComputeTestConfig config{
+        .workgroup_size = {32, 1, 1},
+        .store_per_invocation = true,
+        .local_index_in_v4 = true,
+    };
+    const auto result = runner->run<std::array<u32, 32>>(TranslateToSpirv(instructions, config),
+                                                         std::array{0U, 0U, 0U, 0U});
+    ASSERT_TRUE(result.has_value());
+    for (u32 lane = 0; lane < 32; ++lane) {
+        EXPECT_EQ((*result)[lane], 1U) << "lane " << lane;
+    }
+}
+
+// v_writelane sets one lane of v1 and every other lane keeps its value. v1 = lane + 1, then lane 2
+// takes -15 = 0xfffffff1 (VOP3 form, constant lane select) and lane 31 takes s1 (VOP2 form: the
+// lane select is an SGPR, s2, in the vsrc1 field).
+TEST_F(GcnTest, writelane_sets_selected_lane_and_keeps_other_lanes) {
+    auto runner = gcn_test::Runner::instance().value();
+    const std::array<u64, 5> instructions{
+        VOP2(OpcodeVOP2::V_ADD_I32, VOperand8::V1, SOperand9::Const1, VOperand8::V4).Get(),
+        VOP3A(OpcodeVOP3::V_WRITELANE_B32, VOperand8::V1, SOperand9::ConstNeg15, SOperand9::Const2)
+            .Get(),
+        SOP1(OpcodeSOP1::S_MOV_B32, SOperand7::S2, SOperand8::Const31).Get(),
+        VOP2(OpcodeVOP2::V_WRITELANE_B32, VOperand8::V1, SOperand9::S1, VOperand8::V2).Get(),
+        VOP1(OpcodeVOP1::V_MOV_B32, VOperand8::V0, SOperand9::V1).Get(),
+    };
+    const ComputeTestConfig config{
+        .workgroup_size = {32, 1, 1},
+        .store_per_invocation = true,
+        .local_index_in_v4 = true,
+    };
+    const auto result = runner->run<std::array<u32, 32>>(TranslateToSpirv(instructions, config),
+                                                         std::array{0U, 0xc0de0031U, 0U, 0U});
+    ASSERT_TRUE(result.has_value());
+    for (u32 lane = 0; lane < 32; ++lane) {
+        const u32 expected = lane == 2 ? 0xfffffff1U : lane == 31 ? 0xc0de0031U : lane + 1;
+        EXPECT_EQ((*result)[lane], expected) << "lane " << lane;
+    }
+}
