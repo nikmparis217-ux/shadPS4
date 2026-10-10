@@ -17,7 +17,26 @@ static void AddFlatbuf(Info& info) {
     }
 }
 
+static bool IsF64(IR::Type type) {
+    return True(type & (IR::Type::F64 | IR::Type::F64x2 | IR::Type::F64x3 | IR::Type::F64x4));
+}
+
+static bool UsesF64(const IR::Inst& inst) {
+    if (IsF64(inst.Type())) {
+        return true;
+    }
+    for (size_t i = 0; i < inst.NumArgs(); ++i) {
+        if (IsF64(inst.Arg(i).Type())) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Visit(Info& info, const IR::Inst& inst) {
+    if (UsesF64(inst)) {
+        info.uses_fp64 = true;
+    }
     switch (inst.GetOpcode()) {
     case IR::Opcode::GetAttribute:
     case IR::Opcode::GetAttributeU1:
@@ -89,10 +108,6 @@ void Visit(Info& info, const IR::Inst& inst) {
     case IR::Opcode::BitCastU16F16:
     case IR::Opcode::BitCastF16U16:
         info.uses_fp16 = true;
-        break;
-    case IR::Opcode::PackDouble2x32:
-    case IR::Opcode::UnpackDouble2x32:
-        info.uses_fp64 = true;
         break;
     case IR::Opcode::ImageWrite:
         info.has_storage_images = true;
