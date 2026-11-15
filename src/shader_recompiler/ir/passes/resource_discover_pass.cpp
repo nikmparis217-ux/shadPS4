@@ -16,6 +16,26 @@ static bool IsSharpSource(const IR::Inst* inst) {
            inst->GetOpcode() == IR::Opcode::ReadConstBuffer;
 }
 
+static bool IsSharpOperation(const IR::Inst* inst) {
+    switch (inst->GetOpcode()) {
+    case IR::Opcode::IAdd32:
+    case IR::Opcode::ISub32:
+    case IR::Opcode::IMul32:
+    case IR::Opcode::ShiftLeftLogical32:
+    case IR::Opcode::ShiftRightLogical32:
+    case IR::Opcode::BitwiseAnd32:
+    case IR::Opcode::BitwiseOr32:
+    case IR::Opcode::BitwiseXor32:
+    case IR::Opcode::BitwiseNot32:
+    case IR::Opcode::UMin32:
+    case IR::Opcode::UMax32:
+    case IR::Opcode::BitFieldUExtract:
+        return true;
+    default:
+        return false;
+    }
+}
+
 struct StridePatchResult {
     IR::Value vsharp_dw1;
     u32 dw1_mask;
@@ -278,6 +298,23 @@ IR::Inst* FindSharpSource(IR::Inst* handle) {
     return handle;
 }
 
+static void MarkSharpSources(IR::Inst* inst) {
+    if (!IsSharpSource(inst)) {
+        ASSERT(IsSharpOperation(inst));
+        for (size_t i = 0; i < inst->NumArgs(); i++) {
+            if (IR::Inst* arg = inst->Arg(i).TryInst()) {
+                MarkSharpSources(arg);
+            }
+        }
+        return;
+    }
+    if (inst->GetOpcode() == IR::Opcode::ReadConstBuffer) {
+        auto flags = inst->Flags<IR::BufferInstInfo>();
+        flags.sharp_source.Assign(1u);
+        inst->SetFlags(flags);
+    }
+}
+
 void MarkReadConstBufferSharpSources(const SharpReference& sharp) {
     // In cases of bindless sharp fetches mark all producer instructions
     // so the extended userdata flattening pass will include them.
@@ -286,12 +323,7 @@ void MarkReadConstBufferSharpSources(const SharpReference& sharp) {
         if (!source) {
             continue;
         }
-        ASSERT(IsSharpSource(source));
-        if (source->GetOpcode() == IR::Opcode::ReadConstBuffer) {
-            auto flags = source->Flags<IR::BufferInstInfo>();
-            flags.sharp_source.Assign(1u);
-            source->SetFlags(flags);
-        }
+        MarkSharpSources(source);
     }
 }
 

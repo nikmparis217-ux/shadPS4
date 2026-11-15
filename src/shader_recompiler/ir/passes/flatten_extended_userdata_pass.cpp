@@ -17,6 +17,7 @@
 #include "shader_recompiler/info.h"
 #include "shader_recompiler/ir/ir_emitter.h"
 #include "shader_recompiler/ir/opcodes.h"
+#include "shader_recompiler/ir/passes/resource_pass.h"
 #include "shader_recompiler/ir/passes/srt.h"
 #include "shader_recompiler/ir/program.h"
 #include "shader_recompiler/ir/reg.h"
@@ -163,6 +164,7 @@ struct PassInfo {
     std::unordered_map<IR::Inst*, PtrUserList> pointer_uses;
     // GetUserData instructions corresponding to sgpr_base of SRT roots
     boost::container::small_flat_map<IR::ScalarReg, IR::Inst*, 1> srt_roots;
+    boost::container::small_vector<IR::Inst*, 4> sharp_dwords;
 
     // pick a single inst for a given value number
     std::unordered_map<u32, IR::Inst*> vn_to_inst;
@@ -636,7 +638,7 @@ static void VisitPointer(const IR::Value& off_dw, IR::Inst* subtree, PassInfo& p
 static void GenerateSrtProgram(Info& info, PassInfo& pass_info) {
     Xbyak::CodeGenerator& c = g_srt_codegen;
 
-    if (pass_info.srt_roots.empty()) {
+    if (pass_info.srt_roots.empty() && pass_info.sharp_dwords.empty()) {
         return;
     }
 
@@ -655,6 +657,19 @@ static void GenerateSrtProgram(Info& info, PassInfo& pass_info) {
 
     for (const auto& [sgpr_base, root] : pass_info.srt_roots) {
         VisitPointer(IR::Value(static_cast<u32>(sgpr_base)), root, pass_info, c);
+    }
+
+    for (IR::Inst* dword : pass_info.sharp_dwords) {
+        if (pass_info.DeduplicateInstruction(dword) != dword) {
+            continue;
+        }
+        if (!ComputeOffset(c, r10d, pass_info, IR::Value{dword})) {
+            LOG_ERROR(Render_Recompiler, "Failed to compute sharp dword for SRT walker");
+            continue;
+        }
+        c.mov(ptr[rsi + (pass_info.dst_off_dw << 2)], r10d);
+        dword->SetFlags(pass_info.dst_off_dw);
+        pass_info.dst_off_dw++;
     }
 
     c.ret();
@@ -743,7 +758,7 @@ void SimplifyReadConstAddressAdd(IR::Inst& inst) {
 
 } // Anonymous namespace
 
-void FlattenExtendedUserdataPass(IR::Program& program) {
+void FlattenExtendedUserdataPass(IR::Program& program, const ResourceDiscoveryList& sharp_usages) {
     auto& post_order = program.post_order_blocks;
     PassInfo pass_info;
 
@@ -846,6 +861,19 @@ void FlattenExtendedUserdataPass(IR::Program& program) {
         }
     }
 
+    for (const auto& usage : sharp_usages) {
+        for (const auto& sharp : usage.sharps) {
+            for (u32 i = 0; i < sharp.num_dwords; i++) {
+                IR::Inst* dword = sharp.dwords[i].TryInst();
+                if (dword && !IsReadConstSource(sharp.dwords[i]) &&
+                    std::ranges::find(pass_info.sharp_dwords, dword) ==
+                        pass_info.sharp_dwords.end()) {
+                    pass_info.sharp_dwords.push_back(dword);
+                }
+            }
+        }
+    }
+
     GenerateSrtProgram(program.info, pass_info);
 
     // Assign offsets to duplicate readconsts
@@ -853,6 +881,9 @@ void FlattenExtendedUserdataPass(IR::Program& program) {
         ASSERT(pass_info.vn_to_inst.contains(pass_info.gvn_table.GetValueNumber(readconst)));
         IR::Inst* original = pass_info.DeduplicateInstruction(readconst);
         SetFlatbufOffset(readconst, GetFlatbufOffset(original));
+    }
+    for (IR::Inst* dword : pass_info.sharp_dwords) {
+        dword->SetFlags(pass_info.DeduplicateInstruction(dword)->Flags<u16>());
     }
 
     program.info.RefreshFlatBuf();
@@ -870,7 +901,7 @@ PFN_SrtWalker RegisterWalkerCode(const u8* ptr, size_t size) {
 
 namespace Optimization {
 
-void FlattenExtendedUserdataPass(IR::Program& program) {
+void FlattenExtendedUserdataPass(IR::Program& program, const ResourceDiscoveryList& sharp_usages) {
     UNREACHABLE_MSG("FlattenExtendedUserdataPass unimplemented for target architecture.");
 }
 
